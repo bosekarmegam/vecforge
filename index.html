@@ -104,7 +104,8 @@
         }
 
         .nav-logo .bolt {
-            font-size: 1.4rem;
+            width: 28px;
+            height: 28px;
         }
 
         .nav-links {
@@ -313,12 +314,14 @@
         }
 
         .code-block {
-            background: #1E1E2E;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
             border-radius: var(--radius);
             padding: 28px 28px 24px;
             position: relative;
             overflow: hidden;
-            box-shadow: var(--shadow-lg);
+            box-shadow: var(--shadow-md);
+            text-align: left;
         }
 
         .code-block::before {
@@ -335,7 +338,7 @@
             display: flex;
             align-items: center;
             gap: 7px;
-            margin-bottom: 18px;
+            margin-bottom: 20px;
         }
 
         .code-dot {
@@ -356,37 +359,63 @@
             background: #00B894;
         }
 
+        .code-header-title {
+            margin-left: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
         .code-block code {
             font-family: 'JetBrains Mono', monospace;
             font-size: 0.85rem;
             line-height: 1.8;
             display: block;
-            color: #CDD6F4;
+            color: #1A1D2E;
+            text-align: left;
+            white-space: pre-wrap;
         }
 
         .code-block .kw {
-            color: #CBA6F7;
+            color: #6C5CE7;
         }
 
         .code-block .fn {
-            color: #89B4FA;
+            color: #0984E3;
         }
 
         .code-block .str {
-            color: #A6E3A1;
+            color: #00B894;
         }
 
         .code-block .cmt {
-            color: #6C7086;
+            color: #A0AAB2;
             font-style: italic;
         }
 
         .code-block .var {
-            color: #F5C2E7;
+            color: #E84393;
         }
 
         .code-block .num {
-            color: #FAB387;
+            color: #E17055;
+        }
+
+        .code-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 20px -28px;
+        }
+
+        .output-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 12px;
+            font-weight: 600;
+            text-align: left;
         }
 
         .code-label {
@@ -699,7 +728,10 @@
         }
 
         .footer-brand .bolt {
-            font-size: 1.1rem;
+            width: 22px;
+            height: 22px;
+            vertical-align: middle;
+            margin-right: 6px;
         }
 
         .footer-links {
@@ -842,7 +874,7 @@
     <nav>
         <div class="nav-inner">
             <a href="#" class="nav-logo">
-                <span class="bolt">⚡</span> VecForge
+                <img src="vecforge-logo.svg" alt="VecForge Logo" class="bolt"> VecForge
             </a>
             <button class="mobile-toggle" onclick="document.querySelector('.nav-links').classList.toggle('open')"
                 aria-label="Menu">☰</button>
@@ -860,7 +892,7 @@
     <header class="hero">
         <div class="hero-badge">
             <span class="dot"></span>
-            v0.2.0 — Phase 2 Performance &amp; Polish
+            v1.0.0 — Production Ready
         </div>
         <h1>
             <span class="gradient-text">Forge</span> your vector<br>
@@ -890,19 +922,39 @@
                     <span class="code-dot red"></span>
                     <span class="code-dot yellow"></span>
                     <span class="code-dot green"></span>
+                    <span class="code-header-title">test_scores_varied.py</span>
                 </div>
-                <code>
-<span class="cmt"># 5 lines. That's all it takes.</span>
+
+                <div class="code-split">
+                    <div class="code-input">
+                        <code>
+<span class="cmt"># Multi-domain hybrid search & precise scoring</span>
 <span class="kw">from</span> vecforge <span class="kw">import</span> VecForge
 
-db = <span class="fn">VecForge</span>(<span class="str">"my_vault"</span>)
-db.<span class="fn">add</span>(<span class="str">"Patient admitted with type 2 diabetes"</span>)
-results = db.<span class="fn">search</span>(<span class="str">"diabetic patient"</span>)
-<span class="fn">print</span>(results[<span class="num">0</span>].text)
-<span class="cmt"># → 'Patient admitted with type 2 diabetes'</span>
-            </code>
+db = <span class="fn">VecForge</span>(<span class="str">":memory:"</span>)
+db.<span class="fn">add</span>(<span class="str">"The quick brown fox jumps over the lazy dog"</span>)
+db.<span class="fn">add</span>(<span class="str">"NASA's Artemis aims to return humans to the Moon"</span>)
+db.<span class="fn">add</span>(<span class="str">"Authentic Italian pizza requires a wood-fired oven"</span>)
+
+results = db.<span class="fn">search</span>(<span class="str">"space exploration"</span>)
+<span class="kw">for</span> r <span class="kw">in</span> results:
+    <span class="fn">print</span>(<span class="str">f"{</span><span class="var">r</span>.<span class="var">score</span><span class="str">:.3f}  →  {</span><span class="var">r</span>.<span class="var">text</span><span class="str">}"</span>)
+</code>
+                    </div>
+
+                    <div class="code-divider"></div>
+
+                    <div class="code-output">
+                        <div class="output-label">Terminal Output</div>
+                        <code>
+<span class="num">1.000</span>  →  NASA's Artemis aims to return humans to the Moon
+<span class="num">0.134</span>  →  Authentic Italian pizza requires a wood-fired oven
+<span class="num">0.000</span>  →  The quick brown fox jumps over the lazy dog
+</code>
+                    </div>
+                </div>
             </div>
-            <p class="code-label">The 5-Line Promise — any core feature in 5 lines or fewer</p>
+            <p class="code-label">Perfect [0, 1] Min-Max Normalization across any domain</p>
         </div>
     </header>
 
@@ -1139,7 +1191,7 @@ results = db.<span class="fn">search</span>(<span class="str">"diabetic patient"
     <footer>
         <div class="footer-inner">
             <div class="footer-brand">
-                <span class="bolt">⚡</span> VecForge
+                <img src="vecforge-logo.svg" alt="VecForge Logo" class="bolt"> VecForge
             </div>
             <div class="footer-links">
                 <a href="https://github.com/bosekarmegam/vecforge">GitHub</a>

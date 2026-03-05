@@ -1,5 +1,6 @@
 <p align="center">
-  <h1 align="center">⚡ VecForge</h1>
+  <img src="vecforge-logo.svg" alt="VecForge Logo" width="120" height="120">
+  <h1 align="center">VecForge</h1>
   <p align="center"><strong>Forge your vector database. Own it forever.</strong></p>
   <p align="center">
     Local-first · Encrypted · Hybrid Search · Zero Cloud Dependency
