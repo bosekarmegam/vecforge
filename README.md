@@ -13,7 +13,6 @@
 Built by **Suneel Bose K** — Founder & CEO, [ArcGX TechLabs Private Limited](https://arcgx.in)
 
 [![PyPI version](https://img.shields.io/pypi/v/vecforge.svg)](https://pypi.org/project/vecforge/)
-[![PyPI downloads](https://img.shields.io/pypi/dm/vecforge.svg)](https://pypi.org/project/vecforge/)
 [![License: BSL 1.1](https://img.shields.io/badge/License-BSL%201.1-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-green.svg)](https://python.org)
 [![Tests](https://github.com/bosekarmegam/vecforge/actions/workflows/tests.yml/badge.svg)](https://github.com/bosekarmegam/vecforge/actions/workflows/tests.yml)
