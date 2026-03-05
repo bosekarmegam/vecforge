@@ -48,6 +48,7 @@ jobs:
 
       - name: Run tests before publish
         run: |
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
           pip install -e ".[dev]"
           pytest tests/ -v --tb=short
 

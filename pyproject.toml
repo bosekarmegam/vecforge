@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vecforge"
-version = "0.1.0"
+version = "0.2.0"
 description = "Forge your vector database. Own it forever. Local-first, encrypted, quantum-inspired."
 readme = "README.md"
 license = {text = "Business Source License 1.1"}
