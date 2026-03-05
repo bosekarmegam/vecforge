@@ -23,7 +23,7 @@ import click
 
 
 @click.group()
-@click.version_option(version="0.2.0", prog_name="VecForge")
+@click.version_option(version="1.0.0", prog_name="VecForge")
 def cli() -> None:
     """VecForge — Forge your vector database. Own it forever.
 

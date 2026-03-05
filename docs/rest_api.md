@@ -137,7 +137,7 @@ curl http://localhost:8080/api/v1/health
 {
   "status": "healthy",
   "service": "VecForge",
-  "version": "0.2.0",
+  "version": "1.0.0",
   "built_by": "Suneel Bose K · ArcGX TechLabs"
 }
 ```

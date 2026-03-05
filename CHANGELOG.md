@@ -4,6 +4,11 @@ All notable changes to VecForge will be documented in this file.
 
 Built by Suneel Bose K · ArcGX TechLabs Private Limited.
 
+## [1.0.0] — 2026-03-05
+### Changed
+* 🚀 Vector score normalization (fixed a bug where `SearchCascade` hybrid fusion resulted in squashed score differences). Scores are now perfectly min-max normalized between `0.0` and `1.0`. All search relevancies accurately reflect semantic similarity.
+* Bumped major version due to stabilization of API surfaces and core scoring algorithms.
+
 ## [0.2.0] — 2026-03-05
 
 ### Added — Phase 2: Performance & Polish

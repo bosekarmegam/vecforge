@@ -43,7 +43,7 @@ def create_app(vault_path: str = ":memory:") -> FastAPI:
             "Built by Suneel Bose K · ArcGX TechLabs Private Limited.\n"
             "Licensed under BSL 1.1."
         ),
-        version="0.2.0",
+        version="1.0.0",
         docs_url="/docs",
         redoc_url="/redoc",
     )

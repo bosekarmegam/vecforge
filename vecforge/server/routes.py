@@ -208,7 +208,7 @@ def create_router(vault_path: str) -> APIRouter:
         return {
             "status": "healthy",
             "service": "VecForge",
-            "version": "0.2.0",
+            "version": "1.0.0",
             "built_by": "Suneel Bose K · ArcGX TechLabs",
         }
 

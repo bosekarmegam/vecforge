@@ -90,7 +90,7 @@ pip install sqlcipher3
 
 ```python
 import vecforge
-print(vecforge.__version__)   # 0.2.0
+print(vecforge.__version__)   # 1.0.0
 print(vecforge.__author__)    # Suneel Bose K
 print(vecforge.__company__)   # ArcGX TechLabs Private Limited
 ```
