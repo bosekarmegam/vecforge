@@ -32,7 +32,7 @@ from vecforge.core.bm25 import BM25Engine
 from vecforge.core.indexer import FaissIndexer
 from vecforge.core.reranker import Reranker
 from vecforge.search.filters import MetadataFilter
-from vecforge.search.hybrid import reciprocal_rank_fusion
+from vecforge.search.hybrid import weighted_linear_fusion
 
 logger = logging.getLogger(__name__)
 
@@ -134,12 +134,12 @@ class CascadeSearcher:
         dense_scores, dense_ids = self._indexer.search(query_vector, top_k=retrieval_k)
         logger.debug("Stage 1 (Dense): retrieved %d candidates", len(dense_ids))
 
-        # ─── Stage 2: Sparse keyword merge via RRF ───
+        # ─── Stage 2: Sparse keyword merge via Weighted Linear Fusion ───
         bm25_results = self._bm25.search(query_text, top_k=retrieval_k)
         sparse_ids = [r.doc_index for r in bm25_results]
         sparse_scores = [r.score for r in bm25_results]
 
-        fused = reciprocal_rank_fusion(
+        fused = weighted_linear_fusion(
             dense_ids=dense_ids,
             dense_scores=dense_scores,
             sparse_ids=sparse_ids,

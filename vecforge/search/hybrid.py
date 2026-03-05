@@ -119,6 +119,7 @@ def weighted_linear_fusion(
     fused_scores: dict[int, float] = {}
 
     # perf: Normalize dense scores to [0, 1]
+    effective_alpha = alpha if len(sparse_scores) > 0 else 1.0
     if len(dense_scores) > 0:
         d_min, d_max = float(dense_scores.min()), float(dense_scores.max())
         d_range = d_max - d_min if d_max > d_min else 1.0
@@ -128,7 +129,7 @@ def weighted_linear_fusion(
             if doc_id_int < 0:
                 continue
             norm_score = (float(score) - d_min) / d_range
-            fused_scores[doc_id_int] = alpha * norm_score
+            fused_scores[doc_id_int] = effective_alpha * norm_score
 
     # perf: Normalize sparse scores to [0, 1]
     if len(sparse_scores) > 0:
