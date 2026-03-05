@@ -59,7 +59,7 @@ quantum = []
 vecforge = "vecforge.cli.main:cli"
 
 [project.urls]
-Homepage = "https://vecforge.arcgx.in"
+Homepage = "https://bosekarmegam.github.io/vecforge/"
 Repository = "https://github.com/bosekarmegam/vecforge"
 Issues = "https://github.com/bosekarmegam/vecforge/issues"
 
