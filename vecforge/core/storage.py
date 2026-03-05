@@ -133,8 +133,7 @@ class StorageBackend:
         """
         assert self._conn is not None
 
-        self._conn.executescript(
-            """
+        self._conn.executescript("""
             CREATE TABLE IF NOT EXISTS schema_version (
                 version INTEGER PRIMARY KEY
             );
@@ -169,8 +168,7 @@ class StorageBackend:
                 count INTEGER NOT NULL,
                 updated_at REAL NOT NULL
             );
-            """
-        )
+            """)
 
         # Ensure default namespace exists
         self._conn.execute(
