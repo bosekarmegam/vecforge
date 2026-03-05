@@ -1,0 +1,64 @@
+# ─── VecForge .gitignore ───
+# Built by Suneel Bose K · ArcGX TechLabs Private Limited
+
+# ─── Python ───
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# ─── Distribution / Packaging ───
+build/
+dist/
+*.egg-info/
+*.egg
+*.whl
+sdist/
+wheels/
+
+# ─── Virtual Environments ───
+.venv/
+venv/
+env/
+ENV/
+
+# ─── Testing ───
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+coverage.xml
+*.cover
+*.py,cover
+
+# ─── Type Checking ───
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# ─── Linting ───
+.ruff_cache/
+
+# ─── IDE / Editor ───
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ─── Jupyter ───
+.ipynb_checkpoints/
+
+# ─── Project-Specific ───
+VecForge_INSTRUCTIONS.md
+*.db
+*.db-journal
+*.jsonl
+!examples/*.py
+
+# ─── OS ───
+.DS_Store
+Desktop.ini
+ehthumbs.db

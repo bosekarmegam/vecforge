@@ -1,0 +1,88 @@
+# VecForge — Universal Local-First Vector Database
+# Copyright (c) 2026 Suneel Bose K · ArcGX TechLabs Private Limited
+# Licensed under BSL 1.1
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vecforge"
+version = "0.1.0"
+description = "Forge your vector database. Own it forever. Local-first, encrypted, quantum-inspired."
+readme = "README.md"
+license = {text = "Business Source License 1.1"}
+requires-python = ">=3.10"
+authors = [{name = "Suneel Bose K", email = "suneelbose@arcgx.in"}]
+keywords = ["vector-database", "faiss", "embeddings", "search", "local-first", "encrypted"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Database",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+
+dependencies = [
+    "faiss-cpu>=1.7.4",
+    "sentence-transformers>=2.2.0",
+    "numpy>=1.24.0",
+    "rank-bm25>=0.2.2",
+    "fastapi>=0.100.0",
+    "uvicorn[standard]>=0.23.0",
+    "pymupdf>=1.23.0",
+    "numba>=0.58.0",
+    "joblib>=1.3.0",
+    "click>=8.1.0",
+    "python-docx>=1.0.0",
+    "beautifulsoup4>=4.12.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "mypy>=1.5.0",
+    "ruff>=0.1.0",
+    "black>=23.7.0",
+    "types-beautifulsoup4",
+]
+gpu = [
+    "faiss-gpu>=1.7.4",
+    "cupy>=12.0.0",
+]
+quantum = []
+
+[project.scripts]
+vecforge = "vecforge.cli.main:cli"
+
+[project.urls]
+Homepage = "https://vecforge.arcgx.in"
+Repository = "https://github.com/bosekarmegam/vecforge"
+Issues = "https://github.com/bosekarmegam/vecforge/issues"
+
+[tool.setuptools.packages.find]
+include = ["vecforge*"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "SIM"]
+
+[tool.black]
+line-length = 88
+target-version = ["py310"]
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
