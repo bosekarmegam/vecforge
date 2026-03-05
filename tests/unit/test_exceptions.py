@@ -106,6 +106,6 @@ class TestExceptionMessages:
             IngestError("file", "reason"),
         ]
         for exc in exceptions:
-            assert (
-                "ArcGX" in str(exc) or "vecforge" in str(exc).lower()
-            ), f"{type(exc).__name__} missing branding"
+            assert "ArcGX" in str(exc) or "vecforge" in str(exc).lower(), (
+                f"{type(exc).__name__} missing branding"
+            )
