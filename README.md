@@ -5,6 +5,7 @@
     Local-first · Encrypted · Hybrid Search · Zero Cloud Dependency
   </p>
 </p>
+
 ---
 
 **VecForge** is a universal, local-first Python vector database with enterprise security, multimodal ingestion, and optional quantum-inspired acceleration.
