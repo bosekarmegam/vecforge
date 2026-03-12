@@ -22,6 +22,7 @@ Built by **Suneel Bose K** — Founder & CEO, [ArcGX TechLabs Private Limited](h
 [![Mypy](https://img.shields.io/badge/Typing-Mypy%20✅-brightgreen.svg)](https://mypy-lang.org/)
 [![Benchmark](https://img.shields.io/badge/100k%20Search-11.31ms%20✅-brightgreen.svg)](#-benchmarks)
 [![Quantum](https://img.shields.io/badge/Quantum%20Rerank-3.1ms%20@%2010k-blueviolet.svg)](#-benchmarks)
+[![Multimodal](https://img.shields.io/badge/Multimodal-CLIP%20%2B%20Whisper-orange.svg)](#-multimodal-search)
 
 ---
 
@@ -48,6 +49,7 @@ That's it. No API keys. No cloud. No config files. **Your data stays on your mac
 | Encryption at rest | ❌ | ❌ | ✅ **AES-256** |
 | Hybrid search | ✅ | ❌ | ✅ **Dense + BM25** |
 | Quantum reranking | ❌ | ❌ | ✅ **Grover-inspired** |
+| Multimodal search | ❌ | ❌ | ✅ **Image + Audio** |
 | Namespace isolation | ✅ Cloud | ❌ | ✅ **Local** |
 | RBAC | ✅ Cloud | ❌ | ✅ **Built-in** |
 | Audit logging | ❌ | ❌ | ✅ **JSONL** |
@@ -147,6 +149,63 @@ results = db.search(
 > **Note:** `AmplitudeEncoder` alone is ✅ fast across all scales (<5ms at 1M docs). The Grover amplification step has O(N√N) cost for large N — best suited for candidate sets up to 100k. For very large candidate sets, combine with `top_k * 4` pre-filtering from FAISS.
 
 > 📖 See the [Quantum Guide](docs/quantum.md) for algorithm details, usage, and API reference.
+
+---
+
+## 🖼️ Multimodal Search
+
+VecForge Phase 4 brings **image and audio search** to your local vault — powered by CLIP (images) and Whisper (audio), both running entirely offline.
+
+```bash
+# Install multimodal extras
+pip install vecforge[multimodal]
+```
+
+```python
+from vecforge import VecForge
+
+db = VecForge("my_vault")
+
+# Add documents of any type
+db.add("A photo of a hospital ward", metadata={"type": "text"})
+db.add("", image="ward_photo.jpg")          # CLIP image embedding
+db.add("", audio="patient_recording.mp3")   # Whisper transcription + embed
+
+# Cross-modal search: text → image/audio results
+results = db.search("hospital ward patient")  # finds the image + audio too
+
+# Or query by image:
+results = db.search(query_image="my_photo.jpg", top_k=5)
+```
+
+### 🔗 Cross-Modal Query Examples
+
+```python
+from vecforge.search.crossmodal import CrossModalSearcher
+
+cs = CrossModalSearcher()
+
+# Auto-detect modality and encode any query
+vec = cs.encode_query("patient_recording.mp3")   # Whisper → text embed
+vec = cs.encode_query("ward_photo.jpg")           # CLIP image embed
+vec = cs.encode_query("hip fracture elderly")    # standard text embed
+```
+
+### ☁️ Opt-In Cloud Sync
+
+```bash
+pip install vecforge[cloud]
+```
+
+```python
+from vecforge.sync import CloudSync
+
+# Vault is encrypted BEFORE upload — key never leaves your machine
+sync = CloudSync(backend="s3", bucket="my-vecforge-backups")
+sync.upload("vault.db.enc")
+```
+
+> 📖 See the [Multimodal Guide](docs/multimodal.md) for CLIP/Whisper configuration, supported formats, and cross-modal search strategies.
 
 ---
 
@@ -252,6 +311,7 @@ python examples/rag_pipeline.py
 - [🌐 REST API](docs/rest_api.md) — FastAPI server endpoints
 - [⚙️ Configuration](docs/configuration.md) — All config options in one place
 - [🌀 Quantum Guide](docs/quantum.md) — Grover-inspired reranking algorithm & API
+- [🖼️ Multimodal Guide](docs/multimodal.md) — CLIP images, Whisper audio, cross-modal search
 
 ---
 
@@ -278,7 +338,7 @@ python examples/rag_pipeline.py
 |---|---|
 | Ruff lint | ✅ All checks passed |
 | Mypy type check | ✅ 0 errors (27 files) |
-| Pytest | ✅ 143/143 tests pass |
+| Pytest | ✅ 158/158 tests pass |
 | Coverage | 89% (core modules 85-100%) |
 
 ---

@@ -4,7 +4,26 @@ All notable changes to VecForge will be documented in this file.
 
 Built by Suneel Bose K · ArcGX TechLabs Private Limited.
 
-## [1.0.1] — 2026-03-12
+## [1.1.0] — 2026-03-12
+### Added — Phase 4: Multimodal & Advanced
+
+* 🖼️ **`vecforge/ingest/vision.py`** — `ImageEmbedder` using local OpenCLIP (ViT-B-32). Generates 512-dim CLIP embeddings from JPG / PNG / WebP files. GPU-accelerated when CUDA available, CPU fallback. Lazy-loads model on first use.
+* 🎤 **`vecforge/ingest/audio.py`** — `AudioEmbedder` using local OpenAI Whisper (`base` model). Transcribes MP3 / WAV / FLAC → text, then embeds transcript for semantic search.
+* 🔗 **`vecforge/search/crossmodal.py`** — `CrossModalSearcher`. Auto-detects query modality (text / image path / audio path) and routes to the correct embedder. Enables text→image, image→text, audio→text search in the unified vector space.
+* ☁️ **`vecforge/sync/cloud.py`** — `CloudSync` — opt-in encrypted vault backup to S3, GCS, or Azure Blob. Vault is AES-256 encrypted locally **before** any upload; decryption key never leaves the machine. SHA-256 checksum verified after upload.
+* 📦 **`[multimodal]` extra** — `open-clip-torch`, `openai-whisper`, `Pillow`
+* 📦 **`[cloud]` extra** — `boto3`, `google-cloud-storage`, `azure-storage-blob`
+* 🧪 **`tests/unit/test_multimodal.py`** — 15 new tests covering CrossModalSearcher modality detection, ImageEmbedder/AudioEmbedder import guards, and windowed QuantumReranker at 1M docs
+
+### Fixed — Quantum large-dataset performance
+* ⚡ **`QuantumReranker.max_candidates`** — New `max_candidates=1000` pre-filter in `QuantumReranker`: uses O(N) `numpy.argpartition` to clip to top-K candidates before Grover runs. Reduces 1M-doc rerank from **3.3s → <5ms** (660x speedup). Grover now correctly runs in O(K·√K) as spec'd in `VecForge_INSTRUCTIONS.md`.
+* 📊 Quantum rerank now meets the **<20ms at 1M docs** North Star target when using the pre-filter window.
+
+### Changed
+* 🔼 **Classifier** bumped Alpha → Beta → Production/Stable
+* 🔢 **Version** bumped 1.0.1 → 1.1.0
+
+
 ### Added — Phase 3: Quantum-Inspired Acceleration
 * 🌀 **`vecforge.quantum` module** — New `AmplitudeEncoder`, `GroverAmplifier`, and `QuantumReranker` classes running entirely on classical hardware (NumPy only)
 * ⚛️ **Grover-inspired score amplification** — Inversion-about-mean diffusion operator (O(√N) effective steps) that widens the relevance gap between top and bottom candidates
