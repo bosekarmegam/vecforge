@@ -21,6 +21,7 @@ Built by **Suneel Bose K** — Founder & CEO, [ArcGX TechLabs Private Limited](h
 [![Ruff](https://img.shields.io/badge/Linting-Ruff%20✅-brightgreen.svg)](https://github.com/astral-sh/ruff)
 [![Mypy](https://img.shields.io/badge/Typing-Mypy%20✅-brightgreen.svg)](https://mypy-lang.org/)
 [![Benchmark](https://img.shields.io/badge/100k%20Search-11.31ms%20✅-brightgreen.svg)](#-benchmarks)
+[![Quantum](https://img.shields.io/badge/Quantum%20Rerank-3.1ms%20@%2010k-blueviolet.svg)](#-benchmarks)
 
 ---
 
@@ -46,6 +47,7 @@ That's it. No API keys. No cloud. No config files. **Your data stays on your mac
 | Local-first | ❌ Cloud-only | ✅ | ✅ **Always** |
 | Encryption at rest | ❌ | ❌ | ✅ **AES-256** |
 | Hybrid search | ✅ | ❌ | ✅ **Dense + BM25** |
+| Quantum reranking | ❌ | ❌ | ✅ **Grover-inspired** |
 | Namespace isolation | ✅ Cloud | ❌ | ✅ **Local** |
 | RBAC | ✅ Cloud | ❌ | ✅ **Built-in** |
 | Audit logging | ❌ | ❌ | ✅ **JSONL** |
@@ -108,6 +110,43 @@ results = db.search(
 ```
 
 > 📖 See the [Search Guide](docs/search.md) for alpha tuning, metadata operators, and reranking strategies.
+
+---
+
+## 🌀 Quantum-Inspired Search
+
+VecForge Phase 3 brings **Grover-inspired score amplification** — a classical implementation of quantum computing techniques that sharpens search relevance without any quantum hardware.
+
+```python
+# Enable Grover-inspired reranking — no quantum hardware needed
+results = db.search(
+    "space exploration mission",
+    quantum_rerank=True,   # Stage 5: Grover diffusion operator
+    top_k=10,
+)
+
+# Combine with cross-encoder for maximum precision:
+# Cross-encoder only runs on top-√N survivors (not all N)
+results = db.search(
+    "elderly diabetic hip fracture",
+    rerank=True,           # cross-encoder on √N candidates
+    quantum_rerank=True,   # Grover pre-selection
+    top_k=5,
+)
+```
+
+### ⚡ Quantum Benchmark (Actual CPU Results)
+
+| Docs | Amplitude Encode | Grover Amplify | Full QRerank |
+|---:|---:|---:|---:|
+| 1,000 | **0.006ms** | **0.391ms** | **0.551ms** ✅ |
+| 10,000 | **0.009ms** | **1.636ms** | **3.137ms** ✅ |
+| 100,000 | **0.054ms** | 18.527ms | 32.682ms |
+| 1,000,000 | **4.230ms** ✅ | 2954ms | 3290ms |
+
+> **Note:** `AmplitudeEncoder` alone is ✅ fast across all scales (<5ms at 1M docs). The Grover amplification step has O(N√N) cost for large N — best suited for candidate sets up to 100k. For very large candidate sets, combine with `top_k * 4` pre-filtering from FAISS.
+
+> 📖 See the [Quantum Guide](docs/quantum.md) for algorithm details, usage, and API reference.
 
 ---
 
@@ -212,12 +251,13 @@ python examples/rag_pipeline.py
 - [🖥️ CLI Reference](docs/cli_reference.md) — All CLI commands & options
 - [🌐 REST API](docs/rest_api.md) — FastAPI server endpoints
 - [⚙️ Configuration](docs/configuration.md) — All config options in one place
+- [🌀 Quantum Guide](docs/quantum.md) — Grover-inspired reranking algorithm & API
 
 ---
 
 ## 📊 Benchmarks
 
-> Verified on Phase 2 benchmark suite (`benchmarks/bench_search.py`)
+> Verified on Phase 2 & Phase 3 benchmark suites (`benchmarks/bench_search.py`, `benchmarks/bench_quantum.py`)
 
 | Operation | VecForge (Actual) | North Star Target | Pinecone | ChromaDB |
 |---|---|---|---|---|
@@ -227,6 +267,10 @@ python examples/rag_pipeline.py
 | Ingest 100k docs | **2.9M docs/sec** | — | Manual | Manual |
 | BM25 Search 10k | **9.40ms** p50 | — | N/A | N/A |
 | Encrypted search | **<20ms overhead** | <20ms | N/A | N/A |
+| **Quantum rerank 1k** | **0.55ms** p50 ✅ | — | N/A | N/A |
+| **Quantum rerank 10k** | **3.14ms** p50 ✅ | — | N/A | N/A |
+| **Quantum rerank 100k** | **32.68ms** p50 | — | N/A | N/A |
+| AmplitudeEncoder 1M | **4.23ms** p50 ✅ | — | N/A | N/A |
 
 ### Quality Gates
 
@@ -234,7 +278,7 @@ python examples/rag_pipeline.py
 |---|---|
 | Ruff lint | ✅ All checks passed |
 | Mypy type check | ✅ 0 errors (27 files) |
-| Pytest | ✅ 128/128 tests pass |
+| Pytest | ✅ 143/143 tests pass |
 | Coverage | 89% (core modules 85-100%) |
 
 ---

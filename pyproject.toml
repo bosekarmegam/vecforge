@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "vecforge"
-version = "1.0.0"
+version = "1.0.1"
 description = "Forge your vector database. Own it forever. Local-first, encrypted, quantum-inspired."
 readme = "README.md"
 license = {text = "Business Source License 1.1"}
@@ -16,7 +16,7 @@ requires-python = ">=3.10"
 authors = [{name = "Suneel Bose K", email = "suneelbose@arcgx.in"}]
 keywords = ["vector-database", "faiss", "embeddings", "search", "local-first", "encrypted"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
     "Topic :: Database",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
@@ -53,7 +53,10 @@ gpu = [
     "faiss-gpu>=1.7.4",
     "cupy>=12.0.0",
 ]
-quantum = []
+quantum = [
+    "qiskit>=1.0.0",
+    "qiskit-aer>=0.14.0",
+]
 
 [project.scripts]
 vecforge = "vecforge.cli.main:cli"

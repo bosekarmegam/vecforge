@@ -4,6 +4,21 @@ All notable changes to VecForge will be documented in this file.
 
 Built by Suneel Bose K · ArcGX TechLabs Private Limited.
 
+## [1.0.1] — 2026-03-12
+### Added — Phase 3: Quantum-Inspired Acceleration
+* 🌀 **`vecforge.quantum` module** — New `AmplitudeEncoder`, `GroverAmplifier`, and `QuantumReranker` classes running entirely on classical hardware (NumPy only)
+* ⚛️ **Grover-inspired score amplification** — Inversion-about-mean diffusion operator (O(√N) effective steps) that widens the relevance gap between top and bottom candidates
+* 📐 **Amplitude encoding** — L2-normalises scores into unit-norm quantum amplitude space for numerically stable score fusion
+* 🔌 **`quantum_rerank=True` param** — New flag on `VecForge.search()` that runs Grover amplification as Stage 5 of the cascade pipeline
+* 📦 **`vecforge[quantum]` extra** — Optional `qiskit>=1.0.0` and `qiskit-aer>=0.14.0` extras for genuine quantum hybrid experiments
+* ⚡ **`benchmarks/bench_quantum.py`** — New benchmark suite; measured results on CPU:
+  - 1k docs: Encode=0.006ms, Grover=0.391ms, QRerank=0.551ms ✅
+  - 10k docs: Encode=0.009ms, Grover=1.636ms, QRerank=3.137ms ✅
+  - 100k docs: Encode=0.054ms, Grover=18.527ms, QRerank=32.682ms
+  - 1M docs: AmplitudeEncoder alone=4.230ms ✅
+* 📖 **`docs/quantum.md`** — Full documentation covering algorithm theory, usage, performance, and API reference
+* 🔼 **Bumped classifier** from Alpha → Beta
+
 ## [1.0.0] — 2026-03-05
 ### Changed
 * 🚀 Vector score normalization (fixed a bug where `SearchCascade` hybrid fusion resulted in squashed score differences). Scores are now perfectly min-max normalized between `0.0` and `1.0`. All search relevancies accurately reflect semantic similarity.
