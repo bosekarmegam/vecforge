@@ -18,21 +18,15 @@ import matplotlib.pyplot as plt  # noqa: E402
 import matplotlib.ticker  # noqa: E402
 import numpy as np  # noqa: E402
 from matplotlib.patches import Arc, FancyArrowPatch  # noqa: E402
+from palette import INK, MUTED, RC, ROLE, S  # noqa: E402
 
 HERE = Path(__file__).resolve().parent
 FIG = HERE.parent / "figures"
 R1 = json.loads((HERE / "results.json").read_text())
 R2 = json.loads((HERE / "results2.json").read_text()) if (HERE / "results2.json").exists() else {}
 
-INK, V1, V2, TEAL, AMBER, GREY = "#1b1e2e", "#B4462F", "#4B3BD1", "#0E7490", "#B45309", "#8a8fa8"
-PALETTE = [V2, TEAL, AMBER, "#7C6FE0", "#3FA7C0", "#D9823B", GREY]
-plt.rcParams.update({
-    "font.family": "serif", "font.serif": ["Liberation Serif", "DejaVu Serif"],
-    "font.size": 9.5, "axes.titlesize": 10, "axes.labelsize": 9.5, "legend.fontsize": 8.5,
-    "axes.spines.top": False, "axes.spines.right": False, "axes.grid": True,
-    "grid.color": "#e6e6ee", "grid.linewidth": 0.7, "savefig.dpi": 300, "savefig.bbox": "tight",
-    "mathtext.fontset": "dejavuserif",
-})
+NEUTRAL = ROLE["neutral"]["base"]  # axes, reference vectors and the unit circle in the geometry figure
+plt.rcParams.update(RC)
 
 
 def save(fig: plt.Figure, name: str) -> None:
@@ -50,29 +44,31 @@ def fig_grover_geometry() -> None:
         ax.spines[s].set_visible(False)
     ax.set_xticks([])
     ax.set_yticks([])
-    ax.add_patch(Arc((0, 0), 2, 2, theta1=-30, theta2=95, color="#d0d2e2", lw=1))
-    ax.annotate("", xy=(1.18, 0), xytext=(-0.05, 0), arrowprops=dict(arrowstyle="-|>", color=GREY, lw=1))
-    ax.annotate("", xy=(0, 1.18), xytext=(0, -0.05), arrowprops=dict(arrowstyle="-|>", color=GREY, lw=1))
+    ax.add_patch(Arc((0, 0), 2, 2, theta1=-30, theta2=95, color=NEUTRAL, lw=0.8, alpha=0.5))
+    ax.annotate("", xy=(1.18, 0), xytext=(-0.05, 0), arrowprops=dict(arrowstyle="-|>", color=NEUTRAL, lw=1))
+    ax.annotate("", xy=(0, 1.18), xytext=(0, -0.05), arrowprops=dict(arrowstyle="-|>", color=NEUTRAL, lw=1))
     ax.text(1.2, -0.07, r"$u_U$ (unmarked)", fontsize=9, color=INK, ha="left", va="top")
     ax.text(0.03, 1.21, r"$u_M$ (marked)", fontsize=9, color=INK, ha="left")
 
-    def vec(angle: float, color: str, label: str, style: str = "-", lw: float = 1.8, off=(0.04, 0.0)) -> None:
+    def vec(angle: float, color: str, label: str, style: str = "-", lw: float = 1.8, off=(0.04, 0.0), text: str | None = None) -> None:
         x, y = math.cos(angle), math.sin(angle)
         ax.add_patch(FancyArrowPatch((0, 0), (x, y), arrowstyle="-|>", mutation_scale=11, color=color, lw=lw, linestyle=style))
-        ax.text(x + off[0], y + off[1], label, color=color, fontsize=9)
+        ax.text(x + off[0], y + off[1], label, color=text or color, fontsize=9)
 
-    vec(theta, GREY, r"$s$ (uniform)", "--", 1.1, (0.05, -0.06))
-    vec(phi0, TEAL, r"$a$ (encoded scores)", "-", 1.8, (0.05, 0.0))
-    vec(-phi0, AMBER, r"$O_M a$ (oracle flips sign)", ":", 1.4, (0.05, -0.06))
+    # label text uses the shade of a light hue so it stays readable on white
+    vec(theta, NEUTRAL, r"$s$ (uniform)", "--", 1.1, (0.05, -0.06), text=ROLE["neutral"]["shade"])
+    vec(phi0, S["dense"], r"$a$ (encoded scores)", "-", 1.8, (0.05, 0.0))
+    vec(-phi0, S["threshold"], r"$O_M a$ (oracle flips sign)", ":", 1.4, (0.05, -0.06))
+    iterates = {1: (ROLE["accent"]["base"], ROLE["accent"]["shade"]), 2: (S["v2"], S["v2"]), 3: (S["v2_grover"], S["v2_grover"])}
     for k in (1, 2, 3):
-        vec(phi0 + 2 * k * theta, V2, "" if k == 3 else rf"$G^{k} a$", "-", 1.8 if k == 3 else 1.2, (0.03, 0.03))
+        vec(phi0 + 2 * k * theta, iterates[k][0], "" if k == 3 else rf"$G^{k} a$", "-", 1.8 if k == 3 else 1.2, (0.03, 0.03), text=iterates[k][1])
     ang3 = phi0 + 6 * theta
-    ax.text(math.cos(ang3) - 0.06, math.sin(ang3) + 0.02, r"$G^{3} a$, $k^\star = 3$", color=V2, fontsize=9, ha="right")
-    ax.add_patch(Arc((0, 0), 0.62, 0.62, theta1=math.degrees(phi0), theta2=math.degrees(phi0 + 2 * theta), color=V2, lw=1.2))
+    ax.text(math.cos(ang3) - 0.11, math.sin(ang3) + 0.02, r"$G^{3} a$, $k^\star = 3$", color=S["v2_grover"], fontsize=9, ha="right")
+    ax.add_patch(Arc((0, 0), 0.62, 0.62, theta1=math.degrees(phi0), theta2=math.degrees(phi0 + 2 * theta), color=S["v2"], lw=1.2))
     mid = phi0 + theta
-    ax.text(0.36 * math.cos(mid) + 0.02, 0.36 * math.sin(mid), r"$2\theta$", color=V2, fontsize=9)
-    ax.add_patch(Arc((0, 0), 0.34, 0.34, theta1=0, theta2=math.degrees(theta), color=GREY, lw=1))
-    ax.text(0.2, 0.0, r"$\theta$", color=GREY, fontsize=8)
+    ax.text(0.36 * math.cos(mid) + 0.02, 0.36 * math.sin(mid), r"$2\theta$", color=S["v2"], fontsize=9)
+    ax.add_patch(Arc((0, 0), 0.8, 0.8, theta1=0, theta2=math.degrees(theta), color=NEUTRAL, lw=1))
+    ax.text(0.43, 0.037, r"$\theta$", color=NEUTRAL, fontsize=8, va="center")  # sits between the axis and s, clear of both
     ax.set_xlim(-0.55, 1.75)
     ax.set_ylim(-0.48, 1.3)
     save(fig, "fig-grover-geometry")
@@ -84,16 +80,16 @@ def fig_rbac() -> None:
     grant = np.array([[1, 1, 1, 1, 1, 1], [1, 1, 1, 0, 0, 0], [1, 0, 0, 0, 0, 0], [0, 0, 0, 0, 0, 0]])
     fig, ax = plt.subplots(figsize=(6.2, 2.2))
     ax.grid(False)
-    cmap = matplotlib.colors.ListedColormap(["#F4F4F8", "#DCD7FF"])
+    cmap = matplotlib.colors.ListedColormap([S["denied_fill"], S["allowed_fill"]])
     ax.imshow(grant, cmap=cmap, aspect="auto")
     for i in range(len(roles)):
         for j in range(len(ops)):
             ax.text(j, i, "allowed" if grant[i, j] else "denied", ha="center", va="center",
-                    fontsize=8.5, color=V2 if grant[i, j] else GREY, fontweight="bold" if grant[i, j] else "normal")
-    ax.set_xticks(range(len(ops)), ops, fontsize=8.5)
-    ax.set_yticks(range(len(roles)), roles, fontsize=9)
+                    fontsize=8.5, color=S["allowed_text"] if grant[i, j] else S["denied_text"], fontweight="bold" if grant[i, j] else "normal")
+    ax.set_xticks(range(len(ops)), ops, fontsize=8.5, color=INK)
+    ax.set_yticks(range(len(roles)), roles, fontsize=9, color=INK)
     ax.xaxis.tick_top()
-    ax.tick_params(length=0)
+    ax.tick_params(which="both", length=0)
     for s in ax.spines.values():
         s.set_visible(False)
     ax.set_xticks(np.arange(-0.5, len(ops)), minor=True)
@@ -110,13 +106,13 @@ def fig_alpha() -> None:
     train = [e["alpha_sweep"]["train"][str(x) if str(x) in e["alpha_sweep"]["train"] else x] for x in a]
     rrf = e["methods"]["RRF (k = 60)"]["ndcg10"]
     fig, ax = plt.subplots(figsize=(3.2, 2.5))
-    ax.plot(a, train, "o-", color=TEAL, ms=3.5, label="train claims (tuning)")
-    ax.plot(a, dev, "s-", color=V2, ms=3.5, label="dev claims (reported)")
-    ax.axhline(rrf, color=AMBER, ls="--", lw=1.2, label="RRF, dev")
-    ax.axvline(e["best_alpha"], color=GREY, ls=":", lw=1)
+    ax.plot(a, train, "o-", color=S["train"], ms=3.5, label="train claims (tuning)")
+    ax.plot(a, dev, "s-", color=S["dev"], ms=3.5, label="dev claims (reported)")
+    ax.axhline(rrf, color=S["rrf"], ls="--", lw=1.2, label="RRF, dev")
+    ax.axvline(e["best_alpha"], color=MUTED, ls=":", lw=1)
     ax.set_xlabel(r"fusion weight $\alpha$ (0 = BM25, 1 = dense)")
     ax.set_ylabel("nDCG@10")
-    ax.legend(frameon=False, loc="lower center")
+    ax.legend(loc="lower center", facecolor="white", edgecolor="none", framealpha=1)  # hides the dotted line behind the text
     save(fig, "fig-alpha-sweep")
 
 
@@ -136,8 +132,8 @@ def fig_methods() -> None:
     rec = [m[n]["recall100"] for n in names]
     fig, axes = plt.subplots(1, 2, figsize=(6.6, 2.3), sharey=True, gridspec_kw={"width_ratios": [1.35, 1]})
     y = np.arange(len(names))[::-1]
-    cmap = {"BM25 only": GREY, "Dense only (MiniLM)": TEAL, "RRF (k = 60)": AMBER}
-    colors = [cmap.get(n, V2 if "Grover" not in n else "#2E2390") for n in names]
+    cmap = {"BM25 only": S["bm25"], "Dense only (MiniLM)": S["dense"], "RRF (k = 60)": S["rrf"]}
+    colors = [cmap.get(n, S["v2_grover"] if "Grover" in n else S["hybrid"]) for n in names]
     axes[0].barh(y, vals, xerr=[lo, hi], color=colors, height=0.6, error_kw=dict(lw=0.9, capsize=2.5, ecolor=INK))
     for yi, v, h in zip(y, vals, hi, strict=True):
         axes[0].text(v + h + 0.008, yi, f"{v:.3f}", va="center", fontsize=8)
@@ -157,13 +153,14 @@ def fig_methods() -> None:
 def fig_stages() -> None:
     b = R2["E17"]["mean_ms_per_query"]
     order = ["query embedding (MiniLM)", "dense search (FAISS)", "sparse search (BM25)", "fusion", "hydration (SQLite)", "Grover rerank", "other"]
+    stage_color = dict(zip(order, (S["embed"], S["dense"], S["bm25"], S["fusion"], S["hydration"], S["grover"], S["other"]), strict=True))
     labels = list(b)
     fig, ax = plt.subplots(figsize=(6.6, 1.9))
     y = np.arange(len(labels))[::-1]
     left = np.zeros(len(labels))
-    for i, st in enumerate(order):
+    for st in order:
         w = np.array([b[lab].get(st, 0.0) for lab in labels])
-        ax.barh(y, w, left=left, color=PALETTE[i % len(PALETTE)], height=0.55, label=st)
+        ax.barh(y, w, left=left, color=stage_color[st], height=0.55, label=st)
         left += w
     for yi, tot in zip(y, left, strict=True):
         ax.text(tot + 0.1, yi, f"{tot:.1f} ms", va="center", fontsize=8.5)
@@ -177,9 +174,10 @@ def fig_stages() -> None:
 def fig_latency_cdf() -> None:
     lat = R2["E8"]["search_latency"]
     fig, ax = plt.subplots(figsize=(3.2, 2.5))
-    for (name, d), c in zip(lat.items(), (V2, AMBER), strict=False):
+    for (name, d), c in zip(lat.items(), (S["hybrid"], S["v2_grover"]), strict=False):
         x = np.sort(np.array(d["all_ms"]))
-        ax.plot(x, np.arange(1, len(x) + 1) / len(x), color=c, lw=1.6, label=f"{name} (p50 {d['p50_ms']:.1f} ms)")
+        ax.plot(x, np.arange(1, len(x) + 1) / len(x), color=c, lw=1.6, ls="--" if "Grover" in name else "-",
+                label=f"{name} (p50 {d['p50_ms']:.1f} ms)")
     ax.set_xlabel("end-to-end search latency (ms)")
     ax.set_ylabel("fraction of queries")
     ax.set_xlim(left=0)
@@ -194,7 +192,7 @@ def fig_encryption() -> None:
     fig, axes = plt.subplots(1, 4, figsize=(6.6, 2.0))
     for ax, (k, title) in zip(axes, metrics, strict=True):
         v = [r[k] for r in rows]
-        bars = ax.bar([0, 1], v, color=[TEAL, V2], width=0.6)
+        bars = ax.bar([0, 1], v, color=[S["plain"], S["encrypted"]], width=0.6)
         ax.set_title(title, fontsize=8.8)
         ax.set_xticks([0, 1], ["plain", "AES-256"], fontsize=8.3)
         ax.grid(axis="x", visible=False)
@@ -211,10 +209,10 @@ def fig_deletes() -> None:
     rows = R2["E10"]["rows"]
     x = [r["deleted_fraction"] * 100 for r in rows]
     fig, ax = plt.subplots(figsize=(3.2, 2.5))
-    ax.plot(x, [r["search_p50_ms"] for r in rows], "o-", color=V2, ms=4, lw=1.6, label="search p50")
-    ax.axvline(20, color=AMBER, ls="--", lw=1)
+    ax.plot(x, [r["search_p50_ms"] for r in rows], "o-", color=S["v2"], ms=4, lw=1.6, label="search p50")
+    ax.axvline(20, color=S["threshold"], ls="--", lw=1)
     ax.set_ylim(0, max(r["search_p50_ms"] for r in rows) * 1.3)
-    ax.text(19.4, ax.get_ylim()[1] * 0.97, "compaction\nat 20%", color=AMBER, fontsize=8, va="top", ha="right")
+    ax.text(19.4, ax.get_ylim()[1] * 0.97, "compaction\nat 20%", color=ROLE["baseline"]["shade"], fontsize=8, va="top", ha="right")
     ax.set_xlabel("documents deleted (% of 50,000)")
     ax.set_ylabel("search latency p50 (ms)")
     ax.set_xticks([0, 5, 10, 15, 20, 25])
@@ -226,18 +224,19 @@ def fig_filters() -> None:
     lab = [f"{r['selectivity'] * 100:g}%" for r in rows]
     x = np.arange(len(rows))
     fig, ax = plt.subplots(figsize=(3.2, 2.5))
-    ax.bar(x - 0.18, [r["fixed_window_results_mean"] for r in rows], 0.36, color=V1, label="fixed 4k window")
-    ax.bar(x + 0.18, [r["results_mean"] for r in rows], 0.36, color=V2, label="adaptive widening")
+    ax.bar(x - 0.18, [r["fixed_window_results_mean"] for r in rows], 0.36, color=S["v1"], label="fixed 4k window")
+    ax.bar(x + 0.18, [r["results_mean"] for r in rows], 0.36, color=S["v2"], label="adaptive widening")
     ax.set_xticks(x, lab)
     ax.set_xlabel("share of documents passing the filter")
     ax.set_ylabel("results returned (of k = 10)")
     ax.set_ylim(0, 11.5)
     ax.grid(axis="x", visible=False)
     ax2 = ax.twinx()
-    ax2.plot(x, [r["rounds_mean"] for r in rows], "D--", color=AMBER, ms=3.5, label="search rounds")
-    ax2.set_ylabel("search rounds (mean)", color=AMBER)
-    ax2.tick_params(axis="y", colors=AMBER)
+    ax2.plot(x, [r["rounds_mean"] for r in rows], "D--", color=S["bm25"], ms=3.5, label="search rounds")
+    ax2.set_ylabel("search rounds (mean)", color=ROLE["sparse"]["shade"])
+    ax2.tick_params(axis="y", color=S["bm25"], labelcolor=ROLE["sparse"]["shade"])
     ax2.spines["right"].set_visible(True)
+    ax2.spines["right"].set_color(S["bm25"])
     ax2.grid(False)
     h1, l1 = ax.get_legend_handles_labels()
     h2, l2 = ax2.get_legend_handles_labels()
@@ -251,9 +250,10 @@ def fig_ingest() -> None:
     fig, ax = plt.subplots(figsize=(3.2, 2.3))
     names = [r["format"].upper() for r in rows]
     v = [r["chars_per_s"] / 1000 for r in rows]
-    bars = ax.bar(names, v, color=[TEAL, TEAL, TEAL, V2, AMBER], width=0.62)
+    colors = [S["format_slow"] if r["format"] == "docx" else S["format_fast"] for r in rows]  # DOCX is the slow one
+    bars = ax.bar(names, v, color=colors, width=0.62)
     for b_, val in zip(bars, v, strict=True):
-        ax.text(b_.get_x() + b_.get_width() / 2, val + max(v) * 0.02, f"{val:,.0f}", ha="center", fontsize=8)
+        ax.text(b_.get_x() + b_.get_width() / 2, val + max(v) * 0.02, f"{val:,.0f}", ha="center", fontsize=8, color=INK)
     ax.set_ylabel("thousand characters per second")
     ax.grid(axis="x", visible=False)
     save(fig, "fig-ingest")
@@ -263,19 +263,21 @@ def fig_dedup() -> None:
     e = R2["E13"]
     fig, axes = plt.subplots(1, 2, figsize=(6.6, 2.5))
     bins = np.linspace(0.4, 1.0, 25)
-    axes[0].hist(e["pos_sim"], bins=bins, color=V2, alpha=0.75, label="paraphrase (should merge)")
-    axes[0].hist(e["neg_sim"], bins=bins, color=AMBER, alpha=0.65, label="near miss (must not merge)")
+    axes[0].hist(e["pos_sim"], bins=bins, color=S["paraphrase"], alpha=0.75, label="paraphrase (should merge)")
+    axes[0].hist(e["neg_sim"], bins=bins, color=S["near_miss"], alpha=0.65, label="near miss (must not merge)")
     axes[0].axvline(e["default_threshold"], color=INK, ls="--", lw=1)
     axes[0].text(e["default_threshold"] + 0.01, axes[0].get_ylim()[1] * 1.0, "default\n0.92", ha="left", fontsize=7.8, va="top")
     axes[0].set_xlabel("cosine similarity to the stored fact (MiniLM)")
     axes[0].set_ylabel("statements")
     axes[0].legend(frameon=False, fontsize=7.8, loc="upper left")
     axes[0].set_xlim(0.4, 1.06)
-    for curve, c, lab in ((e["curve"], V2, "cosine only"), (e["curve_guard"], TEAL, "cosine + value guard")):
+    for curve, c, lab in ((e["curve"], S["v2"], "cosine only"), (e["curve_guard"], S["guard"], "cosine + value guard")):
         axes[1].plot([p["recall"] for p in curve], [p["precision"] for p in curve], "o-", ms=3, color=c, label=lab)
+    place = {0.92: dict(xytext=(4, 9), ha="center", va="bottom"), 0.7: dict(xytext=(-8, 7))}  # 0.92 sits above its point, clear of the zig-zag
     for p in e["curve"]:
-        if abs(p["threshold"] - 0.92) < 1e-6 or abs(p["threshold"] - 0.7) < 1e-6:
-            axes[1].annotate(f"t = {p['threshold']:.2f}", (p["recall"], p["precision"]), textcoords="offset points", xytext=(6, -3) if p["threshold"] > 0.9 else (-8, 7), fontsize=7.5)
+        for t, kw in place.items():
+            if abs(p["threshold"] - t) < 1e-6:
+                axes[1].annotate(f"t = {t:.2f}", (p["recall"], p["precision"]), textcoords="offset points", fontsize=7.5, **kw)
     axes[1].set_xlabel("recall of correct merges")
     axes[1].set_ylabel("precision of merges")
     axes[1].set_xlim(-0.02, 1.0)
@@ -291,7 +293,7 @@ def fig_mcp_rest() -> None:
     fig, axes = plt.subplots(1, 2, figsize=(6.6, 2.3))
     keys = list(m)
     v = [m[k]["cold_start_first_result_s"] for k in keys]
-    bars = axes[0].bar([f"{int(k):,} memories" for k in keys], v, color=[TEAL, V2], width=0.55)
+    bars = axes[0].bar([f"{int(k):,} memories" for k in keys], v, color=[ROLE["accent"]["base"], S["mcp"]], width=0.55)
     for b_, val in zip(bars, v, strict=True):
         axes[0].text(b_.get_x() + b_.get_width() / 2, val + max(v) * 0.02, f"{val:.2f} s", ha="center", fontsize=8)
     axes[0].set_ylabel("start to first tool result (s)")
@@ -300,9 +302,9 @@ def fig_mcp_rest() -> None:
     tools = ["remember", "recall", "context_pack"]
     x = np.arange(len(tools))
     big = keys[-1]
-    axes[1].bar(x - 0.2, [m[big]["tool_p50_ms"][t] for t in tools], 0.4, color=V2, label="MCP over stdio")
+    axes[1].bar(x - 0.2, [m[big]["tool_p50_ms"][t] for t in tools], 0.4, color=S["mcp"], label="MCP over stdio")
     rest = {"remember": r["p50_ms"]["add"], "recall": r["p50_ms"]["search"], "context_pack": None}
-    axes[1].bar(x + 0.2, [rest[t] or 0 for t in tools], 0.4, color=AMBER, label="REST over HTTP (add, search)")
+    axes[1].bar(x + 0.2, [rest[t] or 0 for t in tools], 0.4, color=S["rest"], label="REST over HTTP (add, search)")
     axes[1].set_xticks(x, tools)
     axes[1].set_ylabel("latency p50 (ms)")
     axes[1].grid(axis="x", visible=False)
@@ -320,7 +322,7 @@ def fig_threads() -> None:
     lo = med - np.array([min(r.get("qps_runs", [r["qps"]])) for r in rows])
     hi = np.array([max(r.get("qps_runs", [r["qps"]])) for r in rows]) - med
     fig, ax = plt.subplots(figsize=(3.2, 2.5))
-    ax.errorbar(t, med, yerr=[lo, hi], fmt="o-", color=V2, ms=4, capsize=3, lw=1.6, elinewidth=0.9, label="median, range of 3 runs")
+    ax.errorbar(t, med, yerr=[lo, hi], fmt="o-", color=S["v2"], ms=4, capsize=3, lw=1.6, elinewidth=0.9, label="median, range of 3 runs")
     ax.set_xscale("log", base=2)
     ax.set_xticks(t, [str(x) for x in t])
     ax.xaxis.set_minor_locator(matplotlib.ticker.NullLocator())
@@ -335,8 +337,8 @@ def fig_reopen() -> None:
     rows = R1["E5"]["rows"]
     x = np.arange(len(rows))
     fig, ax = plt.subplots(figsize=(3.2, 2.4))
-    ax.bar(x - 0.18, [r["open_rebuild_s"] for r in rows], 0.36, color=V1, label="rebuild from vectors")
-    ax.bar(x + 0.18, [r["open_snapshot_s"] for r in rows], 0.36, color=V2, label="load snapshot")
+    ax.bar(x - 0.18, [r["open_rebuild_s"] for r in rows], 0.36, color=S["v1"], label="rebuild from vectors")
+    ax.bar(x + 0.18, [r["open_snapshot_s"] for r in rows], 0.36, color=S["v2"], label="load snapshot")
     ax.set_yscale("log")
     ax.set_xticks(x, [f"{r['n'] // 1000}k docs" for r in rows])
     ax.set_ylabel("time to open (s, log scale)")
@@ -359,8 +361,8 @@ def compose(left: str, right: str, out: str) -> None:
     canvas.paste(b, (a.width + gap, top))
     draw = ImageDraw.Draw(canvas)
     font = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf", 64)
-    draw.text((10, 10), "(a)", fill="#1b1e2e", font=font)
-    draw.text((a.width + gap + 10, 10), "(b)", fill="#1b1e2e", font=font)
+    draw.text((10, 10), "(a)", fill=INK, font=font)
+    draw.text((a.width + gap + 10, 10), "(b)", fill=INK, font=font)
     canvas.save(FIG / f"{out}.png", dpi=(300, 300))
 
 

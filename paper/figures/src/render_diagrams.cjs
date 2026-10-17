@@ -7,16 +7,27 @@ const { chromium } = require("playwright");
 const HERE = __dirname;
 const OUT = path.join(HERE, "..");
 const MERMAID = process.env.MERMAID_JS || "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js";
+// why: palette.json is the one colour system shared by every chart and diagram in the paper
+const PALETTE = JSON.parse(fs.readFileSync(path.join(HERE, "palette.json"), "utf8"));
+const D = PALETTE.diagram;
+const ROLE = PALETTE.roles;
+const FONT = "Inter, DejaVu Sans, sans-serif";
 const THEME = {
   theme: "base",
   themeVariables: {
-    fontFamily: "Inter, DejaVu Sans, sans-serif", fontSize: "16px",
-    primaryColor: "#F3F1FF", primaryBorderColor: "#4B3BD1", primaryTextColor: "#1b1e2e",
-    secondaryColor: "#EEF9FB", tertiaryColor: "#FFF5EA", lineColor: "#4a4f66",
-    clusterBkg: "#FAFAFD", clusterBorder: "#C9CBE0", edgeLabelBackground: "#ffffff",
-    actorBkg: "#F3F1FF", actorBorder: "#4B3BD1", actorTextColor: "#1b1e2e", signalColor: "#2b2f45",
-    signalTextColor: "#1b1e2e", noteBkgColor: "#FFF5EA", noteBorderColor: "#B45309", activationBkgColor: "#E3DEFF",
-    labelBoxBkgColor: "#EEF9FB", labelBoxBorderColor: "#0E7490", loopTextColor: "#0E7490",
+    fontFamily: FONT, fontSize: "16px",
+    primaryColor: D.process_fill, primaryBorderColor: D.process_stroke, primaryTextColor: PALETTE.ink,
+    secondaryColor: D.data_fill, secondaryBorderColor: D.data_stroke,
+    tertiaryColor: D.decision_fill, tertiaryBorderColor: D.decision_stroke,
+    lineColor: D.arrow, textColor: PALETTE.ink,
+    clusterBkg: D.cluster_fill, clusterBorder: D.cluster_stroke, edgeLabelBackground: PALETTE.paper,
+    actorBkg: D.process_fill, actorBorder: D.process_stroke, actorTextColor: PALETTE.ink,
+    signalColor: D.arrow, signalTextColor: PALETTE.ink,
+    noteBkgColor: D.note_fill, noteBorderColor: D.note_stroke, noteTextColor: PALETTE.ink,
+    activationBkgColor: ROLE.accent.tint, activationBorderColor: ROLE.accent.base,
+    labelBoxBkgColor: D.terminal_fill, labelBoxBorderColor: D.terminal_stroke, loopTextColor: ROLE.neutral.shade,
+    sequenceNumberColor: PALETTE.paper,
+    attributeBackgroundColorOdd: PALETTE.paper, attributeBackgroundColorEven: D.terminal_fill,
   },
   flowchart: { curve: "basis", padding: 14, nodeSpacing: 34, rankSpacing: 42 },
   sequence: { actorMargin: 34, mirrorActors: false, showSequenceNumbers: true },
@@ -26,7 +37,8 @@ const THEME = {
   const files = fs.readdirSync(HERE).filter((f) => f.endsWith(".mmd")).sort();
   const browser = await chromium.launch({ args: ["--no-sandbox"] });
   const page = await browser.newPage({ deviceScaleFactor: 2.5, viewport: { width: 1400, height: 1000 } });
-  await page.setContent(`<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#fff} #c{display:inline-block;padding:18px}</style></head><body><div id="c"></div></body></html>`);
+  // why: Mermaid measures sequence text in an off-screen element that inherits the body font, so the body must use the theme font or notes overflow their box
+  await page.setContent(`<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#fff;font-family:${FONT}} #c{display:inline-block;padding:18px}</style></head><body><div id="c"></div></body></html>`);
   await page.addScriptTag({ path: fs.existsSync(MERMAID) ? MERMAID : undefined, url: fs.existsSync(MERMAID) ? undefined : MERMAID });
   // why: Mermaid measures labels when it renders, so the font must be loaded first
   await page.evaluate(async () => {

@@ -1,4 +1,9 @@
 flowchart TB
+    %% node roles, colours from palette.json (diagram section)
+    classDef data fill:#DDF2EA,stroke:#009E73,color:#1B1E2E
+    classDef process fill:#E3EEF7,stroke:#0072B2,color:#1B1E2E
+    classDef memory fill:#F5E6EF,stroke:#CC79A7,color:#1B1E2E
+    classDef measure fill:#FBEDCF,stroke:#E69F00,color:#1B1E2E
     subgraph W [Step 1, workloads]
         direction LR
         W1[Zipf corpus<br/>10k to 100k docs] ~~~ W2[Gaussian mixture<br/>100k x 384] ~~~ W3[SciFact<br/>5,183 abstracts] ~~~ W4[Memory set<br/>160 statements]
@@ -16,3 +21,7 @@ flowchart TB
         T1[Bootstrap<br/>95% CI] ~~~ T2[Paired<br/>randomisation] ~~~ T3[Medians of<br/>repeats]
     end
     W --> S --> M --> T
+    class W1,W2,W3,W4 data
+    class S1,S2 process
+    class M1,M2,M3,M4 measure
+    class T1,T2,T3 memory

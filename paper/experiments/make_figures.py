@@ -12,6 +12,8 @@ from pathlib import Path
 import matplotlib
 import matplotlib.ticker
 
+from palette import RC, S
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt  # noqa: E402
 
@@ -19,24 +21,7 @@ HERE = Path(__file__).resolve().parent
 FIG = HERE.parent / "figures"
 R = json.loads((HERE / "results.json").read_text())
 
-V1, V2, V2B = "#B4462F", "#4B3BD1", "#0E7490"
-plt.rcParams.update(
-    {
-        "font.family": "serif",
-        "font.serif": ["Liberation Serif", "DejaVu Serif"],
-        "font.size": 9.5,
-        "axes.titlesize": 10,
-        "axes.labelsize": 9.5,
-        "legend.fontsize": 8.5,
-        "axes.spines.top": False,
-        "axes.spines.right": False,
-        "axes.grid": True,
-        "grid.color": "#e6e6ee",
-        "grid.linewidth": 0.7,
-        "savefig.dpi": 300,
-        "savefig.bbox": "tight",
-    }
-)
+plt.rcParams.update(RC)
 
 
 def fig_rank() -> None:
@@ -47,14 +32,14 @@ def fig_rank() -> None:
         n,
         e["series"]["1.x"]["tau_linear"],
         s=6,
-        color=V1,
+        color=S["v1"],
         label="1.x (diffusion only)",
         zorder=3,
     )
     ax.plot(
         n,
         e["series"]["2.0"]["tau_linear"],
-        color=V2,
+        color=S["v2"],
         lw=1.6,
         label="2.0 (oracle + diffusion)",
         zorder=4,
@@ -75,7 +60,7 @@ def fig_bm25() -> None:
         [r["n"] for r in rows if r["v1_s"]],
         [r["v1_s"] for r in rows if r["v1_s"]],
         "o-",
-        color=V1,
+        color=S["v1"],
         ms=3.5,
         label="1.x rebuild per insert",
     )
@@ -83,7 +68,7 @@ def fig_bm25() -> None:
         [r["n"] for r in rows],
         [r["v2_s"] for r in rows],
         "s-",
-        color=V2,
+        color=S["v2"],
         ms=3.5,
         label="2.0 incremental",
     )
@@ -108,7 +93,7 @@ def fig_namespace() -> None:
         x,
         [r["recall_postfilter_v1"] for r in rows],
         "o-",
-        color=V1,
+        color=S["v1"],
         ms=3.5,
         label="1.x post-filter (4k window)",
     )
@@ -116,7 +101,7 @@ def fig_namespace() -> None:
         x,
         [r["recall_flat_selector_v2"] for r in rows],
         "s-",
-        color=V2,
+        color=S["v2"],
         ms=3.5,
         label="2.0 flat, ID selector",
     )
@@ -124,7 +109,7 @@ def fig_namespace() -> None:
         x,
         [r["recall_hnsw_v2"] for r in rows],
         "^--",
-        color=V2B,
+        color=S["v2_hnsw"],
         ms=3.5,
         label="2.0 HNSW",
     )

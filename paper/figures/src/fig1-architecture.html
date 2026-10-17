@@ -1,20 +1,21 @@
 <!doctype html>
 <html><head><meta charset="utf-8"><title>Figure 1</title>
 <style>
+  /* colours from palette.json, diagram section */
   body { margin:0; background:#fff; }
   svg { display:block; font-family:"Inter", "DejaVu Sans", sans-serif; }
-  .box { fill:#fff; stroke:#2b2f45; stroke-width:1.6; }
-  .soft { fill:#F3F1FF; stroke:#4B3BD1; stroke-width:1.6; }
-  .store { fill:#EEF9FB; stroke:#0E7490; stroke-width:1.6; }
-  .warm { fill:#FFF5EA; stroke:#B45309; stroke-width:1.6; }
-  .t { font-size:15px; fill:#1b1e2e; font-weight:600; }
-  .s { font-size:12.5px; fill:#4a4f66; }
-  .h { font-size:13px; fill:#4B3BD1; font-weight:700; letter-spacing:1.5px; }
-  .arrow { stroke:#2b2f45; stroke-width:1.5; fill:none; marker-end:url(#a); }
+  .box { fill:#FFFFFF; stroke:#1B1E2E; stroke-width:1.6; }
+  .soft { fill:#E3EEF7; stroke:#0072B2; stroke-width:1.6; }
+  .store { fill:#DDF2EA; stroke:#009E73; stroke-width:1.6; }
+  .warm { fill:#F5E6EF; stroke:#CC79A7; stroke-width:1.6; }
+  .t { font-size:15px; fill:#1B1E2E; font-weight:600; }
+  .s { font-size:12.5px; fill:#5A5F73; }
+  .h { font-size:13px; fill:#0072B2; font-weight:700; letter-spacing:1.5px; }
+  .arrow { stroke:#2B2F45; stroke-width:1.5; fill:none; marker-end:url(#a); }
   .dash { stroke-dasharray:5 4; }
 </style></head><body>
 <svg width="1000" height="580" viewBox="0 0 1000 580" xmlns="http://www.w3.org/2000/svg">
-  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2b2f45"/></marker></defs>
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2B2F45"/></marker></defs>
 
   <text class="h" x="20" y="28">CLIENTS</text>
   <rect class="box" x="20" y="40" width="165" height="54" rx="10"/><text class="t" x="34" y="63">Python API</text><text class="s" x="34" y="82">VecForge, MemoryStore</text>

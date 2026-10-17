@@ -64,8 +64,8 @@ What is already taken care of: one `main.tex` at the root; figures flattened to 
 5. **Metadata**. Copy the text exactly, with no LaTeX and no line breaks:
    - Title: `VecForge: A Local-First Hybrid Vector Database with Persistent Agent Memory and Order-Preserving Grover-Inspired Reranking`
    - Authors: `Suneel Bose K`
-   - Abstract: the abstract from the paper, as one paragraph with single spaces. It is under arXiv's 1,920-character limit.
-   - Comments (optional): `25 pages, 21 figures, 10 tables. Code and experiments: https://github.com/bosekarmegam/vecforge`
+   - Abstract: the abstract from the paper, as one paragraph with single spaces. It is 1,916 characters, under arXiv's 1,920-character limit.
+   - Comments (optional): `20 pages, 21 figures, 10 tables. Code and experiments: https://github.com/bosekarmegam/vecforge`
    - Primary category: `cs.DB`. Cross-lists: `cs.IR` and `cs.AI`.
    - ACM class (optional): `H.3.3; H.2.4`
    - Report number, journal reference and DOI: leave empty. arXiv assigns its own DOI.
