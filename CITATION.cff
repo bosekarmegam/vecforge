@@ -24,6 +24,7 @@ authors:
     given-names: "Suneel Bose"
     email: "suneelbose@arcgx.in"
     affiliation: "ArcGX TechLabs Private Limited"
+    orcid: "https://orcid.org/0009-0000-9282-2287"
 preferred-citation:
   type: article
   title: "VecForge: A Local-First Hybrid Vector Database with Persistent Agent Memory and Order-Preserving Grover-Inspired Reranking"
@@ -31,6 +32,7 @@ preferred-citation:
     - family-names: "K"
       given-names: "Suneel Bose"
       affiliation: "ArcGX TechLabs Private Limited"
+      orcid: "https://orcid.org/0009-0000-9282-2287"
   year: 2026
   month: 10
   status: preprint

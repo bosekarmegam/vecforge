@@ -61,3 +61,7 @@ VecForge_INSTRUCTIONS.md
 .DS_Store
 Desktop.ini
 ehthumbs.db
+
+# ─── Paper build directory (the packaged tarball is committed instead) ───
+paper/arxiv/
+paper/_paper.html

@@ -7,6 +7,8 @@ Suneel Bose K, ArcGX TechLabs Private Limited
 | --- | --- |
 | `VecForge-2.0-Paper.pdf` | Final paper, A4, ready to upload |
 | `VecForge-2.0-Paper.docx` | The same paper in Word, for editing or for venues that want .docx |
+| `VecForge-2.0-arXiv-source.tar.gz` | LaTeX source package for arXiv (`main.tex` plus figures), built by `build_arxiv.py` |
+| `PUBLISHING.md` | Step-by-step guide: arXiv endorsement, licence, upload, then ORCID, Google Scholar and ResearchGate |
 | `vecforge-paper.md` | Source text (Markdown with LaTeX math and citation keys) |
 | `references.bib` | Bibliography (BibTeX) |
 | `figures/` | Figures; `figures/src/` holds the diagram sources (Mermaid and SVG) |
@@ -30,6 +32,7 @@ python paper/experiments/make_figures2.py
 node paper/figures/src/render_diagrams.cjs              # needs MERMAID_JS pointing at mermaid.min.js
 node paper/figures/src/render_svg_figs.cjs
 python paper/build_paper.py                             # PDF + DOCX
+python paper/build_arxiv.py                             # arXiv LaTeX source package (needs pdflatex)
 ```
 
 `build_paper.py` needs pandoc 3, Node with `playwright`, KaTeX (set `KATEX_DIR`), pypdf and reportlab.
@@ -49,7 +52,7 @@ All of these cost nothing to submit or to read.
 
 | Venue | What you get | Format | Notes |
 | --- | --- | --- | --- |
-| **arXiv** (cs.DB, cross-list cs.IR and cs.AI) | The standard preprint server for computer science; indexed by Google Scholar and Semantic Scholar within days | PDF accepted; LaTeX source preferred | First-time submitters in a category need an **endorsement** from an existing arXiv author in that category. Ask a colleague or a professor who has published in cs.DB or cs.IR. |
+| **arXiv** (cs.DB, cross-list cs.IR and cs.AI) | The standard preprint server for computer science; indexed by Google Scholar and Semantic Scholar within days | PDF accepted; LaTeX source preferred | Since January 2026 a first-time submitter needs a **personal endorsement** from an established arXiv author in computer science unless they have both an academic email and a prior arXiv paper. See `PUBLISHING.md`. |
 | **Zenodo** | A permanent **DOI** in minutes, run by CERN | PDF + Word + code archive | Best first step. Link the GitHub repository to Zenodo and every GitHub release gets its own DOI automatically. Choose "Publication / Preprint" for the paper. |
 | **TechRxiv** (IEEE) | Engineering preprint server with a DOI | PDF or Word | Light moderation, no endorsement needed. |
 | **OSF Preprints** | Preprint with a DOI | PDF or Word | Simple and broad. |
@@ -62,8 +65,10 @@ Venues to be careful with:
 
 ## Recommended path
 
+The detailed arXiv walkthrough, including the endorsement rules that changed in January 2026, is in `PUBLISHING.md`.
+
 1. **Zenodo now.** Upload the PDF, the Word file and a ZIP of the repository at tag v2.0.0. You get a DOI immediately. Add the DOI to `CITATION.cff`, the README and the website.
-2. **arXiv next.** Get an endorsement for cs.DB, then submit the PDF with cs.IR and cs.AI as cross-lists. Use the abstract from the paper (arXiv limits it to 1,920 characters; this one fits).
+2. **arXiv next.** Get an endorsement for cs.DB, then upload `VecForge-2.0-arXiv-source.tar.gz` with cs.IR and cs.AI as cross-lists. Use the abstract from the paper (arXiv limits it to 1,920 characters; this one is 1,916).
 3. **A workshop later.** Reformat into the venue's template (ACM `acmart` or IEEE `IEEEtran`), extend the SciFact evaluation to more BEIR datasets as Section 13 suggests, and submit for peer review.
 
 ## Format of this paper
@@ -87,5 +92,5 @@ The paper follows the usual structure for a systems paper in computer science:
 - [ ] Read the whole paper once more and check every number against `experiments/results.json` and `experiments/results2.json`.
 - [ ] Decide on an AI-assistance statement. arXiv and most publishers do not allow an AI tool to be listed as an author, and many ask authors to disclose substantial use of AI tools in a short acknowledgement. Check the policy of the venue you choose.
 - [ ] Add funding or acknowledgements if any apply.
-- [ ] Add an ORCID iD (free at orcid.org) to the author line and to your Zenodo and arXiv profiles.
+- [x] ORCID iD 0009-0000-9282-2287 is on the author line, in `CITATION.cff` and on the website. Link it to your arXiv and Zenodo accounts too.
 - [ ] After publishing, add the DOI or arXiv ID to `CITATION.cff`, the README, the website and your portfolio.

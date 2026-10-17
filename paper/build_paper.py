@@ -102,7 +102,7 @@ def build_pdf() -> None:
         writer.add_metadata(
             {
                 "/Title": "VecForge: A Local-First Hybrid Vector Database with Persistent Agent Memory and Order-Preserving Grover-Inspired Reranking",
-                "/Author": "Suneel Bose K",
+                "/Author": "Suneel Bose K (ORCID 0009-0000-9282-2287)",
                 "/Subject": "Preprint, VecForge 2.0.0",
                 "/Keywords": "vector database; hybrid retrieval; BM25; FAISS; agent memory; Model Context Protocol; Grover search; amplitude amplification",
                 "/Creator": "paper/build_paper.py",
@@ -124,7 +124,7 @@ def build_docx() -> None:
             str(ref),
             *COMMON,
             "-M",
-            "date=ArcGX TechLabs Private Limited, Tiruchirappalli, Tamil Nadu, India · suneelbose@arcgx.in · October 2026",
+            "date=ArcGX TechLabs Private Limited, Tiruchirappalli, Tamil Nadu, India. suneelbose@arcgx.in. ORCID iD https://orcid.org/0009-0000-9282-2287. October 2026",
         ],
         check=True,
     )

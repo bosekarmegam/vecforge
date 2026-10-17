@@ -16,6 +16,7 @@ $math$
   .authors { text-align: center; font-size: 11.5pt; font-weight: 700; margin-bottom: 1mm; }
   .affil { text-align: center; font-size: 9.6pt; font-style: italic; color: #333; }
   .email { text-align: center; font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; color: #333; margin-top: 1mm; }
+  .orcid { text-align: center; font-size: 8.6pt; color: #333; margin-top: 0.6mm; }
   .abstract { margin: 7mm 9mm 4mm; font-size: 9.6pt; line-height: 1.36; }
   .abstract h2 { font-size: 10pt; text-align: center; margin: 0 0 2mm; font-variant: small-caps; letter-spacing: .04em; }
   .keywords { margin: 0 9mm 6mm; font-size: 9pt; }
@@ -55,6 +56,7 @@ $math$
 <div class="authors">$for(author)$$author$$sep$, $endfor$</div>
 <div class="affil">$affiliation$</div>
 <div class="email">$email$</div>
+<div class="orcid">ORCID iD: <a href="https://orcid.org/$orcid$">https://orcid.org/$orcid$</a></div>
 <div class="abstract"><h2>Abstract</h2>$abstract$</div>
 <div class="keywords"><b>Keywords:</b> $keywords$</div>
 $body$
