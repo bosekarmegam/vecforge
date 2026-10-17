@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/brand/vecforge-mark.svg" alt="VecForge logo" width="120" height="120">
+  <img src="https://raw.githubusercontent.com/bosekarmegam/vecforge/main/assets/brand/vecforge-mark.svg" alt="VecForge logo" width="120" height="120">
   <h1 align="center">VecForge</h1>
   <p align="center"><strong>Forge your vector database. Own it forever.</strong></p>
   <p align="center">
