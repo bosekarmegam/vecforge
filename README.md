@@ -238,8 +238,26 @@ curl -X POST http://localhost:8080/api/v1/memory/remember -H "Content-Type: appl
 
 ---
 
+## 📄 Citing VecForge
+
+If VecForge helps your work, please cite the paper ([PDF](paper/VecForge-2.0-Paper.pdf); GitHub's "Cite this repository" button uses [`CITATION.cff`](CITATION.cff)):
+
+```bibtex
+@misc{bosek2026vecforge,
+  author = {Suneel Bose K},
+  title  = {VecForge: A Local-First Hybrid Vector Database with Persistent
+            Agent Memory and a Corrected Grover-Inspired Reranker},
+  year   = {2026},
+  note   = {Preprint},
+  url    = {https://github.com/bosekarmegam/vecforge/blob/main/paper/VecForge-2.0-Paper.pdf}
+}
+```
+
+---
+
 ## 📚 Documentation
 
+- **[📄 Research paper (PDF)](paper/VecForge-2.0-Paper.pdf)** · [Word](paper/VecForge-2.0-Paper.docx) · [experiments](paper/experiments/): design, proofs and a reproducible evaluation of VecForge 2.0
 - **[📘 Complete Instructions (PDF, 26 pages)](docs/VecForge-Instructions.pdf)**: install, search, AI memory, MCP setup for Claude, REST, CLI and security in one guide
 - [⚡ Quickstart](docs/quickstart.md) · [📦 Installation](docs/installation.md) · [🧠 Core Concepts](docs/core_concepts.md)
 - [🔍 Search](docs/search.md) · [🧠 Memory](docs/memory.md) · [🔌 MCP](docs/mcp.md) · [🌀 Quantum](docs/quantum.md) · [🖼️ Multimodal](docs/multimodal.md)

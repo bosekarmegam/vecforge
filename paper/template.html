@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>$title$</title>
+<meta name="author" content="$for(author)$$author$$sep$, $endfor$">
+<meta name="description" content="$abstract-text$">
+$math$
+<style>
+  @page { size: A4; margin: 22mm 21mm 22mm 21mm; }
+  html { font-family: "Liberation Serif", "Times New Roman", serif; font-size: 10.6pt; color: #111; }
+  body { margin: 0; line-height: 1.38; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+  .preprint { font-family: "Inter", "DejaVu Sans", sans-serif; font-size: 7.6pt; letter-spacing: .06em; text-transform: uppercase;
+    color: #666; display: flex; justify-content: space-between; border-bottom: .6pt solid #bbb; padding-bottom: 2mm; margin-bottom: 7mm; }
+  h1.title { font-size: 17pt; line-height: 1.22; text-align: center; margin: 0 6mm 4mm; font-weight: 700; hyphens: none; }
+  .authors { text-align: center; font-size: 11.5pt; font-weight: 700; margin-bottom: 1mm; }
+  .affil { text-align: center; font-size: 9.6pt; font-style: italic; color: #333; }
+  .email { text-align: center; font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; color: #333; margin-top: 1mm; }
+  .abstract { margin: 7mm 9mm 4mm; font-size: 9.6pt; line-height: 1.36; }
+  .abstract h2 { font-size: 10pt; text-align: center; margin: 0 0 2mm; font-variant: small-caps; letter-spacing: .04em; }
+  .keywords { margin: 0 9mm 6mm; font-size: 9pt; }
+  .keywords b { font-variant: small-caps; }
+  h1, h2, h3 { hyphens: none; text-align: left; page-break-after: avoid; break-after: avoid; }
+  h1 { font-size: 12.4pt; margin: 6mm 0 2mm; }
+  h2 { font-size: 11pt; margin: 4.5mm 0 1.6mm; }
+  h3 { font-size: 10.6pt; margin: 3.5mm 0 1.2mm; font-style: italic; }
+  .header-section-number { margin-right: .55em; }
+  p { margin: 0 0 2.2mm; orphans: 3; widows: 3; }
+  ol, ul { margin: 0 0 2.4mm; padding-left: 6mm; }
+  li { margin-bottom: 1mm; }
+  code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.3pt; }
+  a { color: #1d3fa0; text-decoration: none; }
+  figure { margin: 4mm 0 4mm; text-align: center; break-inside: avoid; page-break-inside: avoid; }
+  figure img { max-width: 100%; }
+  figcaption { font-size: 8.9pt; line-height: 1.32; text-align: justify; margin: 2mm 4mm 0; }
+  table { border-collapse: collapse; margin: 3mm auto 4.5mm; font-size: 8.9pt; break-inside: avoid; page-break-inside: avoid; }
+  caption { caption-side: top; font-size: 8.9pt; text-align: left; margin-bottom: 1.6mm; }
+  thead tr { border-top: 1pt solid #111; border-bottom: .6pt solid #111; }
+  tbody tr:last-child { border-bottom: 1pt solid #111; }
+  th, td { padding: 1.1mm 2.6mm; text-align: right; }
+  th:first-child, td:first-child { text-align: left; }
+  th { font-weight: 700; }
+  .katex { font-size: 1.06em; }
+  .katex-display { margin: 2.6mm 0; }
+  #refs, .references { font-size: 8.9pt; line-height: 1.32; text-align: left; }
+  .csl-entry { margin-bottom: 1.4mm; padding-left: 7mm; text-indent: -7mm; }
+  .csl-left-margin { display: inline; }
+  .csl-right-inline { display: inline; margin-left: .5em; }
+  .note { font-size: 8.6pt; color: #444; border-top: .6pt solid #bbb; margin-top: 6mm; padding-top: 2mm; }
+</style>
+</head>
+<body>
+<div class="preprint"><span>Preprint · $date$</span><span>$version$</span></div>
+<h1 class="title">$title$</h1>
+<div class="authors">$for(author)$$author$$sep$, $endfor$</div>
+<div class="affil">$affiliation$</div>
+<div class="email">$email$</div>
+<div class="abstract"><h2>Abstract</h2>$abstract$</div>
+<div class="keywords"><b>Keywords:</b> $keywords$</div>
+$body$
+</body>
+</html>

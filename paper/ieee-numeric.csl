@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<style xmlns="http://purl.org/net/xbiblio/csl" class="in-text" version="1.0" demote-non-dropping-particle="sort-only">
+  <info>
+    <title>IEEE-style numeric (VecForge paper)</title>
+    <id>vecforge-ieee-numeric</id>
+    <updated>2026-10-17T00:00:00+00:00</updated>
+  </info>
+  <macro name="author">
+    <names variable="author">
+      <name and="text" delimiter=", " delimiter-precedes-last="contextual" initialize-with=". " name-as-sort-order="none" et-al-min="7" et-al-use-first="1"/>
+    </names>
+  </macro>
+  <macro name="title-quoted"><text variable="title" quotes="true"/></macro>
+  <citation collapse="citation-number">
+    <sort><key variable="citation-number"/></sort>
+    <layout prefix="[" suffix="]" delimiter=", "><text variable="citation-number"/></layout>
+  </citation>
+  <bibliography entry-spacing="0" second-field-align="flush">
+    <layout suffix=".">
+      <text variable="citation-number" prefix="[" suffix="]"/>
+      <group delimiter=", ">
+        <text macro="author"/>
+        <text macro="title-quoted"/>
+        <choose>
+          <if type="paper-conference chapter" match="any">
+            <text variable="container-title" font-style="italic" prefix="in " text-case="title"/>
+            <text variable="collection-title"/>
+            <text variable="volume" prefix="vol. "/>
+          </if>
+          <else-if type="article-journal">
+            <text variable="container-title" font-style="italic" text-case="title"/>
+            <text variable="volume" prefix="vol. "/>
+            <text variable="issue" prefix="no. "/>
+          </else-if>
+          <else>
+            <text variable="publisher"/>
+          </else>
+        </choose>
+        <text variable="page" prefix="pp. "/>
+        <date variable="issued"><date-part name="year"/></date>
+        <text variable="URL"/>
+        <text variable="DOI" prefix="doi: "/>
+        <text variable="note"/>
+      </group>
+    </layout>
+  </bibliography>
+</style>

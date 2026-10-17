@@ -792,6 +792,81 @@
             border-bottom-color: var(--accent-light);
         }
 
+        /* ─── RESEARCH ─── */
+        .paper-card {
+            max-width: 900px;
+            margin: 0 auto;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 32px 34px;
+            box-shadow: var(--shadow-md);
+        }
+
+        .paper-card .venue {
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--accent);
+        }
+
+        .paper-card h3 {
+            font-family: Georgia, "Times New Roman", serif;
+            font-size: 1.35rem;
+            line-height: 1.35;
+            margin: 10px 0 8px;
+        }
+
+        .paper-card .authors {
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+            margin-bottom: 16px;
+        }
+
+        .paper-card ul {
+            margin: 0 0 22px 18px;
+            color: var(--text-secondary);
+            font-size: 0.93rem;
+            line-height: 1.7;
+        }
+
+        .paper-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .paper-actions a {
+            padding: 11px 20px;
+            border-radius: var(--radius-pill);
+            font-weight: 700;
+            font-size: 0.88rem;
+            text-decoration: none;
+            border: 1.5px solid var(--border);
+            color: var(--text);
+            background: var(--bg-card);
+        }
+
+        .paper-actions a.primary {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #fff;
+        }
+
+        .bibtex {
+            margin-top: 18px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.74rem;
+            line-height: 1.6;
+            background: var(--bg-code);
+            border-radius: var(--radius-sm);
+            padding: 14px 16px;
+            white-space: pre;
+            overflow-x: auto;
+            color: var(--text-secondary);
+        }
+
         .guide-card {
             display: flex;
             align-items: center;
@@ -1188,6 +1263,7 @@
                 <li><a href="#compare">Compare</a></li>
                 <li><a href="#examples">Examples</a></li>
                 <li><a href="#docs">Docs</a></li>
+                <li><a href="#research">Research</a></li>
                 <li><a href="docs/VecForge-Instructions.pdf">Guide (PDF)</a></li>
                 <li><a href="https://github.com/bosekarmegam/vecforge" class="nav-cta">GitHub</a></li>
             </ul>
@@ -1534,6 +1610,40 @@ mem.<span class="f">end_session</span>(<span class="s">"Reviewed the deployment 
     </section>
 
     <!-- ─── DOCS ─── -->
+    <section id="research">
+        <div class="section-header scroll-reveal">
+            <span class="section-tag">Research</span>
+            <h2>The paper behind VecForge 2.0</h2>
+            <p>Design, proofs and a reproducible evaluation against the 1.x release.</p>
+        </div>
+
+        <div class="paper-card scroll-reveal">
+            <span class="venue">Preprint · October 2026</span>
+            <h3>VecForge: A Local-First Hybrid Vector Database with Persistent Agent Memory and a Corrected Grover-Inspired Reranker</h3>
+            <p class="authors">Suneel Bose K · ArcGX TechLabs Private Limited</p>
+            <ul>
+                <li>Proves that diffusion-only "Grover" reranking can only keep or reverse a ranking, and replaces it with an O(N) closed form of the full algorithm.</li>
+                <li>Namespace search inside the index: full recall where the 1.x post-filter missed most results in small namespaces.</li>
+                <li>Encrypted index snapshots that reopen a 100,000-document vault without rebuilding.</li>
+                <li>Long-term memory for AI assistants over the Model Context Protocol.</li>
+            </ul>
+            <div class="paper-actions">
+                <a href="paper/VecForge-2.0-Paper.pdf" class="primary">Read the paper (PDF)</a>
+                <a href="paper/VecForge-2.0-Paper.docx" download>Word version</a>
+                <a href="https://github.com/bosekarmegam/vecforge/tree/main/paper" target="_blank" rel="noopener">Experiments and data</a>
+                <a href="https://github.com/bosekarmegam/vecforge/blob/main/CITATION.cff" target="_blank" rel="noopener">Cite</a>
+            </div>
+            <div class="bibtex">@misc{bosek2026vecforge,
+  author = {Suneel Bose K},
+  title  = {VecForge: A Local-First Hybrid Vector Database with Persistent
+            Agent Memory and a Corrected Grover-Inspired Reranker},
+  year   = {2026},
+  note   = {Preprint},
+  url    = {https://github.com/bosekarmegam/vecforge/blob/main/paper/VecForge-2.0-Paper.pdf}
+}</div>
+        </div>
+    </section>
+
     <section id="docs">
         <div class="section-header scroll-reveal">
             <span class="section-tag">Documentation</span>
