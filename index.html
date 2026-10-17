@@ -1614,18 +1614,19 @@ mem.<span class="f">end_session</span>(<span class="s">"Reviewed the deployment 
         <div class="section-header scroll-reveal">
             <span class="section-tag">Research</span>
             <h2>The paper behind VecForge 2.0</h2>
-            <p>Design, proofs and a reproducible evaluation against the 1.x release.</p>
+            <p>Design, proofs and a reproducible evaluation of every feature.</p>
         </div>
 
         <div class="paper-card scroll-reveal">
-            <span class="venue">Preprint · October 2026</span>
-            <h3>VecForge: A Local-First Hybrid Vector Database with Persistent Agent Memory and a Corrected Grover-Inspired Reranker</h3>
-            <p class="authors">Suneel Bose K · ArcGX TechLabs Private Limited</p>
+            <span class="venue">Preprint, October 2026</span>
+            <h3>VecForge: A Local-First Hybrid Vector Database with Persistent Agent Memory and Order-Preserving Grover-Inspired Reranking</h3>
+            <p class="authors">Suneel Bose K, ArcGX TechLabs Private Limited</p>
             <ul>
+                <li>On the SciFact benchmark, hybrid search reaches nDCG@10 of 0.707, against 0.645 for dense search, 0.665 for BM25 and 0.681 for reciprocal rank fusion.</li>
                 <li>Proves that diffusion-only "Grover" reranking can only keep or reverse a ranking, and replaces it with an O(N) closed form of the full algorithm.</li>
-                <li>Namespace search inside the index: full recall where the 1.x post-filter missed most results in small namespaces.</li>
-                <li>Encrypted index snapshots that reopen a 100,000-document vault without rebuilding.</li>
-                <li>Long-term memory for AI assistants over the Model Context Protocol.</li>
+                <li>Namespace search inside the index: full recall where the 1.x post-filter found 0.5% of results in small namespaces.</li>
+                <li>Encrypted index snapshots reopen a vault 9 to 17 times faster, and encryption, audit logging and access control add little measurable cost.</li>
+                <li>Long-term memory for AI assistants over the Model Context Protocol, with 18 experiments, 21 figures and the negative results reported too.</li>
             </ul>
             <div class="paper-actions">
                 <a href="paper/VecForge-2.0-Paper.pdf" class="primary">Read the paper (PDF)</a>
@@ -1636,7 +1637,7 @@ mem.<span class="f">end_session</span>(<span class="s">"Reviewed the deployment 
             <div class="bibtex">@misc{bosek2026vecforge,
   author = {Suneel Bose K},
   title  = {VecForge: A Local-First Hybrid Vector Database with Persistent
-            Agent Memory and a Corrected Grover-Inspired Reranker},
+            Agent Memory and Order-Preserving Grover-Inspired Reranking},
   year   = {2026},
   note   = {Preprint},
   url    = {https://github.com/bosekarmegam/vecforge/blob/main/paper/VecForge-2.0-Paper.pdf}

@@ -1,0 +1,55 @@
+// Render the paper's Mermaid diagrams (*.mmd in this folder) to PNG in ../.
+// Usage: MERMAID_JS=/path/to/mermaid.min.js NODE_PATH=$(npm root -g) node render_diagrams.cjs
+"use strict";
+const fs = require("fs");
+const path = require("path");
+const { chromium } = require("playwright");
+const HERE = __dirname;
+const OUT = path.join(HERE, "..");
+const MERMAID = process.env.MERMAID_JS || "https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js";
+const THEME = {
+  theme: "base",
+  themeVariables: {
+    fontFamily: "Inter, DejaVu Sans, sans-serif", fontSize: "16px",
+    primaryColor: "#F3F1FF", primaryBorderColor: "#4B3BD1", primaryTextColor: "#1b1e2e",
+    secondaryColor: "#EEF9FB", tertiaryColor: "#FFF5EA", lineColor: "#4a4f66",
+    clusterBkg: "#FAFAFD", clusterBorder: "#C9CBE0", edgeLabelBackground: "#ffffff",
+    actorBkg: "#F3F1FF", actorBorder: "#4B3BD1", actorTextColor: "#1b1e2e", signalColor: "#2b2f45",
+    signalTextColor: "#1b1e2e", noteBkgColor: "#FFF5EA", noteBorderColor: "#B45309", activationBkgColor: "#E3DEFF",
+    labelBoxBkgColor: "#EEF9FB", labelBoxBorderColor: "#0E7490", loopTextColor: "#0E7490",
+  },
+  flowchart: { curve: "basis", padding: 14, nodeSpacing: 34, rankSpacing: 42 },
+  sequence: { actorMargin: 34, mirrorActors: false, showSequenceNumbers: true },
+  er: { fontSize: 13 },
+};
+(async () => {
+  const files = fs.readdirSync(HERE).filter((f) => f.endsWith(".mmd")).sort();
+  const browser = await chromium.launch({ args: ["--no-sandbox"] });
+  const page = await browser.newPage({ deviceScaleFactor: 2.5, viewport: { width: 1400, height: 1000 } });
+  await page.setContent(`<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#fff} #c{display:inline-block;padding:18px}</style></head><body><div id="c"></div></body></html>`);
+  await page.addScriptTag({ path: fs.existsSync(MERMAID) ? MERMAID : undefined, url: fs.existsSync(MERMAID) ? undefined : MERMAID });
+  // why: Mermaid measures labels when it renders, so the font must be loaded first
+  await page.evaluate(async () => {
+    for (const w of ["400", "600"]) await document.fonts.load(`${w} 16px Inter`);
+  });
+  await page.evaluate((cfg) => window.mermaid.initialize({ startOnLoad: false, ...cfg }), THEME);
+  for (const f of files) {
+    const src = fs.readFileSync(path.join(HERE, f), "utf8");
+    const svg = await page.evaluate(async (code) => (await window.mermaid.render("d" + Math.random().toString(36).slice(2), code)).svg, src);
+    await page.evaluate((s) => {
+      const c = document.getElementById("c");
+      c.innerHTML = s;
+      const el = c.querySelector("svg");
+      // why: Mermaid sets width 100% plus a max-width; use the natural width instead
+      const natural = parseFloat(el.style.maxWidth) || el.viewBox.baseVal.width;
+      el.style.width = natural + "px";
+      el.style.maxWidth = "none";
+      el.removeAttribute("width");
+    }, svg);
+    await page.evaluate(() => document.fonts.ready);
+    const out = path.join(OUT, f.replace(/\.mmd$/, ".png"));
+    await (await page.$("#c")).screenshot({ path: out });
+    console.log("wrote", path.basename(out));
+  }
+  await browser.close();
+})().catch((e) => { console.error(e); process.exit(1); });

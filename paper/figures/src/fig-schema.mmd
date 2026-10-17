@@ -1,0 +1,38 @@
+erDiagram
+    NAMESPACES ||--o{ DOCUMENTS : contains
+    INDEX_STATE ||--|{ INDEX_CHUNKS : "stored as"
+    SESSIONS ||--o{ DOCUMENTS : groups
+    DOCUMENTS {
+        text doc_id PK
+        text namespace FK
+        text text
+        blob embedding
+        text metadata_json
+        text content_hash
+        real created_at
+    }
+    NAMESPACES {
+        text name PK
+        real created_at
+    }
+    INDEX_STATE {
+        int generation
+        int doc_count
+        text index_type
+        text tombstones
+    }
+    INDEX_CHUNKS {
+        text kind PK
+        int seq PK
+        blob data
+    }
+    SESSIONS {
+        text session_id PK
+        text agent
+        text summary
+        real ended_at
+    }
+    KV {
+        text key PK
+        text value_json
+    }

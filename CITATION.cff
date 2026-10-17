@@ -26,7 +26,7 @@ authors:
     affiliation: "ArcGX TechLabs Private Limited"
 preferred-citation:
   type: article
-  title: "VecForge: A Local-First Hybrid Vector Database with Persistent Agent Memory and a Corrected Grover-Inspired Reranker"
+  title: "VecForge: A Local-First Hybrid Vector Database with Persistent Agent Memory and Order-Preserving Grover-Inspired Reranking"
   authors:
     - family-names: "K"
       given-names: "Suneel Bose"

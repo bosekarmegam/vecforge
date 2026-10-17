@@ -101,7 +101,7 @@ def build_pdf() -> None:
             writer.add_page(page)
         writer.add_metadata(
             {
-                "/Title": "VecForge: A Local-First Hybrid Vector Database with Persistent Agent Memory and a Corrected Grover-Inspired Reranker",
+                "/Title": "VecForge: A Local-First Hybrid Vector Database with Persistent Agent Memory and Order-Preserving Grover-Inspired Reranking",
                 "/Author": "Suneel Bose K",
                 "/Subject": "Preprint, VecForge 2.0.0",
                 "/Keywords": "vector database; hybrid retrieval; BM25; FAISS; agent memory; Model Context Protocol; Grover search; amplitude amplification",

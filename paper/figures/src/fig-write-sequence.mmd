@@ -1,0 +1,18 @@
+sequenceDiagram
+    autonumber
+    participant A as Application
+    participant V as Vault core
+    participant S as SQLite vault
+    participant I as FAISS + BM25
+    A->>V: add_batch(texts)
+    Note over V: check role, embed texts,<br/>check vector dimension
+    V->>S: BEGIN, insert rows
+    V->>S: bump generation, COMMIT
+    V->>I: add vectors and postings
+    alt index update fails
+        V->>S: delete inserted rows
+        V->>I: rebuild from stored vectors
+        V-->>A: error, vault unchanged
+    else success
+        V-->>A: document ids
+    end

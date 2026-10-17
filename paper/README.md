@@ -1,6 +1,6 @@
 # VecForge 2.0 paper
 
-**VecForge: A Local-First Hybrid Vector Database with Persistent Agent Memory and a Corrected Grover-Inspired Reranker**
+**VecForge: A Local-First Hybrid Vector Database with Persistent Agent Memory and Order-Preserving Grover-Inspired Reranking**
 Suneel Bose K, ArcGX TechLabs Private Limited
 
 | File | What it is |
@@ -9,18 +9,39 @@ Suneel Bose K, ArcGX TechLabs Private Limited
 | `VecForge-2.0-Paper.docx` | The same paper in Word, for editing or for venues that want .docx |
 | `vecforge-paper.md` | Source text (Markdown with LaTeX math and citation keys) |
 | `references.bib` | Bibliography (BibTeX) |
-| `figures/` | Figures; `figures/src/` holds the architecture diagram source |
-| `experiments/` | Scripts that produce every number in the evaluation, and `results.json` |
+| `figures/` | Figures; `figures/src/` holds the diagram sources (Mermaid and SVG) |
+| `experiments/` | Scripts that produce every number in the evaluation, with `results.json` and `results2.json` |
 
 ## Rebuild
 
 ```bash
-python paper/experiments/run_experiments.py      # about 15 minutes on 4 cores
+# E1 to E7: VecForge 2.0 against the 1.x code (about 15 minutes on 4 cores)
+python paper/experiments/run_experiments.py
 python paper/experiments/make_figures.py
-python paper/build_paper.py                      # PDF + DOCX
+
+# E8 to E18: SciFact retrieval quality, encryption, deletes, filters, ingestion,
+# memory deduplication, MCP, REST, security overhead, stage breakdown, threads
+export SCIFACT_DIR=/path/to/scifact      # BEIR SciFact: corpus.jsonl, queries.jsonl, qrels/
+export MINILM_DIR=/path/to/minilm        # all-MiniLM-L6-v2 as ONNX (model.onnx, tokenizer.json)
+python paper/experiments/run_experiments2.py            # or --only E9,E10 to rerun a subset
+python paper/experiments/make_figures2.py
+
+# Diagrams (Mermaid and hand-drawn SVG), then the paper itself
+node paper/figures/src/render_diagrams.cjs              # needs MERMAID_JS pointing at mermaid.min.js
+node paper/figures/src/render_svg_figs.cjs
+python paper/build_paper.py                             # PDF + DOCX
 ```
 
-`build_paper.py` needs pandoc 3, Node with `playwright`, pypdf and reportlab.
+`build_paper.py` needs pandoc 3, Node with `playwright`, KaTeX (set `KATEX_DIR`), pypdf and reportlab.
+The experiments need `onnxruntime` and `tokenizers` for the MiniLM encoder and the `mcp` client package.
+
+## What is in the paper
+
+- 21 figures in several forms: block diagram, flowcharts, sequence diagrams, an entity-relationship
+  diagram, a state diagram, a geometric diagram, a permission matrix, a methodology diagram, and bar,
+  line, scatter, histogram, cumulative-distribution, stacked and precision-recall charts.
+- 10 tables, including retrieval quality with bootstrap confidence intervals and significance tests.
+- 18 experiments covering every feature, with the negative results reported alongside the positive ones.
 
 ## Where to publish for free
 
@@ -43,7 +64,7 @@ Venues to be careful with:
 
 1. **Zenodo now.** Upload the PDF, the Word file and a ZIP of the repository at tag v2.0.0. You get a DOI immediately. Add the DOI to `CITATION.cff`, the README and the website.
 2. **arXiv next.** Get an endorsement for cs.DB, then submit the PDF with cs.IR and cs.AI as cross-lists. Use the abstract from the paper (arXiv limits it to 1,920 characters; this one fits).
-3. **A workshop later.** Reformat into the venue's template (ACM `acmart` or IEEE `IEEEtran`), add the BEIR retrieval-quality evaluation described in Section 7, and submit for peer review.
+3. **A workshop later.** Reformat into the venue's template (ACM `acmart` or IEEE `IEEEtran`), extend the SciFact evaluation to more BEIR datasets as Section 13 suggests, and submit for peer review.
 
 ## Format of this paper
 
@@ -63,7 +84,7 @@ The paper follows the usual structure for a systems paper in computer science:
 
 ## Before you submit
 
-- [ ] Read the whole paper once more and check every number against `experiments/results.json`.
+- [ ] Read the whole paper once more and check every number against `experiments/results.json` and `experiments/results2.json`.
 - [ ] Decide on an AI-assistance statement. arXiv and most publishers do not allow an AI tool to be listed as an author, and many ask authors to disclose substantial use of AI tools in a short acknowledgement. Check the policy of the venue you choose.
 - [ ] Add funding or acknowledgements if any apply.
 - [ ] Add an ORCID iD (free at orcid.org) to the author line and to your Zenodo and arXiv profiles.

@@ -1,0 +1,11 @@
+stateDiagram-v2
+    direction LR
+    [*] --> Candidate: remember()
+    Candidate --> Reinforced: duplicate
+    Candidate --> Stored: new
+    Reinforced --> Stored: importance + 0.05
+    Stored --> Recalled: recall()
+    Recalled --> Stored: access + 1
+    Stored --> Updated: update()
+    Updated --> Stored
+    Stored --> [*]: forget()

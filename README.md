@@ -246,7 +246,7 @@ If VecForge helps your work, please cite the paper ([PDF](paper/VecForge-2.0-Pap
 @misc{bosek2026vecforge,
   author = {Suneel Bose K},
   title  = {VecForge: A Local-First Hybrid Vector Database with Persistent
-            Agent Memory and a Corrected Grover-Inspired Reranker},
+            Agent Memory and Order-Preserving Grover-Inspired Reranking},
   year   = {2026},
   note   = {Preprint},
   url    = {https://github.com/bosekarmegam/vecforge/blob/main/paper/VecForge-2.0-Paper.pdf}

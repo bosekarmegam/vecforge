@@ -1,0 +1,7 @@
+flowchart LR
+    O([Open vault]) --> G[Read generation G<br/>and snapshot S]
+    G --> C{S = G?}
+    C -- yes --> L[Load indexes<br/>from chunks]
+    C -- no --> R[Rebuild from<br/>stored vectors]
+    L --> Y([Ready])
+    R --> Y

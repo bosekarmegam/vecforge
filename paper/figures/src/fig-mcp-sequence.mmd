@@ -1,0 +1,18 @@
+sequenceDiagram
+    participant U as Person
+    participant C as Assistant
+    participant M as vecforge mcp
+    participant V as Vault
+    C->>M: start (stdio)
+    M->>V: open, load snapshot
+    C->>M: initialize, list tools
+    U->>C: Remember I prefer<br/>short answers
+    C->>M: remember(...)
+    M->>V: dedup and store
+    M-->>C: memory id
+    Note over C,V: session ends, snapshot saved
+    U->>C: New chat, days later
+    C->>M: context_pack(query)
+    M->>V: summary + top memories
+    M-->>C: briefing
+    C-->>U: Short answer
