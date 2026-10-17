@@ -121,6 +121,11 @@ warn_unused_configs = true
 module = ["faiss", "faiss.*", "fitz", "docx", "mcp.*", "sentence_transformers.*"]
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+# why: click and MCP tool decorators are untyped; the bodies are still checked
+module = ["vecforge.cli.*", "vecforge.mcp.*"]
+disable_error_code = ["untyped-decorator"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "-v --tb=short"

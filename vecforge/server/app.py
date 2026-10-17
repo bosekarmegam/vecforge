@@ -72,6 +72,9 @@ def create_app(
         try:
             yield
         finally:
+            # why: cached memory stores point at this vault; drop them so a
+            # restarted app builds fresh ones
+            app.state.memory_stores.clear()
             if owns_vault and app.state.vault is not None:
                 app.state.vault.close()
                 app.state.vault = None

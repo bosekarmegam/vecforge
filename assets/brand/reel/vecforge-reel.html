@@ -1,0 +1,257 @@
+<!doctype html>
+<!--
+  VecForge 2.0 brand reel (1080x1920, 14 s).
+  Every frame is a pure function of time: render(t) sets all styles,
+  so scripts/render_reel.cjs can step through frames deterministically.
+  Open in a browser to preview in real time.
+  Copyright (c) 2026 Suneel Bose K · ArcGX TechLabs Private Limited
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VecForge Reel</title>
+<style>
+  :root { --cyan:#67E8F9; --violet:#C4B5FD; --amber:#FFB86B; }
+  html, body { margin:0; padding:0; background:#07051a; }
+  #stage {
+    position:relative; width:1080px; height:1920px; overflow:hidden;
+    background:
+      radial-gradient(900px 900px at 50% 44%, rgba(108,92,231,.35), rgba(108,92,231,0) 70%),
+      radial-gradient(1400px 1600px at 50% 40%, #1d1558 0%, #110b36 48%, #07051a 100%);
+    font-family:"Inter", system-ui, sans-serif; color:#fff;
+  }
+  canvas { position:absolute; inset:0; }
+  .abs { position:absolute; will-change:transform, opacity; }
+  #mark { width:500px; height:500px; left:290px; top:410px; transform-origin:50% 50%; }
+  #mark svg { width:100%; height:100%; overflow:visible; }
+  #mark .fb { transform-box:fill-box; transform-origin:center; }
+  #flash { inset:0; background:radial-gradient(520px 520px at 50% 41%, rgba(255,214,150,.75), rgba(255,140,40,.25) 40%, rgba(255,120,0,0) 70%); opacity:0; }
+  #word { left:0; right:0; top:980px; text-align:center; font-weight:800; font-size:156px; letter-spacing:-5px; line-height:1; }
+  #word .forge { background:linear-gradient(90deg, var(--cyan), var(--violet) 55%, var(--amber)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  #pill { left:0; right:0; top:1168px; text-align:center; }
+  #pill span { display:inline-block; padding:12px 30px; border-radius:999px; border:2px solid rgba(196,181,253,.45);
+    background:rgba(108,92,231,.18); font-size:30px; font-weight:600; letter-spacing:6px; color:#E9E4FF; }
+  .tag { left:50px; right:50px; top:1300px; text-align:center; opacity:0; }
+  .tag .eyebrow { font-size:28px; font-weight:700; letter-spacing:7px; color:var(--cyan); margin-bottom:22px; }
+  .tag .main { white-space:nowrap; font-size:66px; font-weight:700; line-height:1.14; letter-spacing:-1.5px; }
+  .tag .main em { font-style:normal; color:var(--amber); }
+  #install { left:0; right:0; top:1150px; text-align:center; opacity:0; }
+  #install code { display:inline-block; font-family:"DejaVu Sans Mono", monospace; font-size:42px; padding:26px 44px;
+    border-radius:22px; background:rgba(7,5,26,.75); border:2px solid rgba(103,232,249,.35); color:#E6FBFF; }
+  #install code b { color:var(--cyan); font-weight:400; }
+  #url { left:0; right:0; top:1290px; text-align:center; font-size:30px; color:rgba(233,228,255,.7); opacity:0; letter-spacing:.5px; }
+  #powered { left:0; right:0; top:1660px; text-align:center; opacity:0; transform-origin:50% 50%; }
+  #powered .by { font-size:22px; letter-spacing:8px; font-weight:600; color:rgba(233,228,255,.62); }
+  #powered .name { margin-top:10px; font-size:40px; font-weight:800; letter-spacing:.5px; }
+  #powered .name span { color:var(--amber); }
+  #powered .rule { margin:16px auto 0; width:220px; height:4px; border-radius:4px;
+    background:linear-gradient(90deg, var(--cyan), var(--violet), var(--amber)); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="field" width="1080" height="1920"></canvas>
+  <div id="flash" class="abs"></div>
+
+  <div id="mark" class="abs">
+    <svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="vf-tile" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#2A1F7A"/><stop offset="0.55" stop-color="#4B3BD1"/><stop offset="1" stop-color="#6C5CE7"/>
+        </linearGradient>
+        <linearGradient id="vf-arm" x1="0" y1="132" x2="0" y2="384" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stop-color="#67E8F9"/><stop offset="0.6" stop-color="#C4B5FD"/><stop offset="1" stop-color="#FFB86B"/>
+        </linearGradient>
+        <radialGradient id="vf-spark" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0" stop-color="#FFF4D6"/><stop offset="0.35" stop-color="#FFB547"/><stop offset="1" stop-color="#FF6A00" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="vf-sheen" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.16"/><stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0"/>
+        </linearGradient>
+        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="18"/></filter>
+      </defs>
+      <rect id="halo" x="16" y="16" width="480" height="480" rx="112" fill="#6C5CE7" filter="url(#glow)" opacity="0"/>
+      <g id="tile" class="fb">
+        <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#vf-tile)"/>
+        <rect x="16" y="16" width="480" height="240" rx="112" fill="url(#vf-sheen)"/>
+        <g stroke="#FFFFFF" stroke-opacity="0.07" stroke-width="2">
+          <line x1="96" y1="176" x2="416" y2="176"/><line x1="96" y1="256" x2="416" y2="256"/><line x1="96" y1="336" x2="416" y2="336"/>
+        </g>
+      </g>
+      <g fill="none" stroke="url(#vf-arm)" stroke-linecap="round" stroke-linejoin="round">
+        <path id="armL" d="M128 132 L256 384" stroke-width="52"/>
+        <path id="armR" d="M384 132 L256 384" stroke-width="52"/>
+      </g>
+      <g id="nodes">
+        <g class="fb" id="nodeL"><circle cx="128" cy="132" r="26" fill="#FFF"/><circle cx="128" cy="132" r="11" fill="#2A1F7A"/></g>
+        <g class="fb" id="nodeR"><circle cx="384" cy="132" r="26" fill="#FFF"/><circle cx="384" cy="132" r="11" fill="#2A1F7A"/></g>
+      </g>
+      <g id="mids" fill="#FFFFFF" fill-opacity="0.9"><circle cx="176" cy="226" r="9"/><circle cx="336" cy="226" r="9"/></g>
+      <circle id="spark" class="fb" cx="256" cy="384" r="78" fill="url(#vf-spark)"/>
+      <path id="star" class="fb" d="M256 338 L266 374 L302 384 L266 394 L256 430 L246 394 L210 384 L246 374 Z" fill="#FFF7E6"/>
+    </svg>
+  </div>
+
+  <div id="word" class="abs">Vec<span class="forge">Forge</span></div>
+  <div id="pill" class="abs"><span>VERSION 2.0</span></div>
+
+  <div class="tag abs" id="tag0"><div class="eyebrow">LOCAL-FIRST</div><div class="main">The vector database that<br>lives on <em>your</em> machine</div></div>
+  <div class="tag abs" id="tag1"><div class="eyebrow">AI MEMORY · MCP</div><div class="main">Claude remembers everything.<br><em>Next session too.</em></div></div>
+  <div class="tag abs" id="tag2"><div class="eyebrow">SEARCH</div><div class="main">Hybrid search with a<br><em>quantum-inspired</em> rerank</div></div>
+  <div class="tag abs" id="tag3"><div class="eyebrow">SECURE</div><div class="main">AES-256 encrypted vaults.<br><em>Zero cloud.</em></div></div>
+
+  <div id="install" class="abs"><code><b>$</b> pip install vecforge</code></div>
+  <div id="url" class="abs">github.com/bosekarmegam/vecforge</div>
+
+  <div id="powered" class="abs">
+    <div class="by">POWERED BY</div>
+    <div class="name">ArcGX <span>TechLabs</span></div>
+    <div class="rule"></div>
+  </div>
+</div>
+
+<script>
+const DURATION = 14.0;
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const lerp = (a, b, p) => a + (b - a) * p;
+const outCubic = p => 1 - Math.pow(1 - p, 3);
+const inOutCubic = p => (p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+const outExpo = p => (p >= 1 ? 1 : 1 - Math.pow(2, -10 * p));
+const outBack = p => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); };
+
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const rnd = mulberry32(20261017);
+const SPARK = { x: 540, y: 785 };
+const N = 170;
+const P = Array.from({ length: N }, () => {
+  const ang = rnd() * Math.PI * 2, rad = 700 + rnd() * 600;
+  return {
+    sx: SPARK.x + Math.cos(ang) * rad, sy: SPARK.y + Math.sin(ang) * rad * 1.3,
+    hx: 40 + rnd() * 1000, hy: 60 + rnd() * 1800,
+    delay: rnd() * 0.5, r: 1.6 + rnd() * 2.4, hue: rnd(),
+    wob: rnd() * Math.PI * 2, speed: 0.25 + rnd() * 0.5,
+  };
+});
+const ctx = document.getElementById("field").getContext("2d");
+const COLORS = ["103,232,249", "196,181,253", "255,184,107"];
+
+function particle(p, t) {
+  // converge into the spark (0.0–2.0 s), burst out to the field, then drift
+  if (t < 2.0) {
+    const k = inOutCubic(prog(t, p.delay, 2.0));
+    return { x: lerp(p.sx, SPARK.x, k), y: lerp(p.sy, SPARK.y, k), a: 0.25 + 0.75 * k };
+  }
+  const k = outExpo(prog(t, 2.0, 3.6));
+  const dx = Math.sin(t * p.speed + p.wob) * 14, dy = Math.cos(t * p.speed * 0.8 + p.wob) * 18 - (t - 2) * 6 * p.speed;
+  return { x: lerp(SPARK.x, p.hx, k) + dx * k, y: lerp(SPARK.y, p.hy, k) + dy * k, a: 1 };
+}
+
+function drawField(t) {
+  ctx.clearRect(0, 0, 1080, 1920);
+  const pts = P.map(p => ({ ...particle(p, t), p }));
+  const dim = t > 2.0 ? lerp(1, 0.55, prog(t, 3.0, 5.0)) : 1;
+  ctx.lineWidth = 1.2;
+  for (let i = 0; i < N; i++) {
+    for (let j = i + 1; j < N; j++) {
+      const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y, d2 = dx * dx + dy * dy;
+      if (d2 < 130 * 130) {
+        const a = (1 - Math.sqrt(d2) / 130) * 0.22 * dim * Math.min(pts[i].a, pts[j].a);
+        ctx.strokeStyle = `rgba(196,181,253,${a.toFixed(3)})`;
+        ctx.beginPath(); ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[j].x, pts[j].y); ctx.stroke();
+      }
+    }
+  }
+  for (const q of pts) {
+    const c = COLORS[Math.floor(q.p.hue * 3)];
+    ctx.fillStyle = `rgba(${c},${(0.85 * q.a * dim).toFixed(3)})`;
+    ctx.beginPath(); ctx.arc(q.x, q.y, q.p.r, 0, Math.PI * 2); ctx.fill();
+  }
+}
+
+const $ = id => document.getElementById(id);
+const ARM = Math.hypot(128, 252);
+for (const id of ["armL", "armR"]) $(id).style.strokeDasharray = `${ARM} ${ARM}`;
+
+function render(t) {
+  drawField(t);
+
+  // ── end-card move (10.6–11.4 s)
+  const e = inOutCubic(prog(t, 10.6, 11.4));
+
+  // ── mark
+  const tileIn = prog(t, 0.15, 0.9);
+  const markScale = lerp(0.55 + 0.45 * outBack(tileIn), 0.8, e) * (1 + 0.035 * Math.sin(Math.max(0, t - 2.4) * 2.2) * prog(t, 2.4, 3.2) * (1 - e));
+  $("mark").style.opacity = outCubic(tileIn);
+  $("mark").style.transform = `translateY(${lerp(0, -110, e)}px) scale(${markScale})`;
+  for (const [id, a, b] of [["armL", 0.8, 1.75], ["armR", 0.95, 1.9]]) {
+    const p = outCubic(prog(t, a, b));
+    $(id).style.strokeDashoffset = ARM * (1 - p);
+    $(id).style.opacity = p > 0 ? 1 : 0;
+  }
+  for (const [id, a] of [["nodeL", 0.7], ["nodeR", 0.85]]) {
+    const p = prog(t, a, a + 0.45);
+    $(id).style.transform = `scale(${p > 0 ? outBack(p) : 0})`;
+  }
+  $("mids").style.opacity = prog(t, 1.4, 1.8);
+  const sp = prog(t, 1.85, 2.5);
+  const sparkScale = sp <= 0 ? 0 : sp < 0.35 ? lerp(0, 1.7, outCubic(sp / 0.35)) : lerp(1.7, 1, outCubic((sp - 0.35) / 0.65));
+  const pulse = 1 + 0.08 * Math.sin(Math.max(0, t - 2.5) * 4) * prog(t, 2.5, 3);
+  $("spark").style.transform = `scale(${sparkScale * pulse})`;
+  $("star").style.transform = `rotate(${lerp(-90, 0, outCubic(sp))}deg) scale(${sparkScale > 0 ? Math.min(sparkScale, 1.25) : 0})`;
+  $("halo").setAttribute("opacity", (0.55 * prog(t, 1.9, 2.6)).toFixed(3));
+  const fl = prog(t, 1.9, 2.9);
+  $("flash").style.opacity = fl <= 0 ? 0 : fl < 0.15 ? fl / 0.15 : 1 - outCubic((fl - 0.15) / 0.85);
+  $("flash").style.transform = `translateY(${lerp(0, -110, e)}px)`;
+
+  // ── wordmark + version pill
+  const w = outCubic(prog(t, 2.35, 3.1));
+  $("word").style.opacity = w;
+  $("word").style.transform = `translateY(${lerp(50, 0, w) + lerp(0, -140, e)}px) scale(${lerp(1, 0.92, e)})`;
+  const pl = outCubic(prog(t, 2.8, 3.4));
+  $("pill").style.opacity = pl;
+  $("pill").style.transform = `translateY(${lerp(30, 0, pl) + lerp(0, -145, e)}px)`;
+
+  // ── taglines: 1.8 s each from 3.4 s
+  for (let i = 0; i < 4; i++) {
+    const a = 3.4 + i * 1.8, b = a + 1.8;
+    const pin = outCubic(prog(t, a, a + 0.4));
+    const pout = i === 3 ? prog(t, 10.4, 10.8) : prog(t, b - 0.3, b);
+    const el = $("tag" + i);
+    el.style.opacity = (pin * (1 - pout)).toFixed(3);
+    el.style.transform = `translateY(${lerp(60, 0, pin) - 40 * pout}px)`;
+  }
+
+  // ── end card
+  const ins = outCubic(prog(t, 11.1, 11.7));
+  $("install").style.opacity = ins;
+  $("install").style.transform = `translateY(${lerp(40, 0, ins)}px)`;
+  const u = outCubic(prog(t, 11.4, 12.0));
+  $("url").style.opacity = u;
+  $("url").style.transform = `translateY(${lerp(30, 0, u)}px)`;
+
+  // ── powered by ArcGX: footer from 3 s, hero line on the end card
+  const pw = outCubic(prog(t, 3.0, 3.6));
+  $("powered").style.opacity = pw;
+  $("powered").style.transform = `translateY(${lerp(20, 0, pw) + lerp(0, -180, e)}px) scale(${lerp(1, 1.45, e)})`;
+}
+
+window.render = render;
+window.DURATION = DURATION;
+if (!/[?&]static/.test(location.search)) {
+  const t0 = performance.now();
+  const loop = now => { render(((now - t0) / 1000) % DURATION); requestAnimationFrame(loop); };
+  requestAnimationFrame(loop);
+} else {
+  render(Number(new URLSearchParams(location.search).get("t") || 12));
+}
+</script>
+</body>
+</html>

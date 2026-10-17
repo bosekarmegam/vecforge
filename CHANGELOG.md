@@ -55,6 +55,25 @@ Built by Suneel Bose K · ArcGX TechLabs Private Limited.
 * `ImageEmbedder.embed()` still accepts image paths; `embed_image()` is the explicit method and `embed()` on plain text now encodes text (CLIP text tower).
 * Dependencies removed: `rank-bm25`, `numba`, `joblib`. New extras: `[mcp]`, `[encryption]`.
 * `CascadeSearcher.search()` gained `allowed_ids` / `excluded_ids` / `over_fetch`; `SearchResult` gained fields (dataclass positional order unchanged).
+* `db.storage` (raw SQLite access) now requires an admin key; `save()` and `compact()` require write; `exists`, `count`, `stats`, `similar` and namespace listing require read.
+* `Storage.kv_set()` rejects keys starting with `__` (reserved for VecForge internals).
+* CLI `stats`, `export`, `compact` and `backup` refuse a vault path that does not exist instead of creating an empty vault.
+
+#### Hardening (pre-release review)
+* Atomic writes: a dimension mismatch is rejected before anything is stored, a failed index update rolls the rows back, and `upsert` replaces a document in one transaction.
+* SQLCipher vaults: `sqlite3.Row` replaced by the driver's own row type, explicit transactions throughout, and encrypted `backup()` via `sqlcipher_export`.
+* Snapshots stay valid across metadata-only updates; auto-save failures are logged instead of raised; snapshot source URIs work with spaces and non-ASCII paths.
+* `MemoryStore` shares the vault lock, refuses use after close, and isolates agents: `forget`, `update`, sessions and dedup only touch the store's own namespace. Imports keep sessions and timestamps; `context_pack` no longer repeats the last session summary.
+* Quantum rerank and amplitude encoding handle `NaN` and `±inf` scores (`+inf` ranks first); ties keep their input order.
+* MCP tools return readable errors, shut down cleanly on SIGTERM, and `--print-config` keeps `--model`. REST API keys are compared as bytes, so non-ASCII keys return 401 instead of 500.
+* `HashEmbedder` gives punctuation-only text a non-zero vector; `ImageEmbedder.embed()` only treats strings as paths when they look like images or exist on disk.
+* mypy strict passes with no errors; 386 tests, 90% coverage, plus a randomized differential fuzzer against a brute-force reference.
+
+#### Brand and docs
+* New VecForge logo: SVG mark and horizontal lockups (light and dark) with PNG, favicon and app-icon exports in `assets/brand/`.
+* Website (`index.html`) updated with the new logo and 2.0 content: AI memory section, MCP tools, quantum rerank, comparison rows.
+* Complete instructions guide: `docs/VecForge-Instructions.pdf` (26 pages, bookmarked), built from `docs/guide/` by `scripts/build_guide.py`.
+* 14-second vertical brand reel `assets/brand/vecforge-reel.mp4`, "Powered by ArcGX TechLabs", rendered by `scripts/render_reel.cjs`.
 
 ## [1.1.0] — 2026-03-12
 ### Added — Phase 4: Multimodal & Advanced

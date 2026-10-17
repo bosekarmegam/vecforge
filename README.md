@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="vecforge-logo.svg" alt="VecForge Logo" width="120" height="120">
+  <img src="assets/brand/vecforge-mark.svg" alt="VecForge logo" width="120" height="120">
   <h1 align="center">VecForge</h1>
   <p align="center"><strong>Forge your vector database. Own it forever.</strong></p>
   <p align="center">
@@ -17,7 +17,7 @@ Built by **Suneel Bose K** — Founder & CEO, [ArcGX TechLabs Private Limited](h
 [![License: BSL 1.1](https://img.shields.io/badge/License-BSL%201.1-blue.svg)](LICENSE)
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10--3.13-green.svg)](https://python.org)
 [![Tests](https://github.com/bosekarmegam/vecforge/actions/workflows/tests.yml/badge.svg)](https://github.com/bosekarmegam/vecforge/actions/workflows/tests.yml)
-[![Coverage](https://img.shields.io/badge/Coverage-89%25-brightgreen.svg)](#-benchmarks)
+[![Coverage](https://img.shields.io/badge/Coverage-90%25-brightgreen.svg)](#-benchmarks)
 [![Ruff](https://img.shields.io/badge/Linting-Ruff%20✅-brightgreen.svg)](https://github.com/astral-sh/ruff)
 [![MCP](https://img.shields.io/badge/MCP-Claude%20ready-blueviolet.svg)](#-ai-memory-for-claude-and-other-agents)
 [![Quantum](https://img.shields.io/badge/Quantum%20Rerank-1.7ms%20@%201M-blueviolet.svg)](#-quantum-inspired-search)
@@ -240,11 +240,13 @@ curl -X POST http://localhost:8080/api/v1/memory/remember -H "Content-Type: appl
 
 ## 📚 Documentation
 
+- **[📘 Complete Instructions (PDF, 26 pages)](docs/VecForge-Instructions.pdf)**: install, search, AI memory, MCP setup for Claude, REST, CLI and security in one guide
 - [⚡ Quickstart](docs/quickstart.md) · [📦 Installation](docs/installation.md) · [🧠 Core Concepts](docs/core_concepts.md)
 - [🔍 Search](docs/search.md) · [🧠 Memory](docs/memory.md) · [🔌 MCP](docs/mcp.md) · [🌀 Quantum](docs/quantum.md) · [🖼️ Multimodal](docs/multimodal.md)
 - [🔐 Security](docs/security.md) · [📄 Ingestion](docs/ingestion.md) · [⚙️ Configuration](docs/configuration.md)
 - [📖 API Reference](docs/api_reference.md) · [🖥️ CLI Reference](docs/cli_reference.md) · [🌐 REST API](docs/rest_api.md)
 - [📝 Changelog](CHANGELOG.md) — including 2.0 migration notes
+- 🎨 Brand kit: logo SVG/PNG exports and the 2.0 reel in [`assets/brand/`](assets/brand/)
 
 ---
 

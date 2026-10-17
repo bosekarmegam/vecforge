@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VecForge 2.0 — Complete Instructions</title>
+<meta name="author" content="Suneel Bose K · ArcGX TechLabs Private Limited">
+<style>
+  @page { size: A4; margin: 22mm 18mm 22mm 18mm; }
+  @page :first { margin: 0; }
+  :root {
+    --ink: #1A1D2E; --ink-2: #4A4F6A; --muted: #8B90A8;
+    --accent: #4B3BD1; --accent-2: #6C5CE7; --accent-soft: #EFEDFF;
+    --line: #E4E6F2; --code-bg: #F5F6FB; --warn: #B45309; --warn-soft: #FFF7EB;
+    --ok-soft: #ECFDF5; --ok: #047857;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { font-family: Inter, "DejaVu Sans", sans-serif; color: var(--ink); font-size: 10.2pt; line-height: 1.55; margin: 0; }
+  h1, h2, h3, h4 { font-family: "Inter Display", Inter, sans-serif; color: var(--ink); line-height: 1.2; break-after: avoid; }
+  h1 { font-size: 22pt; font-weight: 800; letter-spacing: -0.4pt; margin: 0 0 4mm; padding-top: 2mm; }
+  h1 .num { color: var(--accent-2); margin-right: 6pt; }
+  h2 { font-size: 13.5pt; font-weight: 700; margin: 7mm 0 2.5mm; }
+  h3 { font-size: 11pt; font-weight: 700; margin: 5mm 0 2mm; }
+  p { margin: 0 0 2.6mm; }
+  a { color: var(--accent); text-decoration: none; }
+  ul, ol { margin: 0 0 3mm; padding-left: 5mm; }
+  li { margin: 0.8mm 0; }
+  code { font-family: "DejaVu Sans Mono", monospace; font-size: 8.6pt; background: var(--code-bg); border-radius: 3px; padding: 0.4pt 2.5pt; color: #3B2FB5; }
+  pre { font-family: "DejaVu Sans Mono", monospace; font-size: 8.2pt; line-height: 1.5; background: #14112B; color: #E7E5FF; border-radius: 6px; padding: 3.5mm 4mm; margin: 0 0 3.5mm; white-space: pre-wrap; break-inside: avoid; }
+  pre code { background: none; color: inherit; padding: 0; font-size: inherit; }
+  pre .c { color: #8B86B8; } pre .k { color: #C4B5FD; } pre .s { color: #FFC98A; } pre .f { color: #67E8F9; } pre .o { color: #9AE6B4; }
+  table { width: 100%; border-collapse: collapse; margin: 0 0 4mm; font-size: 9pt; break-inside: auto; }
+  tr { break-inside: avoid; }
+  th { text-align: left; background: var(--accent-soft); color: #2A1F7A; font-weight: 700; padding: 1.8mm 2.4mm; border-bottom: 1px solid #D9D4FF; }
+  td { padding: 1.6mm 2.4mm; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td code, th code { font-size: 8pt; }
+  .note, .tip, .warn { border-radius: 6px; padding: 3mm 4mm; margin: 0 0 4mm; break-inside: avoid; font-size: 9.4pt; }
+  .note { background: var(--accent-soft); border-left: 3px solid var(--accent-2); }
+  .tip { background: var(--ok-soft); border-left: 3px solid var(--ok); }
+  .warn { background: var(--warn-soft); border-left: 3px solid var(--warn); }
+  .note b, .tip b, .warn b { display: block; margin-bottom: 1mm; }
+  .chapter { break-before: page; }
+  .lead { font-size: 11pt; color: var(--ink-2); margin-bottom: 5mm; }
+  .steps { counter-reset: step; list-style: none; padding-left: 0; }
+  .steps > li { counter-increment: step; position: relative; padding-left: 9mm; margin: 2.5mm 0; }
+  .steps > li::before { content: counter(step); position: absolute; left: 0; top: 0; width: 6mm; height: 6mm; border-radius: 50%; background: var(--accent-2); color: #fff; font-weight: 700; font-size: 8.5pt; display: flex; align-items: center; justify-content: center; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+  .card { border: 1px solid var(--line); border-radius: 6px; padding: 3mm 4mm; break-inside: avoid; }
+  .card h4 { margin: 0 0 1mm; font-size: 10pt; }
+  .card p { margin: 0; font-size: 9pt; color: var(--ink-2); }
+  .muted { color: var(--muted); }
+
+  /* ── cover ── */
+  .cover { height: 297mm; width: 210mm; position: relative; overflow: hidden; background: linear-gradient(160deg, #1B1450 0%, #2A1F7A 45%, #4B3BD1 100%); color: #fff; break-after: page; }
+  .cover .grid { position: absolute; inset: 0; background-image: linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px); background-size: 12mm 12mm; }
+  .cover .glow { position: absolute; width: 160mm; height: 160mm; border-radius: 50%; right: -50mm; bottom: -40mm; background: radial-gradient(circle, rgba(255,181,71,0.35) 0%, rgba(255,106,0,0) 60%); }
+  .cover .inner { position: absolute; left: 22mm; right: 22mm; top: 48mm; }
+  .cover img.mark { width: 44mm; height: 44mm; filter: drop-shadow(0 8mm 14mm rgba(0,0,0,0.35)); }
+  .cover h1 { color: #fff; font-size: 44pt; margin: 14mm 0 2mm; letter-spacing: -1.2pt; }
+  .cover h1 span { color: #C4B5FD; }
+  .cover .sub { font-size: 16pt; color: #DDD8FF; font-weight: 500; margin-bottom: 10mm; }
+  .cover .pills { display: flex; flex-wrap: wrap; gap: 2.5mm; max-width: 150mm; }
+  .cover .pills span { border: 1px solid rgba(255,255,255,0.3); border-radius: 20mm; padding: 1.2mm 4mm; font-size: 9.5pt; color: #EDEBFF; }
+  .cover .foot { position: absolute; left: 22mm; right: 22mm; bottom: 20mm; display: flex; justify-content: space-between; align-items: flex-end; font-size: 9.5pt; color: #CFC9FF; }
+  .cover .foot strong { color: #fff; font-size: 11pt; }
+  .cover .version { font-family: "DejaVu Sans Mono", monospace; font-size: 10pt; color: #FFC98A; }
+
+  /* ── toc ── */
+  .toc { break-after: page; }
+  .toc ol { list-style: none; padding: 0; columns: 1; }
+  .toc li { display: flex; align-items: baseline; gap: 3mm; padding: 2mm 0; border-bottom: 1px dashed var(--line); font-size: 11pt; }
+  .toc li .n { color: var(--accent-2); font-weight: 800; width: 8mm; }
+  .toc li .d { color: var(--muted); font-size: 9pt; margin-left: auto; }
+</style>
+</head>
+<body>
+
+<!-- ───────────── COVER ───────────── -->
+<section class="cover">
+  <div class="grid"></div>
+  <div class="glow"></div>
+  <div class="inner">
+    <img class="mark" src="../../assets/brand/vecforge-mark.svg" alt="VecForge">
+    <h1>Vec<span>Forge</span> 2.0</h1>
+    <div class="sub">Complete Instructions — install, search, remember, serve.</div>
+    <div class="pills">
+      <span>Local-first</span><span>AES-256 encrypted</span><span>Hybrid dense + BM25 search</span>
+      <span>AI memory for Claude</span><span>MCP server</span><span>Quantum-inspired rerank</span>
+      <span>REST API &amp; CLI</span>
+    </div>
+  </div>
+  <div class="foot">
+    <div>Built by <strong>Suneel Bose K</strong><br>Powered by <strong>ArcGX TechLabs Private Limited</strong></div>
+    <div class="version">vecforge 2.0.0 · October 2026</div>
+  </div>
+</section>
+
+<!-- ───────────── CONTENTS ───────────── -->
+<section class="toc">
+  <h1>Contents</h1>
+  <ol>
+    <li><span class="n">1</span>What VecForge is<span class="d">overview, architecture</span></li>
+    <li><span class="n">2</span>Installation<span class="d">pip, extras, offline mode</span></li>
+    <li><span class="n">3</span>Quickstart<span class="d">your first vault in 5 lines</span></li>
+    <li><span class="n">4</span>Core concepts<span class="d">vaults, namespaces, indexes</span></li>
+    <li><span class="n">5</span>Adding and managing data<span class="d">add, batch, upsert, ingest, delete</span></li>
+    <li><span class="n">6</span>Searching<span class="d">alpha, filters, rerank, quantum</span></li>
+    <li><span class="n">7</span>AI memory<span class="d">MemoryStore, sessions, context packs</span></li>
+    <li><span class="n">8</span>Connecting Claude over MCP<span class="d">Desktop, Code, HTTP</span></li>
+    <li><span class="n">9</span>Embedding models<span class="d">sentence-transformers, hash, any API</span></li>
+    <li><span class="n">10</span>Security<span class="d">encryption, RBAC, audit, backup</span></li>
+    <li><span class="n">11</span>REST API<span class="d">server and endpoints</span></li>
+    <li><span class="n">12</span>Command line<span class="d">every command</span></li>
+    <li><span class="n">13</span>Multimodal<span class="d">images and audio</span></li>
+    <li><span class="n">14</span>Performance and tuning<span class="d">benchmarks, index types</span></li>
+    <li><span class="n">15</span>Upgrading from 1.x<span class="d">breaking changes</span></li>
+    <li><span class="n">16</span>Troubleshooting<span class="d">common problems</span></li>
+    <li><span class="n">17</span>Quick reference<span class="d">one-page cheat sheet</span></li>
+  </ol>
+</section>
+
+<!-- ───────────── 1 ───────────── -->
+<section class="chapter">
+  <h1><span class="num">1</span>What VecForge is</h1>
+  <p class="lead">VecForge is a vector database that runs inside your Python process and stores everything in one file on your machine. It finds documents by meaning and by keyword at the same time, can encrypt the file, and — new in 2.0 — gives AI assistants a long-term memory they can use across sessions.</p>
+
+  <div class="grid2">
+    <div class="card"><h4>Local-first</h4><p>No server to run, no account, no API key. A vault is a single SQLite file you own.</p></div>
+    <div class="card"><h4>Hybrid search</h4><p>Semantic (FAISS) and keyword (BM25) results are fused, then optionally reranked.</p></div>
+    <div class="card"><h4>AI memory + MCP</h4><p>Claude Desktop, Claude Code and other MCP clients remember facts, preferences and decisions between conversations.</p></div>
+    <div class="card"><h4>Enterprise basics</h4><p>AES-256 encryption, namespaces per tenant, roles and API keys, an audit log and safe backups.</p></div>
+  </div>
+
+  <h2>How a search works</h2>
+  <ol>
+    <li><b>Dense retrieval.</b> Your query is turned into a vector and compared with every document vector in FAISS.</li>
+    <li><b>Keyword retrieval.</b> VecForge's own BM25 inverted index scores documents that share words with the query.</li>
+    <li><b>Fusion.</b> Both score lists are normalised to 0–1 and blended with <code>alpha</code> (0 = keywords only, 1 = meaning only).</li>
+    <li><b>Hydration and filters.</b> Matching documents are loaded and metadata filters are applied. If a filter removes too many, VecForge automatically looks further down the list.</li>
+    <li><b>Reranking (optional).</b> A cross-encoder model and/or Grover amplitude amplification reorder the top results.</li>
+    <li><b>Recency (optional).</b> Newer documents can be nudged up.</li>
+  </ol>
+  <p>Namespace limits and deletes are enforced inside both retrievers, so small namespaces always get complete results.</p>
+
+  <h2>What lives in a vault file</h2>
+  <table>
+    <tr><th>Part</th><th>Purpose</th></tr>
+    <tr><td>documents</td><td>Text, embedding vector, metadata, namespace, modality, timestamps, content hash</td></tr>
+    <tr><td>namespaces</td><td>Tenant boundaries (<code>default</code> always exists)</td></tr>
+    <tr><td>index snapshot</td><td>Saved FAISS + BM25 indexes so the vault reopens without rebuilding</td></tr>
+    <tr><td>sessions, key/value</td><td>Memory sessions, internal counters, hashed API keys</td></tr>
+  </table>
+</section>
+
+<!-- ───────────── 2 ───────────── -->
+<section class="chapter">
+  <h1><span class="num">2</span>Installation</h1>
+  <p class="lead">VecForge needs Python 3.10 or newer. It is tested on Linux, macOS and Windows with Python 3.10 – 3.13.</p>
+
+  <h2>Install from PyPI</h2>
+<pre><span class="c"># core library, CLI and REST server</span>
+pip install vecforge
+
+<span class="c"># add the MCP server for Claude</span>
+pip install "vecforge[mcp]"
+
+<span class="c"># several extras at once</span>
+pip install "vecforge[mcp,encryption]"</pre>
+
+  <h2>Optional extras</h2>
+  <table>
+    <tr><th>Extra</th><th>Adds</th><th>Use it for</th></tr>
+    <tr><td><code>mcp</code></td><td>mcp SDK</td><td>The memory server for Claude Desktop / Claude Code</td></tr>
+    <tr><td><code>encryption</code></td><td>sqlcipher3-binary</td><td>AES-256 encrypted vaults</td></tr>
+    <tr><td><code>multimodal</code></td><td>open-clip-torch, openai-whisper, Pillow</td><td>Image and audio search</td></tr>
+    <tr><td><code>cloud</code></td><td>boto3, GCS and Azure clients</td><td>Uploading encrypted backups</td></tr>
+    <tr><td><code>gpu</code></td><td>faiss-gpu, cupy</td><td>GPU acceleration</td></tr>
+    <tr><td><code>quantum</code></td><td>qiskit, qiskit-aer</td><td>Real quantum-circuit experiments (not needed for reranking)</td></tr>
+    <tr><td><code>dev</code></td><td>pytest, ruff, black, mypy, httpx, mcp</td><td>Contributing</td></tr>
+  </table>
+
+  <h2>Install from source</h2>
+<pre>git clone https://github.com/bosekarmegam/vecforge.git
+cd vecforge
+pip install -e ".[dev]"
+pytest tests/ -q</pre>
+
+  <h2>Offline or no-download mode</h2>
+  <p>The default embedding model (<code>all-MiniLM-L6-v2</code>, about 90 MB) downloads once from Hugging Face. On an offline machine, in CI, or when you want instant start-up, use the built-in hashing embedder instead:</p>
+<pre>db = VecForge(<span class="s">"vault.db"</span>, model_name=<span class="s">"hash"</span>)
+<span class="c"># or for every command and script:</span>
+export VECFORGE_MODEL=hash</pre>
+  <div class="note"><b>What "hash" means</b>The hash embedder matches shared words and spellings, not meaning. It is ideal for tests, keyword-heavy data and offline use. For semantic search, use a sentence-transformers model.</div>
+
+  <h2>Platform notes</h2>
+  <ul>
+    <li><b>Windows:</b> PyTorch needs the Microsoft Visual C++ Redistributable (<code>aka.ms/vs/17/release/vc_redist.x64.exe</code>). Without it you see <code>WinError 126 … c10.dll</code>.</li>
+    <li><b>Linux:</b> <code>sudo apt-get install -y build-essential</code> if a wheel has to compile.</li>
+    <li><b>Encryption from source:</b> macOS <code>brew install sqlcipher</code>; Ubuntu <code>apt-get install libsqlcipher-dev</code>, then <code>pip install sqlcipher3</code>.</li>
+  </ul>
+
+  <h2>Check the installation</h2>
+<pre>vecforge --version            <span class="c"># VecForge, version 2.0.0</span>
+python -c <span class="s">"import vecforge; print(vecforge.__version__)"</span></pre>
+</section>
+
+<!-- ───────────── 3 ───────────── -->
+<section class="chapter">
+  <h1><span class="num">3</span>Quickstart</h1>
+  <h2>Your first vault</h2>
+<pre><span class="k">from</span> vecforge <span class="k">import</span> VecForge
+
+db = <span class="f">VecForge</span>(<span class="s">"my_vault.db"</span>)
+db.<span class="f">add</span>(<span class="s">"Patient admitted with type 2 diabetes"</span>, metadata={<span class="s">"ward"</span>: <span class="s">"7"</span>})
+results = db.<span class="f">search</span>(<span class="s">"diabetic patient"</span>)
+<span class="f">print</span>(results[<span class="o">0</span>].text)</pre>
+  <p>The file <code>my_vault.db</code> now holds the document. Open it again tomorrow with the same line and the index is restored from its snapshot.</p>
+
+  <h2>A slightly bigger example</h2>
+<pre><span class="k">with</span> <span class="f">VecForge</span>(<span class="s">"clinic.db"</span>) <span class="k">as</span> db:          <span class="c"># saves and closes automatically</span>
+    db.<span class="f">add_batch</span>(
+        [<span class="s">"Type 2 diabetes, hip fracture admission"</span>,
+         <span class="s">"Cardiac arrest, ICU transfer"</span>,
+         <span class="s">"Routine diabetes follow-up"</span>],
+        metadata_list=[{<span class="s">"year"</span>: <span class="o">2024</span>}, {<span class="s">"year"</span>: <span class="o">2024</span>}, {<span class="s">"year"</span>: <span class="o">2023</span>}],
+        namespace=<span class="s">"ward_7"</span>,
+    )
+    <span class="k">for</span> r <span class="k">in</span> db.<span class="f">search</span>(<span class="s">"diabetes"</span>, namespace=<span class="s">"ward_7"</span>,
+                       filters={<span class="s">"year"</span>: {<span class="s">"gte"</span>: <span class="o">2024</span>}}):
+        <span class="f">print</span>(<span class="s">f"{r.score:.2f} {r.signals} {r.text}"</span>)</pre>
+
+  <h2>Give an assistant memory</h2>
+<pre><span class="k">from</span> vecforge <span class="k">import</span> MemoryStore
+
+mem = <span class="f">MemoryStore</span>(<span class="s">"~/.vecforge/memory.db"</span>, agent=<span class="s">"claude"</span>)
+mem.<span class="f">remember</span>(<span class="s">"User prefers concise answers"</span>, kind=<span class="s">"preference"</span>, importance=<span class="o">0.9</span>)
+<span class="f">print</span>(mem.<span class="f">context_pack</span>(<span class="s">"how should I answer?"</span>))</pre>
+
+  <h2>Or from the terminal</h2>
+<pre>vecforge ingest my_docs/ --vault my.db
+vecforge search <span class="s">"diabetes"</span> --vault my.db --top-k 5
+vecforge memory remember <span class="s">"Deploys happen on Fridays"</span> --kind fact</pre>
+</section>
+
+<!-- ───────────── 4 ───────────── -->
+<section class="chapter">
+  <h1><span class="num">4</span>Core concepts</h1>
+
+  <h2>Vaults</h2>
+<pre>db = <span class="f">VecForge</span>(<span class="s">"my_vault.db"</span>)                 <span class="c"># persistent file</span>
+db = <span class="f">VecForge</span>(<span class="s">":memory:"</span>)                    <span class="c"># throw-away, for tests</span>
+db = <span class="f">VecForge</span>(<span class="s">"secure.db"</span>, encryption_key=os.environ[<span class="s">"VECFORGE_KEY"</span>])</pre>
+
+  <h3>Constructor options</h3>
+  <table>
+    <tr><th>Option</th><th>Default</th><th>Meaning</th></tr>
+    <tr><td><code>path</code></td><td><code>":memory:"</code></td><td>Vault file</td></tr>
+    <tr><td><code>encryption_key</code></td><td>None</td><td>SQLCipher AES-256 key</td></tr>
+    <tr><td><code>audit_log</code></td><td>None</td><td>JSONL audit log path</td></tr>
+    <tr><td><code>quantum</code></td><td>False</td><td>Use Grover reranking by default</td></tr>
+    <tr><td><code>deletion_protection</code></td><td>False</td><td>Block deletes and replacing upserts</td></tr>
+    <tr><td><code>api_key</code></td><td>None</td><td>Key to check against registered roles (None = local admin)</td></tr>
+    <tr><td><code>model_name</code></td><td>all-MiniLM-L6-v2</td><td>Embedding model, or <code>"hash"</code></td></tr>
+    <tr><td><code>embedder</code></td><td>None</td><td>Your own embedder object</td></tr>
+    <tr><td><code>index_type</code></td><td><code>"auto"</code></td><td><code>flat</code>, <code>hnsw</code>, or <code>auto</code> (switches to HNSW at 50,000 documents)</td></tr>
+    <tr><td><code>auto_save_every</code></td><td>0</td><td>Save the index snapshot every N changes</td></tr>
+    <tr><td><code>rerank_model</code></td><td>ms-marco MiniLM</td><td>Cross-encoder used by <code>rerank=True</code></td></tr>
+  </table>
+
+  <h2>Documents</h2>
+  <p>Every document has an ID (auto UUID or your own), text, a metadata dictionary, a namespace, a modality label (<code>text</code>, <code>image</code>, <code>audio</code>, <code>memory</code>) and timestamps.</p>
+
+  <h2>Namespaces</h2>
+  <p>Namespaces separate tenants, projects or agents inside one vault. A search restricted to a namespace never sees another namespace's documents, and the restriction is applied inside the index so small namespaces get complete results.</p>
+<pre>db.<span class="f">create_namespace</span>(<span class="s">"hospital_a"</span>)       <span class="c"># also created automatically by add()</span>
+db.<span class="f">list_namespaces</span>()
+db.<span class="f">delete_namespace</span>(<span class="s">"hospital_a"</span>)       <span class="c"># removes its documents too</span></pre>
+
+  <h2>Indexes, deletes and snapshots</h2>
+  <ul>
+    <li><b>FAISS</b> holds the vectors. <code>flat</code> is exact; <code>hnsw</code> is approximate and much faster on very large vaults.</li>
+    <li><b>BM25</b> is an inverted index built into VecForge; adding a document only touches that document's words.</li>
+    <li><b>Deletes</b> mark the document as gone instantly. When deleted entries pass 20% of the vault, the indexes are rebuilt automatically (or call <code>db.compact()</code>).</li>
+    <li><b>Snapshots.</b> <code>save()</code> and <code>close()</code> store the indexes inside the vault. On open, VecForge checks the snapshot is current and loads it; if not, it rebuilds from the stored vectors — it never needs to re-embed.</li>
+  </ul>
+  <div class="tip"><b>Always close</b>Use <code>with VecForge(...) as db:</code> or call <code>db.close()</code> so the snapshot is saved. If a process is killed, nothing is lost — the next open simply rebuilds the indexes once.</div>
+
+  <h2>Thread safety</h2>
+  <p>All public methods of a <code>VecForge</code> object take an internal lock, so one vault can be shared by threads, the REST server and a memory store in the same process. Do not open the same file from two processes for writing at the same time.</p>
+</section>
+
+<!-- ───────────── 5 ───────────── -->
+<section class="chapter">
+  <h1><span class="num">5</span>Adding and managing data</h1>
+
+  <h2>Add one document</h2>
+<pre>doc_id = db.<span class="f">add</span>(
+    <span class="s">"Patient P4821 — Type 2 diabetes"</span>,
+    metadata={<span class="s">"ward"</span>: <span class="s">"7"</span>, <span class="s">"year"</span>: <span class="o">2026</span>},
+    namespace=<span class="s">"hospital_a"</span>,
+    doc_id=<span class="s">"P4821"</span>,          <span class="c"># optional; error if it already exists</span>
+)</pre>
+
+  <h2>Add many documents (fastest)</h2>
+<pre>ids = db.<span class="f">add_batch</span>(texts, metadata_list=metas, namespace=<span class="s">"docs"</span>)</pre>
+  <p>One model call, one database transaction and one index update for the whole batch — 10 to 50 times faster than calling <code>add()</code> in a loop. If any custom ID already exists, nothing is inserted.</p>
+
+  <h2>Insert or replace, and edit metadata</h2>
+<pre>db.<span class="f">upsert</span>(<span class="s">"Updated discharge note"</span>, doc_id=<span class="s">"P4821"</span>)          <span class="c"># replace text + re-embed</span>
+db.<span class="f">update_metadata</span>(<span class="s">"P4821"</span>, {<span class="s">"reviewed"</span>: <span class="k">True</span>})           <span class="c"># merge, no re-embedding</span>
+db.<span class="f">update_metadata</span>(<span class="s">"P4821"</span>, {<span class="s">"only"</span>: <span class="o">1</span>}, merge=<span class="k">False</span>)       <span class="c"># replace</span></pre>
+
+  <h2>Read</h2>
+<pre>db.<span class="f">get</span>(<span class="s">"P4821"</span>)            <span class="c"># SearchResult or None</span>
+db.<span class="f">get_embedding</span>(<span class="s">"P4821"</span>)  <span class="c"># the stored vector</span>
+db.<span class="f">exists</span>(<span class="s">"P4821"</span>)          <span class="c"># also: "P4821" in db</span>
+db.<span class="f">count</span>()  /  db.<span class="f">count</span>(<span class="s">"hospital_a"</span>)  /  <span class="f">len</span>(db)
+db.<span class="f">stats</span>()                   <span class="c"># documents, namespaces, index type, model, ...</span></pre>
+
+  <h2>Ingest files and folders</h2>
+<pre>count = db.<span class="f">ingest</span>(<span class="s">"medical_records/"</span>, namespace=<span class="s">"records"</span>,
+                  chunk_size=<span class="o">1000</span>, chunk_overlap=<span class="o">200</span>, batch_size=<span class="o">64</span>)</pre>
+  <table>
+    <tr><th>Format</th><th>Extensions</th><th>Reader</th></tr>
+    <tr><td>Text, Markdown</td><td><code>.txt</code> <code>.md</code></td><td>built in</td></tr>
+    <tr><td>PDF</td><td><code>.pdf</code></td><td>PyMuPDF (adds a <code>page</code> field)</td></tr>
+    <tr><td>Word</td><td><code>.docx</code></td><td>python-docx</td></tr>
+    <tr><td>HTML</td><td><code>.html</code> <code>.htm</code></td><td>BeautifulSoup (scripts, nav and footers removed)</td></tr>
+  </table>
+  <p>Folders are read recursively. Text is split at paragraph or sentence boundaries; every chunk gets <code>source</code>, <code>filename</code>, <code>chunk_index</code>, <code>char_start</code> and <code>char_end</code> metadata.</p>
+
+  <h2>Delete</h2>
+<pre>db.<span class="f">delete</span>(<span class="s">"P4821"</span>)                 <span class="c"># True if it existed</span>
+db.<span class="f">delete_many</span>([<span class="s">"a"</span>, <span class="s">"b"</span>, <span class="s">"c"</span>])     <span class="c"># returns how many were deleted</span>
+db.<span class="f">delete_namespace</span>(<span class="s">"old_tenant"</span>)
+db.<span class="f">compact</span>()                        <span class="c"># rebuild without deleted entries</span></pre>
+</section>
+
+<!-- ───────────── 6 ───────────── -->
+<section class="chapter">
+  <h1><span class="num">6</span>Searching</h1>
+<pre>results = db.<span class="f">search</span>(
+    <span class="s">"elderly diabetic hip fracture"</span>,
+    top_k=<span class="o">5</span>,
+    alpha=<span class="o">0.7</span>,                         <span class="c"># 70% meaning, 30% keywords</span>
+    namespace=<span class="s">"ward_7"</span>,
+    filters={<span class="s">"year"</span>: {<span class="s">"gte"</span>: <span class="o">2023</span>}},
+    rerank=<span class="k">False</span>, quantum_rerank=<span class="k">False</span>, recency_weight=<span class="o">0.0</span>,
+)</pre>
+
+  <h2>Choosing alpha</h2>
+  <table>
+    <tr><th>alpha</th><th>Behaviour</th><th>Good for</th></tr>
+    <tr><td>0.0</td><td>keywords only</td><td>IDs, codes, exact terms</td></tr>
+    <tr><td>0.3</td><td>mostly keywords</td><td>technical vocabulary</td></tr>
+    <tr><td>0.5</td><td>balanced (default)</td><td>general use</td></tr>
+    <tr><td>0.7</td><td>mostly meaning</td><td>natural-language questions</td></tr>
+    <tr><td>1.0</td><td>meaning only</td><td>concepts, image queries</td></tr>
+  </table>
+
+  <h2>Metadata filters</h2>
+  <table>
+    <tr><th>Filter</th><th>Matches when</th></tr>
+    <tr><td><code>{"type": "NDA"}</code></td><td>equal</td></tr>
+    <tr><td><code>{"year": {"gte": 2024}}</code></td><td>also <code>gt</code>, <code>lte</code>, <code>lt</code></td></tr>
+    <tr><td><code>{"status": {"in": ["a", "b"]}}</code></td><td>value in list (<code>not_in</code> for the opposite)</td></tr>
+    <tr><td><code>{"type": {"ne": "draft"}}</code></td><td>not equal</td></tr>
+    <tr><td><code>{"tags": {"contains": "ops"}}</code></td><td>list contains item, or text contains substring</td></tr>
+    <tr><td><code>{"tags": {"any": ["ops", "infra"]}}</code></td><td>list shares at least one item</td></tr>
+    <tr><td><code>{"tags": {"all": ["ops", "prod"]}}</code></td><td>list contains all items</td></tr>
+    <tr><td><code>{"reviewed": {"exists": False}}</code></td><td>key missing or null</td></tr>
+  </table>
+  <p>Several keys combine with AND. Comparing different types (text against a number) simply does not match.</p>
+
+  <h2>Reranking</h2>
+  <ul>
+    <li><b><code>rerank=True</code></b> — a cross-encoder reads the query and each candidate together. Most accurate, adds 20–50 ms, downloads a second small model on first use.</li>
+    <li><b><code>quantum_rerank=True</code></b> — Grover amplitude amplification. Candidates found by both the semantic and keyword retrievers are boosted; the best result always stays first; relative order inside each group is kept. Costs under a millisecond. Use both flags to run the cross-encoder only on the boosted survivors.</li>
+    <li><b><code>recency_weight=0.3</code></b> — blends in how new each document is, applied after reranking.</li>
+  </ul>
+
+  <h2>Reading results</h2>
+  <table>
+    <tr><th>Field</th><th>Meaning</th></tr>
+    <tr><td><code>text</code>, <code>doc_id</code>, <code>metadata</code>, <code>namespace</code>, <code>modality</code></td><td>the document</td></tr>
+    <tr><td><code>score</code></td><td>relevance, higher is better (0–1 unless a cross-encoder is used)</td></tr>
+    <tr><td><code>signals</code></td><td><code>["dense"]</code>, <code>["sparse"]</code> or both — which retrievers found it</td></tr>
+    <tr><td><code>dense_score</code>, <code>sparse_score</code></td><td>per-retriever normalised scores (None if that retriever missed it)</td></tr>
+    <tr><td><code>timestamp</code>, <code>updated_at</code></td><td>created and last edited</td></tr>
+  </table>
+
+  <h2>More ways to query</h2>
+<pre>db.<span class="f">search_batch</span>([<span class="s">"diabetes"</span>, <span class="s">"cardiac arrest"</span>], top_k=<span class="o">5</span>)   <span class="c"># one model call</span>
+db.<span class="f">similar</span>(<span class="s">"P4821"</span>, top_k=<span class="o">5</span>)                               <span class="c"># neighbours of a document</span>
+db.<span class="f">search</span>(<span class="s">""</span>, query_vector=vec, alpha=<span class="o">1.0</span>)                <span class="c"># your own vector</span>
+db.<span class="f">search</span>(<span class="s">"diabetes"</span>, exclude_doc_ids=[<span class="s">"P4821"</span>])</pre>
+</section>
+
+<!-- ───────────── 7 ───────────── -->
+<section class="chapter">
+  <h1><span class="num">7</span>AI memory</h1>
+  <p class="lead"><code>MemoryStore</code> gives an assistant a memory that survives the end of a conversation. Memories are documents in the namespace <code>memory:&lt;agent&gt;</code>, so they share the vault's search, encryption and backups.</p>
+
+<pre><span class="k">from</span> vecforge <span class="k">import</span> MemoryStore
+
+mem = <span class="f">MemoryStore</span>(<span class="s">"~/.vecforge/memory.db"</span>, agent=<span class="s">"claude"</span>)   <span class="c"># file created on demand</span></pre>
+
+  <h2>Kinds of memory</h2>
+  <table>
+    <tr><th>kind</th><th>Store</th></tr>
+    <tr><td><code>preference</code></td><td>how the user likes things done</td></tr>
+    <tr><td><code>decision</code></td><td>choices made and why</td></tr>
+    <tr><td><code>fact</code></td><td>durable facts about the user, project or world</td></tr>
+    <tr><td><code>insight</code></td><td>conclusions the assistant reached</td></tr>
+    <tr><td><code>task</code></td><td>open work items</td></tr>
+    <tr><td><code>summary</code></td><td>session summaries (written by <code>end_session</code>)</td></tr>
+    <tr><td><code>episode</code></td><td>what happened</td></tr>
+    <tr><td><code>note</code></td><td>anything else (unknown kinds become notes)</td></tr>
+  </table>
+
+  <h2>Remember</h2>
+<pre>m = mem.<span class="f">remember</span>(<span class="s">"Deploys happen on Fridays"</span>, kind=<span class="s">"fact"</span>,
+                 importance=<span class="o">0.7</span>, tags=[<span class="s">"ops"</span>], source=<span class="s">"user"</span>)</pre>
+  <p>If the same thing (or a near-identical sentence of the same kind) is already stored, VecForge reinforces the existing memory instead of adding a copy: its importance and access count rise and tags merge. The returned memory then has <code>deduplicated=True</code>. Pass <code>dedup=False</code> to force a new entry.</p>
+
+  <h2>Recall</h2>
+<pre><span class="k">for</span> m <span class="k">in</span> mem.<span class="f">recall</span>(<span class="s">"deployment schedule"</span>, top_k=<span class="o">5</span>, kinds=[<span class="s">"fact"</span>, <span class="s">"decision"</span>]):
+    <span class="f">print</span>(m.score, m.kind, m.content)</pre>
+  <p>The score blends relevance (hybrid search), importance and recency (30-day half-life). Filters: <code>kinds</code>, <code>tags</code>, <code>session_id</code>, <code>since</code> (Unix time) and <code>min_importance</code>. An empty query returns the most important recent memories. Each recall updates the access statistics; pass <code>touch=False</code> to look without leaving a trace.</p>
+
+  <h2>Sessions and context packs</h2>
+<pre>mem.<span class="f">start_session</span>(metadata={<span class="s">"project"</span>: <span class="s">"vecforge"</span>})
+mem.<span class="f">remember</span>(<span class="s">"Rewrote the reranker"</span>, kind=<span class="s">"episode"</span>)          <span class="c"># linked to the session</span>
+mem.<span class="f">end_session</span>(<span class="s">"Fixed the reranker and shipped 2.0"</span>)       <span class="c"># saved as a summary</span>
+
+<span class="c"># next conversation</span>
+mem.<span class="f">start_session</span>()
+briefing = mem.<span class="f">context_pack</span>(<span class="s">"release"</span>, max_chars=<span class="o">4000</span>)</pre>
+  <p><code>context_pack()</code> returns Markdown: the last session's summary, then the most relevant memories grouped by kind (preferences and decisions first), trimmed to the character budget (about 4 characters per token). Paste it into a system prompt.</p>
+
+  <h2>Housekeeping</h2>
+<pre>mem.<span class="f">reinforce</span>(memory_id, delta=<span class="o">0.1</span>)
+mem.<span class="f">update</span>(memory_id, content=<span class="s">"Deploys moved to Thursdays"</span>)
+mem.<span class="f">forget</span>(memory_id)  ·  mem.<span class="f">forget_many</span>(ids)  ·  mem.<span class="f">clear</span>(kind=<span class="s">"episode"</span>)
+mem.<span class="f">list_memories</span>(kinds=[<span class="s">"task"</span>])  ·  mem.<span class="f">list_sessions</span>()  ·  mem.<span class="f">stats</span>()
+mem.<span class="f">export_json</span>(<span class="s">"memory.json"</span>)  ·  other.<span class="f">import_json</span>(<span class="s">"memory.json"</span>)</pre>
+
+  <h2>Several agents in one vault</h2>
+<pre>vault = <span class="f">VecForge</span>(<span class="s">"~/.vecforge/memory.db"</span>, encryption_key=os.environ[<span class="s">"VECFORGE_KEY"</span>])
+claude = <span class="f">MemoryStore</span>(vault=vault, agent=<span class="s">"claude"</span>)
+coder  = <span class="f">MemoryStore</span>(vault=vault, agent=<span class="s">"code-assistant"</span>)</pre>
+  <p>A store given <code>vault=</code> does not close that vault when it closes.</p>
+</section>
+
+<!-- ───────────── 8 ───────────── -->
+<section class="chapter">
+  <h1><span class="num">8</span>Connecting Claude over MCP</h1>
+  <p class="lead">The Model Context Protocol lets Claude call tools on your computer. <code>vecforge mcp</code> runs a local MCP server so Claude can store and recall memories. Nothing leaves your machine.</p>
+
+  <h2>Claude Desktop — step by step</h2>
+  <ol class="steps">
+    <li>Install: <code>pip install "vecforge[mcp]"</code></li>
+    <li>Print the configuration: <code>vecforge mcp --print-config claude-desktop</code>. Add <code>--model hash</code> before <code>--print-config</code> for the offline embedder; the printed command keeps it.</li>
+    <li>Open Claude Desktop's config file — macOS <code>~/Library/Application Support/Claude/claude_desktop_config.json</code>, Windows <code>%APPDATA%\Claude\claude_desktop_config.json</code> — and merge the printed <code>mcpServers</code> entry into it.</li>
+    <li>Restart Claude Desktop. The VecForge tools appear in the tools menu.</li>
+    <li>Ask Claude: <i>"Remember that I prefer short answers."</i> In a new chat: <i>"What do you remember about how I like answers?"</i></li>
+  </ol>
+<pre>{
+  <span class="s">"mcpServers"</span>: {
+    <span class="s">"vecforge-memory"</span>: {
+      <span class="s">"command"</span>: <span class="s">"/usr/bin/python3"</span>,
+      <span class="s">"args"</span>: [<span class="s">"-m"</span>, <span class="s">"vecforge.cli.main"</span>, <span class="s">"mcp"</span>, <span class="s">"--agent"</span>, <span class="s">"claude"</span>,
+               <span class="s">"--vault"</span>, <span class="s">"/home/you/.vecforge/memory.db"</span>]
+    }
+  }
+}</pre>
+
+  <h2>Claude Code</h2>
+<pre>cd your-project
+vecforge mcp --print-config claude-code &gt; .mcp.json</pre>
+  <p>Claude Code picks up <code>.mcp.json</code> in the project root.</p>
+
+  <h2>HTTP for several clients</h2>
+<pre>vecforge mcp --transport http --host 127.0.0.1 --port 8765</pre>
+  <div class="warn"><b>Keep HTTP local</b>The HTTP transport has no login. It binds to 127.0.0.1 by default; put an authenticating proxy in front before exposing it to a network.</div>
+
+  <h2>Tools Claude gets</h2>
+  <table>
+    <tr><th>Tool</th><th>What it does</th></tr>
+    <tr><td><code>context_pack</code></td><td>Briefing of what Claude remembers — call at the start of a session</td></tr>
+    <tr><td><code>remember</code></td><td>Store a memory (duplicates reinforce)</td></tr>
+    <tr><td><code>recall</code></td><td>Search memories (kinds, tags, since_days, min_importance)</td></tr>
+    <tr><td><code>forget</code> / <code>reinforce</code></td><td>Delete a memory / raise its importance</td></tr>
+    <tr><td><code>list_memories</code></td><td>Browse without a query</td></tr>
+    <tr><td><code>start_session</code> / <code>end_session</code></td><td>Open a session; close it with a summary for next time</td></tr>
+    <tr><td><code>recent_sessions</code></td><td>What happened recently</td></tr>
+    <tr><td><code>search_vault</code> / <code>add_document</code></td><td>Search or add ordinary documents in any namespace</td></tr>
+    <tr><td><code>vault_stats</code></td><td>Statistics</td></tr>
+  </table>
+  <p>Resources: <code>vecforge://memory/recent</code>, <code>vecforge://memory/sessions</code>, <code>vecforge://vault/stats</code>. Prompt: <code>recall_context</code>.</p>
+
+  <h2>Options</h2>
+  <table>
+    <tr><th>Option</th><th>Default</th></tr>
+    <tr><td><code>--vault</code></td><td><code>~/.vecforge/memory.db</code></td></tr>
+    <tr><td><code>--agent</code></td><td><code>claude</code></td></tr>
+    <tr><td><code>--transport</code></td><td><code>stdio</code> (or <code>http</code>)</td></tr>
+    <tr><td><code>--model</code></td><td>all-MiniLM-L6-v2, or <code>hash</code></td></tr>
+    <tr><td><code>VECFORGE_KEY</code> env var</td><td>opens an encrypted vault</td></tr>
+  </table>
+  <div class="tip"><b>Fast sessions</b>The server loads the embedding model in the background while Claude connects, restores indexes from the snapshot, and saves the snapshot every 25 writes and at shutdown — so the next session starts instantly.</div>
+</section>
+
+<!-- ───────────── 9 ───────────── -->
+<section class="chapter">
+  <h1><span class="num">9</span>Embedding models</h1>
+  <p class="lead">An embedder turns text into vectors. VecForge accepts any of these:</p>
+  <table>
+    <tr><th>Choice</th><th>How</th><th>Notes</th></tr>
+    <tr><td>sentence-transformers</td><td><code>model_name="all-mpnet-base-v2"</code></td><td>Local, semantic. Default <code>all-MiniLM-L6-v2</code> (384 dims, fast).</td></tr>
+    <tr><td>Hash embedder</td><td><code>model_name="hash"</code> or <code>"hash:512"</code></td><td>No download, instant, deterministic; lexical only.</td></tr>
+    <tr><td>Any function or API</td><td><code>embedder=CallableEmbedder(fn, name="my-model")</code></td><td>Wrap OpenAI, Voyage, Ollama, ONNX…</td></tr>
+    <tr><td>CLIP (images + text)</td><td><code>embedder=ImageEmbedder()</code></td><td>Needs the multimodal extra.</td></tr>
+  </table>
+<pre><span class="k">from</span> vecforge <span class="k">import</span> VecForge, CallableEmbedder
+
+<span class="k">def</span> <span class="f">embed</span>(texts):                       <span class="c"># list[str] -&gt; list of vectors</span>
+    <span class="k">return</span> my_client.embed(texts)
+
+db = <span class="f">VecForge</span>(<span class="s">"api.db"</span>, embedder=<span class="f">CallableEmbedder</span>(embed, name=<span class="s">"my-model"</span>))</pre>
+  <p>Vectors are normalised automatically and repeated texts are cached. The model name is saved with the index; if you open a vault with a different model, VecForge warns you. Re-index everything with:</p>
+<pre>db = <span class="f">VecForge</span>(<span class="s">"vault.db"</span>, model_name=<span class="s">"all-mpnet-base-v2"</span>)
+db.<span class="f">reembed</span>()</pre>
+  <p>You can also supply vectors directly: <code>db.add("caption", embedding=vec)</code> and <code>db.search("", query_vector=vec, alpha=1.0)</code>.</p>
+</section>
+
+<!-- ───────────── 10 ───────────── -->
+<section class="chapter">
+  <h1><span class="num">10</span>Security</h1>
+
+  <h2>Encryption at rest</h2>
+<pre>pip install <span class="s">"vecforge[encryption]"</span>
+db = <span class="f">VecForge</span>(<span class="s">"secure.db"</span>, encryption_key=os.environ[<span class="s">"VECFORGE_KEY"</span>])</pre>
+  <ul>
+    <li>The whole file — documents, vectors and index snapshots — is AES-256 encrypted by SQLCipher.</li>
+    <li>A wrong key fails when the vault opens. A lost key means lost data.</li>
+    <li>Without SQLCipher installed, VecForge warns and stores the vault unencrypted.</li>
+    <li>Keep keys in environment variables or a secrets manager, never in code.</li>
+  </ul>
+
+  <h2>Roles and API keys</h2>
+  <table>
+    <tr><th>Role</th><th>read</th><th>write</th><th>delete</th><th>namespaces</th><th>keys</th><th>backup</th></tr>
+    <tr><td><code>admin</code></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+    <tr><td><code>read-write</code></td><td>✓</td><td>✓</td><td>✓</td><td>–</td><td>–</td><td>–</td></tr>
+    <tr><td><code>read-only</code></td><td>✓</td><td>–</td><td>–</td><td>–</td><td>–</td><td>–</td></tr>
+    <tr><td>unregistered key</td><td>–</td><td>–</td><td>–</td><td>–</td><td>–</td><td>–</td></tr>
+  </table>
+<pre>admin = <span class="f">VecForge</span>(<span class="s">"vault.db"</span>)                                 <span class="c"># no key = local admin</span>
+admin.<span class="f">register_api_key</span>(os.environ[<span class="s">"TEAM_KEY"</span>], <span class="s">"read-only"</span>)   <span class="c"># stored as SHA-256 digest</span>
+reader = <span class="f">VecForge</span>(<span class="s">"vault.db"</span>, api_key=os.environ[<span class="s">"TEAM_KEY"</span>])
+admin.<span class="f">revoke_api_key</span>(os.environ[<span class="s">"TEAM_KEY"</span>])</pre>
+  <p><code>save()</code> and <code>compact()</code> need the write permission. Raw SQLite access through <code>db.storage</code> is admin only, because it bypasses every role check.</p>
+
+  <h2>Audit log</h2>
+<pre>db = <span class="f">VecForge</span>(<span class="s">"vault.db"</span>, audit_log=<span class="s">"audit.jsonl"</span>)</pre>
+  <p>Every add, search, delete and admin action is appended as one JSON line (time, actor, operation, document, namespace, details). Search entries include the query text, so protect the log like the vault. Read it with <code>AuditLogger("audit.jsonl").read_log(since=…, actor=…, operation=…)</code>.</p>
+
+  <h2>Backups</h2>
+<pre>db.<span class="f">backup</span>(<span class="s">"backups/vault-2026-10-17.db"</span>)        <span class="c"># safe while the vault is open</span>
+vecforge backup my.db backups/my-copy.db           <span class="c"># same, from the terminal</span></pre>
+  <p><code>SnapshotManager</code> creates timestamped snapshots and restores them, cleaning up stale journal files. Encrypted vaults stay encrypted in backups. <code>CloudSync</code> uploads to S3, GCS or Azure but refuses plain <code>.db</code> files — encrypt first.</p>
+
+  <h2>Deletion protection</h2>
+  <p><code>VecForge("vault.db", deletion_protection=True)</code> blocks <code>delete</code>, <code>delete_many</code>, <code>delete_namespace</code> and upserts that would replace a document.</p>
+</section>
+
+<!-- ───────────── 11 ───────────── -->
+<section class="chapter">
+  <h1><span class="num">11</span>REST API</h1>
+<pre>vecforge serve --vault my.db --port 8080                     <span class="c"># http://127.0.0.1:8080/docs</span>
+vecforge serve --vault my.db --host 0.0.0.0 --api-key <span class="s">"$VECFORGE_API_KEY"</span></pre>
+  <p>With an API key set, every request needs the header <code>X-API-Key</code>. The interactive documentation is at <code>/docs</code>.</p>
+  <table>
+    <tr><th>Method</th><th>Path</th><th>Purpose</th></tr>
+    <tr><td>POST</td><td><code>/api/v1/add</code></td><td>Add a document</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/add_batch</code></td><td>Add many documents</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/search</code></td><td>Search (query, top_k, alpha, namespace, filters, rerank, quantum_rerank, recency_weight)</td></tr>
+    <tr><td>GET / PUT</td><td><code>/api/v1/docs/{id}</code></td><td>Fetch / insert-or-replace</td></tr>
+    <tr><td>PATCH</td><td><code>/api/v1/docs/{id}/metadata</code></td><td>Update metadata</td></tr>
+    <tr><td>DELETE</td><td><code>/api/v1/docs/{id}</code></td><td>Delete</td></tr>
+    <tr><td>GET</td><td><code>/api/v1/docs/{id}/similar</code></td><td>Similar documents</td></tr>
+    <tr><td>GET / POST / DELETE</td><td><code>/api/v1/namespaces</code></td><td>List / create / delete (<code>/namespaces/{name}</code>)</td></tr>
+    <tr><td>GET</td><td><code>/api/v1/stats</code>, <code>/api/v1/health</code></td><td>Statistics, health and version</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/save</code>, <code>/api/v1/compact</code></td><td>Maintenance</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/memory/remember</code>, <code>/memory/recall</code></td><td>Memory per <code>agent</code></td></tr>
+    <tr><td>GET</td><td><code>/api/v1/memory/context</code>, <code>/memory/sessions</code></td><td>Briefing, session list</td></tr>
+    <tr><td>POST</td><td><code>/api/v1/memory/sessions/start</code>, <code>/end</code></td><td>Sessions</td></tr>
+    <tr><td>DELETE</td><td><code>/api/v1/memory/{memory_id}</code></td><td>Forget</td></tr>
+  </table>
+<pre>curl -X POST http://127.0.0.1:8080/api/v1/search \
+  -H <span class="s">"Content-Type: application/json"</span> -H <span class="s">"X-API-Key: $VECFORGE_API_KEY"</span> \
+  -d <span class="s">'{"query": "diabetes", "top_k": 5, "quantum_rerank": true}'</span></pre>
+  <p>Status codes: 400 bad input · 401 missing or wrong key · 403 permission or deletion protection · 404 not found or empty vault · 409 duplicate ID.</p>
+</section>
+
+<!-- ───────────── 12 ───────────── -->
+<section class="chapter">
+  <h1><span class="num">12</span>Command line</h1>
+  <p>Every command that opens a vault accepts <code>--model</code> (or <code>VECFORGE_MODEL</code>).</p>
+  <table>
+    <tr><th>Command</th><th>What it does</th></tr>
+    <tr><td><code>vecforge ingest PATH --vault V</code></td><td>Ingest files or folders (<code>--namespace</code>, <code>--chunk-size</code>, <code>--chunk-overlap</code>)</td></tr>
+    <tr><td><code>vecforge search "Q" --vault V</code></td><td>Search (<code>--top-k --namespace --alpha --rerank --quantum --filters JSON --recency --json</code>)</td></tr>
+    <tr><td><code>vecforge stats V</code></td><td>Statistics</td></tr>
+    <tr><td><code>vecforge export V -o out.json</code></td><td>Export documents as JSON</td></tr>
+    <tr><td><code>vecforge compact V</code></td><td>Rebuild indexes without deleted entries</td></tr>
+    <tr><td><code>vecforge backup V DEST</code></td><td>Consistent copy</td></tr>
+    <tr><td><code>vecforge serve --vault V</code></td><td>REST server (<code>--host --port --api-key</code>)</td></tr>
+    <tr><td><code>vecforge mcp</code></td><td>MCP memory server (<code>--vault --agent --transport --host --port --print-config</code>)</td></tr>
+    <tr><td><code>vecforge memory remember "TEXT"</code></td><td><code>--kind --importance --tags</code></td></tr>
+    <tr><td><code>vecforge memory recall "Q"</code></td><td><code>--top-k --kinds --json</code></td></tr>
+    <tr><td><code>vecforge memory list | sessions | context</code></td><td>Browse memories, sessions, briefing</td></tr>
+    <tr><td><code>vecforge memory forget ID</code></td><td>Delete (exit code 1 if not found)</td></tr>
+    <tr><td><code>vecforge memory export FILE | import FILE</code></td><td>Move memories between machines</td></tr>
+  </table>
+<pre>vecforge search <span class="s">"contract clause"</span> --vault legal.db --top-k 10 \
+  --filters <span class="s">'{"type": "NDA", "year": {"gte": 2024}}'</span> --quantum --json</pre>
+</section>
+
+<!-- ───────────── 13 ───────────── -->
+<section class="chapter">
+  <h1><span class="num">13</span>Multimodal</h1>
+  <p class="lead">Install with <code>pip install "vecforge[multimodal]"</code>. Whisper also needs <code>ffmpeg</code>.</p>
+  <h2>Images</h2>
+  <p>A vault has one vector size. To search images with text, build the vault with CLIP as its embedder so text and images share one space:</p>
+<pre><span class="k">from</span> vecforge.ingest.vision <span class="k">import</span> ImageEmbedder
+
+clip = <span class="f">ImageEmbedder</span>()
+db = <span class="f">VecForge</span>(<span class="s">"gallery.db"</span>, embedder=clip)
+db.<span class="f">add</span>(<span class="s">"ward photo"</span>, embedding=clip.<span class="f">embed_image</span>(<span class="s">"ward.jpg"</span>), modality=<span class="s">"image"</span>,
+       metadata={<span class="s">"path"</span>: <span class="s">"ward.jpg"</span>})
+db.<span class="f">search</span>(<span class="s">"patients in beds"</span>, alpha=<span class="o">1.0</span>)                             <span class="c"># text -&gt; image</span>
+db.<span class="f">search</span>(<span class="s">""</span>, query_vector=clip.<span class="f">embed_image</span>(<span class="s">"query.jpg"</span>), alpha=<span class="o">1.0</span>)  <span class="c"># image -&gt; image</span></pre>
+  <h2>Audio</h2>
+<pre><span class="k">from</span> vecforge.ingest.audio <span class="k">import</span> AudioEmbedder
+
+audio = <span class="f">AudioEmbedder</span>(text_embedder=db.embedder)
+transcript, vec = audio.<span class="f">transcribe_and_embed</span>(<span class="s">"meeting.mp3"</span>)
+db.<span class="f">add</span>(transcript, embedding=vec, modality=<span class="s">"audio"</span>)</pre>
+  <p>Supported audio: mp3, wav, flac, m4a, ogg, webm. Images: jpg, png, webp, bmp, gif, tiff.</p>
+</section>
+
+<!-- ───────────── 14 ───────────── -->
+<section class="chapter">
+  <h1><span class="num">14</span>Performance and tuning</h1>
+  <h2>Measured numbers</h2>
+  <p class="muted">4-core CPU container, 100,000 documents, hash embedder (so these show database cost, not model cost).</p>
+  <table>
+    <tr><th>Operation</th><th>Result</th></tr>
+    <tr><td>Hybrid search, exact index</td><td>7.3 ms (median)</td></tr>
+    <tr><td>Search a 500-document namespace</td><td>0.8 ms, complete results</td></tr>
+    <tr><td>Delete</td><td>0.1 ms</td></tr>
+    <tr><td>Ingest (database cost only)</td><td>about 4,500 documents per second</td></tr>
+    <tr><td>Reopen a 5,000-document vault</td><td>30 ms</td></tr>
+    <tr><td>Reopen a 100,000-document vault</td><td>1.5 s</td></tr>
+    <tr><td>Quantum rerank of 1,000,000 candidates</td><td>1.7 ms</td></tr>
+  </table>
+  <p>With a real model, embedding dominates: about 5 ms per text on CPU with MiniLM, far less on a GPU or with batching.</p>
+
+  <h2>Index types</h2>
+  <table>
+    <tr><th><code>index_type</code></th><th>Search</th><th>When</th></tr>
+    <tr><td><code>flat</code></td><td>exact</td><td>up to ~100k documents, or when every result must be exact</td></tr>
+    <tr><td><code>hnsw</code></td><td>approximate, very fast at millions</td><td>large vaults; namespace searches under 20k documents are still exact</td></tr>
+    <tr><td><code>auto</code></td><td>flat, switches to HNSW at 50k</td><td>default</td></tr>
+  </table>
+
+  <h2>Tips</h2>
+  <ul>
+    <li>Use <code>add_batch</code> or <code>ingest</code>, not <code>add</code> in a loop.</li>
+    <li>Use <code>search_batch</code> for many queries.</li>
+    <li>Set <code>auto_save_every</code> in long-running services so a crash never forces a rebuild.</li>
+    <li>Run <code>vecforge compact</code> after very large deletes, and <code>db.storage.vacuum()</code> as local admin to shrink the file.</li>
+    <li>Put namespaces to work: scoped searches are faster than filtering the whole vault.</li>
+  </ul>
+</section>
+
+<!-- ───────────── 15 ───────────── -->
+<section class="chapter">
+  <h1><span class="num">15</span>Upgrading from 1.x</h1>
+  <p class="lead">Open your existing vault with 2.0 — it is migrated automatically. The first open rebuilds the indexes once; after that, snapshots make opening fast.</p>
+  <table>
+    <tr><th>Change</th><th>What to do</th></tr>
+    <tr><td>Unregistered API keys now get no access (1.x gave read-only)</td><td>Register keys as admin: <code>db.register_api_key(key, "read-only")</code></td></tr>
+    <tr><td><code>vecforge serve</code> listens on 127.0.0.1</td><td>Pass <code>--host 0.0.0.0</code> to expose it, ideally with <code>--api-key</code></td></tr>
+    <tr><td><code>quantum_rerank=True</code> gives different (correct) orderings, scores 0–1</td><td>Re-check any thresholds you tuned on 1.x quantum scores</td></tr>
+    <tr><td>Dependencies <code>rank-bm25</code>, <code>numba</code>, <code>joblib</code> removed</td><td>Nothing; uninstall them if unused</td></tr>
+    <tr><td><code>ImageEmbedder.embed()</code> on plain text now embeds text</td><td>Use <code>embed_image()</code> for images explicitly</td></tr>
+    <tr><td>New result fields (<code>signals</code>, <code>dense_score</code>, …)</td><td>Optional; existing fields unchanged</td></tr>
+  </table>
+  <div class="note"><b>Why quantum results changed</b>VecForge 1.x applied only half of Grover's algorithm (the diffusion step without the oracle). For about half of all result-list sizes that reversed the ranking, and for the rest it did nothing. 2.0 implements the full algorithm and keeps the best result first.</div>
+</section>
+
+<!-- ───────────── 16 ───────────── -->
+<section class="chapter">
+  <h1><span class="num">16</span>Troubleshooting</h1>
+  <table>
+    <tr><th>Symptom</th><th>Cause and fix</th></tr>
+    <tr><td><code>VaultEmptyError</code></td><td>Nothing has been added yet. Add documents first.</td></tr>
+    <tr><td><code>NamespaceNotFoundError</code></td><td>Typo or the namespace was never created. Check <code>db.list_namespaces()</code>.</td></tr>
+    <tr><td><code>VecForgePermissionError</code></td><td>Your API key is unregistered or its role is too low. Ask an admin to register it.</td></tr>
+    <tr><td><code>DuplicateDocumentError</code></td><td>That <code>doc_id</code> exists. Use <code>upsert</code> to replace it.</td></tr>
+    <tr><td><code>VaultClosedError</code></td><td>The vault was closed. Open it again.</td></tr>
+    <tr><td>Model download fails / no internet</td><td>Use <code>model_name="hash"</code> or pre-download the model on a connected machine (Hugging Face cache).</td></tr>
+    <tr><td>Warning: "SQLCipher is not installed"</td><td><code>pip install "vecforge[encryption]"</code>. Until then the vault is not encrypted.</td></tr>
+    <tr><td>ValueError: "Embedding dimension … does not match vault dimension"</td><td>Vectors you passed come from another model. Nothing was written. Use the vault's model or run <code>db.reembed()</code>.</td></tr>
+    <tr><td>CLI: "File '…' does not exist"</td><td><code>stats</code>, <code>export</code>, <code>compact</code> and <code>backup</code> only open existing vaults, so a typo no longer creates an empty file. Check the path.</td></tr>
+    <tr><td>Warning: "different embedding dimension"</td><td>The vault was built with another model. Run <code>db.reembed()</code>.</td></tr>
+    <tr><td>Opening a big vault is slow once</td><td>The snapshot was stale (crash or older version). It rebuilds once; close cleanly next time.</td></tr>
+    <tr><td>Claude does not show VecForge tools</td><td>Check the config path and JSON, use the full Python path from <code>--print-config</code>, restart Claude. Server logs go to stderr.</td></tr>
+    <tr><td><code>WinError 126 … c10.dll</code> on Windows</td><td>Install the Microsoft Visual C++ Redistributable.</td></tr>
+    <tr><td>REST returns 401</td><td>Send <code>X-API-Key</code> matching <code>--api-key</code> / <code>VECFORGE_API_KEY</code>.</td></tr>
+  </table>
+  <h2>Getting help</h2>
+  <p>Issues: <code>github.com/bosekarmegam/vecforge/issues</code> · Contact: <code>suneelbose@arcgx.in</code></p>
+</section>
+
+<!-- ───────────── 17 ───────────── -->
+<section class="chapter">
+  <h1><span class="num">17</span>Quick reference</h1>
+<pre><span class="k">from</span> vecforge <span class="k">import</span> VecForge, MemoryStore, HashEmbedder, CallableEmbedder
+
+<span class="c"># ── open ──</span>
+db = <span class="f">VecForge</span>(path, encryption_key=…, model_name=…, index_type=<span class="s">"auto"</span>, audit_log=…)
+
+<span class="c"># ── write ──</span>
+db.<span class="f">add</span>(text, metadata, namespace, doc_id)      db.<span class="f">add_batch</span>(texts, metadata_list, namespace)
+db.<span class="f">upsert</span>(text, doc_id)                          db.<span class="f">update_metadata</span>(doc_id, {…}, merge=<span class="k">True</span>)
+db.<span class="f">ingest</span>(path, namespace, chunk_size, chunk_overlap)
+
+<span class="c"># ── read ──</span>
+db.<span class="f">search</span>(q, top_k, alpha, namespace, filters, rerank, quantum_rerank, recency_weight)
+db.<span class="f">search_batch</span>(queries)   db.<span class="f">similar</span>(doc_id)   db.<span class="f">get</span>(doc_id)   db.<span class="f">count</span>()   db.<span class="f">stats</span>()
+
+<span class="c"># ── delete / maintain ──</span>
+db.<span class="f">delete</span>(id)  db.<span class="f">delete_many</span>(ids)  db.<span class="f">delete_namespace</span>(ns)  db.<span class="f">compact</span>()
+db.<span class="f">save</span>()  db.<span class="f">backup</span>(dest)  db.<span class="f">reembed</span>()  db.<span class="f">close</span>()
+
+<span class="c"># ── security ──</span>
+db.<span class="f">register_api_key</span>(key, role)  db.<span class="f">revoke_api_key</span>(key)  db.<span class="f">list_api_keys</span>()
+
+<span class="c"># ── memory ──</span>
+mem = <span class="f">MemoryStore</span>(path, agent=<span class="s">"claude"</span>)
+mem.<span class="f">remember</span>(text, kind, importance, tags)    mem.<span class="f">recall</span>(q, top_k, kinds, tags, since)
+mem.<span class="f">start_session</span>()  mem.<span class="f">end_session</span>(summary)  mem.<span class="f">context_pack</span>(q, max_chars)
+mem.<span class="f">forget</span>(id)  mem.<span class="f">reinforce</span>(id)  mem.<span class="f">update</span>(id, content=…)  mem.<span class="f">export_json</span>(file)</pre>
+
+  <table>
+    <tr><th>Environment variable</th><th>Purpose</th></tr>
+    <tr><td><code>VECFORGE_KEY</code></td><td>Encryption key (used by <code>vecforge mcp</code>)</td></tr>
+    <tr><td><code>VECFORGE_MODEL</code></td><td>Default embedding model (e.g. <code>hash</code>)</td></tr>
+    <tr><td><code>VECFORGE_API_KEY</code></td><td>Key required by the REST server</td></tr>
+  </table>
+
+  <div class="note"><b>License</b>Business Source License 1.1 — free for personal, research, open-source and non-commercial use. Commercial use requires a licence from ArcGX TechLabs Private Limited (suneelbose@arcgx.in).</div>
+  <p class="muted" style="margin-top:8mm">VecForge is built by Suneel Bose K and powered by ArcGX TechLabs Private Limited.</p>
+</section>
+
+</body>
+</html>

@@ -27,6 +27,7 @@ from typing import Any
 import click
 
 from vecforge import __version__
+from vecforge.exceptions import VecForgeError
 
 _MODEL_HELP = "Embedding model name, or 'hash' for the dependency-free engine"
 
@@ -53,7 +54,23 @@ def _parse_filters(raw: str | None) -> dict[str, Any] | None:
     return parsed
 
 
-@click.group()
+class _FriendlyGroup(click.Group):
+    """Show VecForge / input / file errors as one line instead of a traceback."""
+
+    def invoke(self, ctx: click.Context) -> Any:
+        try:
+            return super().invoke(ctx)
+        except (VecForgeError, ValueError, OSError) as exc:
+            if isinstance(exc, click.ClickException):
+                raise
+            first = str(exc).strip().splitlines()[0] if str(exc).strip() else ""
+            raise click.ClickException(first or type(exc).__name__) from exc
+
+
+_EXISTING_VAULT = click.Path(exists=True, dir_okay=False)
+
+
+@click.group(cls=_FriendlyGroup)
 @click.version_option(version=__version__, prog_name="VecForge")
 def cli() -> None:
     """VecForge — Forge your vector database. Own it forever.
@@ -167,7 +184,7 @@ def search(
 
 
 @cli.command()
-@click.argument("vault")
+@click.argument("vault", type=_EXISTING_VAULT)
 @_model_option
 def stats(vault: str, model_name: str | None) -> None:
     """Show vault statistics.
@@ -197,7 +214,7 @@ def stats(vault: str, model_name: str | None) -> None:
 
 
 @cli.command()
-@click.argument("vault")
+@click.argument("vault", type=_EXISTING_VAULT)
 @click.option("--format", "fmt", default="json", help="Export format (json)")
 @click.option("--output", "-o", default=None, help="Output file path")
 @click.option("--namespace", default=None, help="Export specific namespace")
@@ -267,7 +284,7 @@ def serve(
 
 
 @cli.command()
-@click.argument("vault")
+@click.argument("vault", type=_EXISTING_VAULT)
 @_model_option
 def compact(vault: str, model_name: str | None) -> None:
     """Rebuild indexes without tombstones and refresh the snapshot.
@@ -285,7 +302,7 @@ def compact(vault: str, model_name: str | None) -> None:
 
 
 @cli.command()
-@click.argument("vault")
+@click.argument("vault", type=_EXISTING_VAULT)
 @click.argument("destination")
 def backup(vault: str, destination: str) -> None:
     """Write a consistent backup copy of the vault (safe while in use).
@@ -342,9 +359,9 @@ def mcp(
         from vecforge.mcp.server import claude_code_config, claude_desktop_config
 
         cfg = (
-            claude_desktop_config(vault, agent)
+            claude_desktop_config(vault, agent, model_name=model_name)
             if print_config == "claude-desktop"
-            else claude_code_config(vault, agent)
+            else claude_code_config(vault, agent, model_name=model_name)
         )
         click.echo(json.dumps(cfg, indent=2))
         return

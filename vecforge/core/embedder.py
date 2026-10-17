@@ -186,7 +186,8 @@ class _CachedEmbedderBase:
         Performance:
             Time: O(d) on cache hit, one model call on miss.
         """
-        return self.encode([text])[0]
+        vec: NDArray[np.float32] = self.encode([text])[0]
+        return vec
 
     def clear_cache(self) -> None:
         """Drop all cached embeddings.
@@ -300,7 +301,7 @@ class Embedder(_CachedEmbedderBase):
 
             logger.info("Loading embedding model: %s", self._model_name)
             model = SentenceTransformer(self._model_name, device=self._device)
-            self._dimension = int(model.get_sentence_embedding_dimension())
+            self._dimension = int(model.get_sentence_embedding_dimension() or 0)
             self._model = model
             logger.info(
                 "Embedding model loaded: %s (dim=%d)",
@@ -390,6 +391,9 @@ class HashEmbedder(_CachedEmbedderBase):
                 padded = f"#{tok}#"
                 feats.extend("c:" + padded[i : i + 3] for i in range(len(padded) - 2))
         feats.extend(f"b:{a}_{b}" for a, b in zip(tokens, tokens[1:], strict=False))
+        if not feats:
+            # why: emoji/punctuation-only text must not collapse onto one vector
+            feats = ["r:" + ch for ch in text if not ch.isspace()]
         return feats
 
     def _vector(self, text: str) -> NDArray[np.float32]:
@@ -465,7 +469,8 @@ class CallableEmbedder(_CachedEmbedderBase):
             raw = raw.reshape(1, -1)
         norms = np.linalg.norm(raw, axis=1, keepdims=True)
         norms[norms == 0.0] = 1.0
-        return (raw / norms).astype(np.float32)
+        out: NDArray[np.float32] = (raw / norms).astype(np.float32)
+        return out
 
 
 def get_embedder(

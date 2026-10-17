@@ -76,12 +76,12 @@ class TestGroverAmplifier:
         scores = np.array([0.5, 0.3, 0.1], dtype=np.float32)
         assert len(amp.amplify(scores)) == 3
 
-    def test_single_element_unchanged(self) -> None:
-        """Single-element input should remain unchanged."""
+    def test_single_element_is_unit_amplitude(self) -> None:
+        """A one-candidate state is |ψ⟩ = [1] (unit norm), whatever the score."""
         amp = GroverAmplifier()
-        scores = np.array([0.7], dtype=np.float32)
-        amplified = amp.amplify(scores)
-        assert amplified[0] == pytest.approx(scores[0], abs=1e-5)
+        for value in (0.7, 5.0):
+            amplified = amp.amplify(np.array([value], dtype=np.float32))
+            assert amplified[0] == pytest.approx(1.0, abs=1e-6)
 
     def test_custom_iterations(self) -> None:
         """Custom iteration override should be respected (no error)."""

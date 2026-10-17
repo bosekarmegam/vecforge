@@ -1,86 +1,59 @@
-<svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-        <!-- Main Gradient: Cyan (Top) to Orange (Bottom) -->
-        <linearGradient id="vecGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="10%" stop-color="#00e5ff" />
-            <stop offset="60%" stop-color="#a855f7" />
-            <stop offset="95%" stop-color="#ff5500" />
-        </linearGradient>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="t">
+  <title id="t">VecForge</title>
+  <defs>
+    <linearGradient id="vf-tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2A1F7A"/>
+      <stop offset="0.55" stop-color="#4B3BD1"/>
+      <stop offset="1" stop-color="#6C5CE7"/>
+    </linearGradient>
+    <linearGradient id="vf-arm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#67E8F9"/>
+      <stop offset="0.6" stop-color="#C4B5FD"/>
+      <stop offset="1" stop-color="#FFB86B"/>
+    </linearGradient>
+    <radialGradient id="vf-spark" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFF4D6"/>
+      <stop offset="0.35" stop-color="#FFB547"/>
+      <stop offset="1" stop-color="#FF6A00" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="vf-sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.16"/>
+      <stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
 
-        <!-- Glow effects for nodes -->
-        <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="4" result="blur" />
-            <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-            </feMerge>
-        </filter>
-        
-        <!-- Intensely blurred glow for the forge area -->
-        <filter id="forgeGlow" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="8" result="blur" />
-            <feMerge>
-                <feMergeNode in="blur" />
-                <feMergeNode in="SourceGraphic" />
-            </feMerge>
-        </filter>
-    </defs>
+  <!-- tile -->
+  <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#vf-tile)"/>
+  <rect x="16" y="16" width="480" height="240" rx="112" fill="url(#vf-sheen)"/>
 
-    <!-- Network Edges (The Vector Matrix) -->
-    <g stroke="url(#vecGrad)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.6">
-        <!-- Left Arm Connections -->
-        <line x1="80" y1="100" x2="130" y2="160" />
-        <line x1="100" y1="130" x2="160" y2="140" />
-        <line x1="130" y1="160" x2="170" y2="210" />
-        <line x1="160" y1="140" x2="200" y2="190" />
-        <line x1="170" y1="210" x2="200" y2="260" />
-        
-        <!-- Right Arm Connections -->
-        <line x1="320" y1="100" x2="270" y2="160" />
-        <line x1="300" y1="130" x2="240" y2="140" />
-        <line x1="270" y1="160" x2="230" y2="210" />
-        <line x1="240" y1="140" x2="200" y2="190" />
-        <line x1="230" y1="210" x2="200" y2="260" />
+  <!-- faint vector grid -->
+  <g stroke="#FFFFFF" stroke-opacity="0.07" stroke-width="2">
+    <line x1="96" y1="176" x2="416" y2="176"/>
+    <line x1="96" y1="256" x2="416" y2="256"/>
+    <line x1="96" y1="336" x2="416" y2="336"/>
+  </g>
 
-        <!-- Cross Connections -->
-        <line x1="160" y1="140" x2="240" y2="140" opacity="0.4" />
-        <line x1="170" y1="210" x2="230" y2="210" opacity="0.5" />
-        <line x1="130" y1="160" x2="200" y2="190" opacity="0.3" />
-        <line x1="270" y1="160" x2="200" y2="190" opacity="0.3" />
+  <!-- the V: two vectors converging -->
+  <g fill="none" stroke="url(#vf-arm)" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M128 132 L256 384" stroke-width="52"/>
+    <path d="M384 132 L256 384" stroke-width="52"/>
+  </g>
 
-        <!-- Core to Anvil -->
-        <line x1="200" y1="190" x2="200" y2="260" stroke-width="4" />
-        <line x1="200" y1="260" x2="200" y2="300" stroke-width="6" />
-    </g>
+  <!-- data points riding the vectors -->
+  <g fill="#FFFFFF">
+    <circle cx="128" cy="132" r="26"/>
+    <circle cx="384" cy="132" r="26"/>
+  </g>
+  <g fill="#2A1F7A">
+    <circle cx="128" cy="132" r="11"/>
+    <circle cx="384" cy="132" r="11"/>
+  </g>
+  <g fill="#FFFFFF" fill-opacity="0.9">
+    <circle cx="176" cy="226" r="9"/>
+    <circle cx="336" cy="226" r="9"/>
+  </g>
 
-    <!-- Vector Nodes (Data Points) -->
-    <g fill="url(#vecGrad)" filter="url(#glow)">
-        <circle cx="80" cy="100" r="5" />
-        <circle cx="100" cy="130" r="4" />
-        <circle cx="160" cy="140" r="6" />
-        <circle cx="130" cy="160" r="7" />
-        <circle cx="170" cy="210" r="5" />
-        
-        <circle cx="320" cy="100" r="5" />
-        <circle cx="300" cy="130" r="4" />
-        <circle cx="240" cy="140" r="6" />
-        <circle cx="270" cy="160" r="7" />
-        <circle cx="230" cy="210" r="5" />
-
-        <circle cx="200" cy="190" r="8" />
-    </g>
-
-    <!-- The Forge Core (Intense heat area at the bottom) -->
-    <g filter="url(#forgeGlow)">
-        <circle cx="200" cy="260" r="10" fill="#ff7700" />
-        <circle cx="200" cy="300" r="14" fill="#ff3300" />
-        
-        <!-- Static Sparks -->
-        <circle cx="180" cy="280" r="3" fill="#ffaa00" opacity="0.8" />
-        <circle cx="225" cy="290" r="4" fill="#ff5500" opacity="0.9" />
-        <circle cx="195" cy="330" r="2.5" fill="#ffcc00" opacity="0.7" />
-        <circle cx="210" cy="320" r="2" fill="#ff8800" opacity="0.6" />
-        <circle cx="165" cy="305" r="1.5" fill="#ff4400" opacity="0.8" />
-        <circle cx="235" cy="270" r="2" fill="#ffaa00" opacity="0.7" />
-    </g>
+  <!-- forge spark at the convergence point -->
+  <circle cx="256" cy="384" r="78" fill="url(#vf-spark)"/>
+  <path d="M256 338 L266 374 L302 384 L266 394 L256 430 L246 394 L210 384 L246 374 Z" fill="#FFF7E6"/>
 </svg>

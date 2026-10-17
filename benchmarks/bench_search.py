@@ -43,7 +43,9 @@ def _random_vecs(n: int, d: int = DIMENSION) -> np.ndarray:
 def bench_faiss_search(n_docs: int, n_queries: int = 100, top_k: int = 10) -> dict:
     """Benchmark FAISS search at given collection size."""
     print(f"\n{'─' * 50}")
-    print(f"FAISS Search Benchmark — {n_docs:,} docs, {n_queries} queries, top_k={top_k}")
+    print(
+        f"FAISS Search Benchmark — {n_docs:,} docs, {n_queries} queries, top_k={top_k}"
+    )
     print(f"{'─' * 50}")
 
     vecs = _random_vecs(n_docs)
@@ -69,7 +71,13 @@ def bench_faiss_search(n_docs: int, n_queries: int = 100, top_k: int = 10) -> di
     print(f"  p95:   {p95:.2f}ms")
     print(f"  p99:   {p99:.2f}ms")
 
-    return {"n_docs": n_docs, "mean_ms": mean, "p50_ms": p50, "p95_ms": p95, "p99_ms": p99}
+    return {
+        "n_docs": n_docs,
+        "mean_ms": mean,
+        "p50_ms": p50,
+        "p95_ms": p95,
+        "p99_ms": p99,
+    }
 
 
 def bench_faiss_ingest(n_docs: int) -> dict:
@@ -101,8 +109,18 @@ def bench_bm25_search(n_docs: int, n_queries: int = 100, top_k: int = 10) -> dic
 
     bm25 = BM25Engine()
     # why: Generate fake docs of ~50 words each
-    words = ["patient", "diabetes", "emergency", "fracture", "cardiac",
-             "hospital", "treatment", "admission", "discharged", "medication"]
+    words = [
+        "patient",
+        "diabetes",
+        "emergency",
+        "fracture",
+        "cardiac",
+        "hospital",
+        "treatment",
+        "admission",
+        "discharged",
+        "medication",
+    ]
 
     docs = [" ".join(np.random.choice(words, size=50).tolist()) for _ in range(n_docs)]
     bm25.add_documents(docs)
@@ -160,7 +178,10 @@ def run_all() -> None:
     for r in results:
         target = "< 15ms" if r["n_docs"] >= 100_000 else "—"
         status = "✅" if r["p50_ms"] < 15 else "⚠️"
-        print(f"  {r['n_docs']:>8,} docs: p50={r['p50_ms']:.2f}ms  target={target}  {status}")
+        print(
+            f"  {r['n_docs']:>8,} docs: p50={r['p50_ms']:.2f}ms  "
+            f"target={target}  {status}"
+        )
 
 
 if __name__ == "__main__":

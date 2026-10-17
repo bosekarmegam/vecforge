@@ -58,7 +58,10 @@ class TestBatchInserts:
         g0 = s.generation
         doc = s.insert_doc("a", _vec(), {})
         assert s.generation == g0 + 1
+        # metadata is read from SQLite at query time: no snapshot invalidation
         s.update_doc(doc.doc_id, metadata={"k": 1})
+        assert s.generation == g0 + 1
+        s.update_doc(doc.doc_id, text="changed")
         assert s.generation == g0 + 2
         s.delete_doc(doc.doc_id)
         assert s.generation == g0 + 3

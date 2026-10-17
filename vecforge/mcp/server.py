@@ -38,13 +38,17 @@ Built by Suneel Bose K · ArcGX TechLabs Private Limited.
 from __future__ import annotations
 
 import atexit
+import contextlib
 import json
 import logging
+import signal
 import sys
 import threading
 import time
-from typing import Any
+from collections.abc import Callable
+from typing import Any, TypeVar
 
+from vecforge.exceptions import VecForgeError
 from vecforge.memory import MemoryStore
 
 logger = logging.getLogger(__name__)
@@ -71,7 +75,10 @@ def _load_server_class() -> tuple[Any, int]:
     except ImportError:
         pass
     try:
-        from mcp.server.fastmcp import FastMCP  # mcp 1.x
+        # mcp 1.x
+        from mcp.server.fastmcp import (  # type: ignore[attr-defined,unused-ignore]
+            FastMCP,
+        )
 
         return FastMCP, 1
     except ImportError as exc:
@@ -163,7 +170,11 @@ class VecForgeMCP:
         since_days: float | None = None,
         min_importance: float = 0.0,
     ) -> dict[str, Any]:
-        since = time.time() - since_days * 86400.0 if since_days else None
+        since = (
+            time.time() - float(since_days) * 86400.0
+            if since_days is not None
+            else None
+        )
         memories = self.store.recall(
             query,
             top_k=top_k,
@@ -258,7 +269,35 @@ class VecForgeMCP:
         }
 
     def close(self) -> None:
-        self.store.close()
+        if not self.store.vault.closed:
+            self.store.close()
+
+
+def _tool_error_class() -> type[Exception]:
+    """Return the SDK's ToolError (its message is shown to the model)."""
+    try:
+        from mcp.server.mcpserver.exceptions import ToolError
+
+        return ToolError  # type: ignore[no-any-return,unused-ignore]
+    except ImportError:
+        try:
+            from mcp.server.fastmcp.exceptions import ToolError as LegacyToolError
+
+            return LegacyToolError  # type: ignore[no-any-return]
+        except ImportError:
+            return RuntimeError
+
+
+_T = TypeVar("_T")
+
+
+def _safe(fn: Callable[..., _T], *args: Any) -> _T:
+    """Call a tool implementation, turning user errors into ToolErrors."""
+    try:
+        return fn(*args)
+    except (VecForgeError, ValueError, TypeError, KeyError) as exc:
+        message = str(exc).splitlines()[0] if str(exc) else type(exc).__name__
+        raise _tool_error_class()(message) from exc
 
 
 def _register(server: Any, app: VecForgeMCP) -> None:
@@ -279,7 +318,7 @@ def _register(server: Any, app: VecForgeMCP) -> None:
         decision. importance: 0.0-1.0. Near-duplicates reinforce the
         existing memory instead of creating a copy.
         """
-        return app.remember(content, kind, importance, tags, session_id, source)
+        return _safe(app.remember, content, kind, importance, tags, session_id, source)
 
     @server.tool(name="recall", description="Search memories by meaning and keywords.")
     def recall(
@@ -292,17 +331,17 @@ def _register(server: Any, app: VecForgeMCP) -> None:
     ) -> dict[str, Any]:
         """Recall memories relevant to a query, ranked by relevance,
         importance and recency."""
-        return app.recall(query, top_k, kinds, tags, since_days, min_importance)
+        return _safe(app.recall, query, top_k, kinds, tags, since_days, min_importance)
 
     @server.tool(name="forget", description="Delete a memory by ID.")
     def forget(memory_id: str) -> dict[str, Any]:
         """Permanently delete one memory."""
-        return app.forget(memory_id)
+        return _safe(app.forget, memory_id)
 
     @server.tool(name="reinforce", description="Mark a memory as important.")
     def reinforce(memory_id: str, delta: float = 0.1) -> dict[str, Any]:
         """Raise a memory's importance so it is recalled more readily."""
-        return app.reinforce(memory_id, delta)
+        return _safe(app.reinforce, memory_id, delta)
 
     @server.tool(name="list_memories", description="Browse memories without a query.")
     def list_memories(
@@ -312,7 +351,7 @@ def _register(server: Any, app: VecForgeMCP) -> None:
         limit: int = 20,
     ) -> dict[str, Any]:
         """List recent memories, optionally filtered by kind, tag or session."""
-        return app.list_memories(kinds, tags, session_id, limit)
+        return _safe(app.list_memories, kinds, tags, session_id, limit)
 
     @server.tool(
         name="context_pack",
@@ -320,24 +359,24 @@ def _register(server: Any, app: VecForgeMCP) -> None:
     )
     def context_pack(query: str = "", max_chars: int = 4000, top_k: int = 12) -> str:
         """Return a markdown briefing: last session summary + relevant memories."""
-        return app.context_pack(query, max_chars, top_k)
+        return _safe(app.context_pack, query, max_chars, top_k)
 
     @server.tool(name="start_session", description="Open a memory session.")
     def start_session(
         name: str = "", metadata: dict[str, Any] | None = None
     ) -> dict[str, Any]:
         """Start a session; returns it plus the previous session (if any)."""
-        return app.start_session(name, metadata)
+        return _safe(app.start_session, name, metadata)
 
     @server.tool(name="end_session", description="Close the session with a summary.")
     def end_session(summary: str = "", session_id: str | None = None) -> dict[str, Any]:
         """End the current session and store the summary for next time."""
-        return app.end_session(summary, session_id)
+        return _safe(app.end_session, summary, session_id)
 
     @server.tool(name="recent_sessions", description="List recent sessions.")
     def recent_sessions(limit: int = 5) -> dict[str, Any]:
         """Show the most recent sessions and their summaries."""
-        return app.recent_sessions(limit)
+        return _safe(app.recent_sessions, limit)
 
     @server.tool(name="search_vault", description="Hybrid search over the vault.")
     def search_vault(
@@ -348,19 +387,21 @@ def _register(server: Any, app: VecForgeMCP) -> None:
         quantum: bool = False,
     ) -> dict[str, Any]:
         """Search documents in any namespace (dense + BM25 hybrid)."""
-        return app.search_vault(query, top_k, namespace, filters, quantum)
+        return _safe(app.search_vault, query, top_k, namespace, filters, quantum)
 
     @server.tool(name="add_document", description="Add a document to the vault.")
     def add_document(
         text: str, metadata: dict[str, Any] | None = None, namespace: str = "default"
     ) -> dict[str, Any]:
         """Store a document (not a memory) for later search."""
-        return app.add_document(text, metadata, namespace)
+        return _safe(app.add_document, text, metadata, namespace)
 
     @server.tool(name="vault_stats", description="Vault and memory statistics.")
     def vault_stats() -> dict[str, Any]:
         """Return statistics about the vault and the memory store."""
-        return app.vault_stats()
+        return _safe(
+            app.vault_stats,
+        )
 
     @server.resource("vecforge://memory/recent")
     def recent_memories_resource() -> str:
@@ -466,6 +507,10 @@ def run_server(
         port=port,
     )
     atexit.register(app.close)
+    # why: SIGTERM (service managers, container stop) skips atexit unless it
+    # is turned into a normal interpreter exit
+    with contextlib.suppress(ValueError):  # not in the main thread
+        signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
     logger.info(
         "VecForge MCP server starting (agent=%s, transport=%s, vault=%s)",
         agent,
@@ -473,17 +518,23 @@ def run_server(
         app.store.vault.path,
     )
     _, major = _load_server_class()
-    if transport in ("http", "streamable-http"):
-        if major >= 2:
-            server.run("streamable-http", host=host, port=port)
+    try:
+        if transport in ("http", "streamable-http"):
+            if major >= 2:
+                server.run("streamable-http", host=host, port=port)
+            else:
+                server.run("streamable-http")
         else:
-            server.run("streamable-http")
-    else:
-        server.run("stdio")
+            server.run("stdio")
+    finally:
+        app.close()
 
 
 def claude_desktop_config(
-    vault_path: str | None = None, agent: str = "claude", python: str | None = None
+    vault_path: str | None = None,
+    agent: str = "claude",
+    python: str | None = None,
+    model_name: str | None = None,
 ) -> dict[str, Any]:
     """Return the ``claude_desktop_config.json`` snippet for this server.
 
@@ -491,6 +542,7 @@ def claude_desktop_config(
         vault_path: Vault file to use.
         agent: Agent name.
         python: Python executable (defaults to the current interpreter).
+        model_name: Embedding model (must match the one the vault uses).
 
     Returns:
         A dict to merge into Claude Desktop's config under ``mcpServers``.
@@ -498,6 +550,8 @@ def claude_desktop_config(
     args = ["-m", "vecforge.cli.main", "mcp", "--agent", agent]
     if vault_path:
         args += ["--vault", vault_path]
+    if model_name:
+        args += ["--model", model_name]
     return {
         "mcpServers": {
             "vecforge-memory": {
@@ -509,7 +563,10 @@ def claude_desktop_config(
 
 
 def claude_code_config(
-    vault_path: str | None = None, agent: str = "claude", python: str | None = None
+    vault_path: str | None = None,
+    agent: str = "claude",
+    python: str | None = None,
+    model_name: str | None = None,
 ) -> dict[str, Any]:
     """Return the ``.mcp.json`` snippet for Claude Code.
 
@@ -521,4 +578,6 @@ def claude_code_config(
     Returns:
         A dict to write as ``.mcp.json`` in the project root.
     """
-    return claude_desktop_config(vault_path=vault_path, agent=agent, python=python)
+    return claude_desktop_config(
+        vault_path=vault_path, agent=agent, python=python, model_name=model_name
+    )

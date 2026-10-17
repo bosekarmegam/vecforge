@@ -164,7 +164,7 @@ def weighted_linear_fusion_detailed(
     sparse_weight = (1.0 - alpha) if has_dense else 1.0
 
     if has_dense:
-        d_min, d_max = float(dense_scores.min()), float(dense_scores.max())
+        d_min, d_max = float(np.min(dense_scores)), float(np.max(dense_scores))
         d_range = d_max - d_min if d_max > d_min else 1.0
         for doc_id, score in zip(dense_ids, dense_scores, strict=False):
             doc_id_int = int(doc_id)

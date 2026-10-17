@@ -27,6 +27,8 @@ from numpy.typing import NDArray
 
 logger = logging.getLogger(__name__)
 
+_IMAGE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp", ".bmp", ".gif", ".tiff"}
+
 # Lazy imports — only required when ImageEmbedder is used
 _open_clip: object | None = None
 _torch: object | None = None
@@ -129,13 +131,17 @@ class ImageEmbedder:
     ) -> NDArray[np.float32]:
         """Generate a CLIP embedding for an image (see :meth:`embed_image`).
 
-        Strings that are not existing files are embedded as *text* so the
-        object satisfies the ``EmbedderLike`` protocol used by the vault.
+        Plain strings without an image extension that are not existing
+        files are embedded as *text*, so the object satisfies the
+        ``EmbedderLike`` protocol used by the vault. A missing image path
+        raises ``FileNotFoundError``.
         """
-        if isinstance(image, str | Path):
-            path = Path(image)
-            if not path.exists() and isinstance(image, str):
-                return self.embed_text(image)
+        if (
+            isinstance(image, str)
+            and Path(image).suffix.lower() not in _IMAGE_SUFFIXES
+            and not Path(image).exists()
+        ):
+            return self.embed_text(image)
         return self.embed_image(image)
 
     def _load(self) -> None:
@@ -244,4 +250,5 @@ class ImageEmbedder:
             features = self._model.encode_text(tokens)
             features = features / features.norm(dim=-1, keepdim=True)
 
-        return features.squeeze(0).cpu().numpy().astype(np.float32)
+        vec: NDArray[np.float32] = features.squeeze(0).cpu().numpy().astype(np.float32)
+        return vec

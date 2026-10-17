@@ -42,7 +42,6 @@ from __future__ import annotations
 
 import logging
 import os
-import sqlite3
 import threading
 import time
 from collections.abc import Sequence
@@ -233,7 +232,7 @@ class VecForge:
             "VecForge vault opened: %s (encrypted=%s, docs=%d, model=%s)",
             path,
             self._storage.is_encrypted,
-            self.count(),
+            len(self._doc_id_to_index),
             self._embedder.name,
         )
 
@@ -380,8 +379,10 @@ class VecForge:
                 # why: a model switch left rows with another dimension — index
                 # what fits and tell the user how to repair the rest
                 skipped += len(batch_ids) - len(keep)
-                for seq in (batch_ids, batch_ns, batch_texts, batch_vecs):
-                    seq[:] = [seq[i] for i in keep]
+                batch_ids[:] = [batch_ids[i] for i in keep]
+                batch_ns[:] = [batch_ns[i] for i in keep]
+                batch_texts[:] = [batch_texts[i] for i in keep]
+                batch_vecs[:] = [batch_vecs[i] for i in keep]
                 if not batch_ids:
                     return
             vectors = np.stack(batch_vecs).astype(np.float32)
@@ -506,7 +507,14 @@ class VecForge:
             self._auto_save_every
             and self._mutations_since_save >= self._auto_save_every
         ):
-            self.save()
+            try:
+                self._save()
+            except Exception as exc:  # the write itself already committed
+                logger.warning(
+                    "Auto-save of the index snapshot failed (%s); "
+                    "it will be retried on the next save or close",
+                    exc,
+                )
 
     def _maybe_compact(self) -> None:
         size = len(self._index_to_doc_id)
@@ -519,14 +527,43 @@ class VecForge:
         vectors = self._embedder.encode(list(texts))
         return np.asarray(vectors, dtype=np.float32)
 
-    def _validate_embedding(self, embedding: Any) -> NDArray[np.float32]:
-        vec = np.asarray(embedding, dtype=np.float32).reshape(-1)
-        if self._indexer is not None and vec.shape[0] != self._indexer.dimension:
+    def _expected_dimension(self) -> int:
+        if self._indexer is not None:
+            return self._indexer.dimension
+        return int(self._embedder.dimension)
+
+    def _check_dimensions(self, vectors: NDArray[np.float32]) -> None:
+        """Reject vectors that do not fit the index *before* any write."""
+        expected = self._expected_dimension()
+        got = int(vectors.shape[-1])
+        if got != expected:
             raise ValueError(
-                f"Embedding dimension {vec.shape[0]} does not match vault "
-                f"dimension {self._indexer.dimension}.\n"
+                f"Embedding dimension {got} does not match vault dimension "
+                f"{expected}.\n"
+                "If you switched models, open the vault with the new model and "
+                "call db.reembed().\n"
                 "VecForge by Suneel Bose K · ArcGX TechLabs"
             )
+
+    def _index_or_rollback(
+        self,
+        doc_ids: Sequence[str],
+        namespace: str,
+        vectors: NDArray[np.float32],
+        texts: Sequence[str],
+    ) -> None:
+        """Index freshly stored rows; delete them again if indexing fails."""
+        try:
+            self._index_documents(doc_ids, namespace, vectors, texts)
+        except Exception:
+            self._storage.delete_docs(list(doc_ids))
+            # why: positions may be half-written; rebuild from the truth
+            self._rebuild_from_storage()
+            raise
+
+    def _validate_embedding(self, embedding: Any) -> NDArray[np.float32]:
+        vec = np.asarray(embedding, dtype=np.float32).reshape(-1)
+        self._check_dimensions(vec)
         norm = float(np.linalg.norm(vec))
         if norm > 0.0:
             vec = vec / norm
@@ -587,6 +624,7 @@ class VecForge:
             # ─── Embed the text ───
             if embedding is None:
                 embedding_vec = self._embed_texts([text])[0]
+                self._check_dimensions(embedding_vec)
             else:
                 embedding_vec = self._validate_embedding(embedding)
 
@@ -600,11 +638,11 @@ class VecForge:
                     modality=modality,
                     doc_id=doc_id,
                 )
-            except sqlite3.IntegrityError as exc:
+            except self._storage.IntegrityError as exc:
                 raise DuplicateDocumentError(str(doc_id)) from exc
 
             # ─── Update in-memory indexes ───
-            self._index_documents(
+            self._index_or_rollback(
                 [stored.doc_id], namespace, embedding_vec.reshape(1, -1), [text]
             )
 
@@ -695,6 +733,7 @@ class VecForge:
             # perf: Batch embed all texts in one model call
             if embeddings is None:
                 vectors = self._embed_texts(texts)
+                self._check_dimensions(vectors)
             else:
                 vectors = np.stack(
                     [self._validate_embedding(e) for e in np.asarray(embeddings)]
@@ -715,11 +754,11 @@ class VecForge:
                     modality=modality,
                     doc_ids=doc_ids,
                 )
-            except sqlite3.IntegrityError as exc:
+            except self._storage.IntegrityError as exc:
                 raise DuplicateDocumentError("<batch>") from exc
 
             ids = [s.doc_id for s in stored]
-            self._index_documents(ids, namespace, vectors, texts)
+            self._index_or_rollback(ids, namespace, vectors, texts)
 
             # security: Audit batch operation
             self._audit.log(
@@ -771,20 +810,45 @@ class VecForge:
         with self._lock:
             self._check_open()
             self._rbac.require("write")
-            if self._storage.get_doc(doc_id) is not None:
-                if self._deletion_protection:
-                    raise DeletionProtectedError(doc_id)
+            if self._storage.get_doc(doc_id) is None:
+                return self.add(
+                    text,
+                    metadata=metadata,
+                    namespace=namespace,
+                    doc_id=doc_id,
+                    modality=modality,
+                    embedding=embedding,
+                )
+            if self._deletion_protection:
+                raise DeletionProtectedError(doc_id)
+            # why: compute and validate everything that can fail *before*
+            # touching the stored document, so a failed upsert loses nothing
+            if embedding is None:
+                vec = self._embed_texts([text])[0]
+                self._check_dimensions(vec)
+            else:
+                vec = self._validate_embedding(embedding)
+            if not self._namespace_mgr.exists(namespace):
+                self._namespace_mgr.create(namespace)
+            with self._storage._tx():
                 self._storage.delete_doc(doc_id)
-                self._tombstone(doc_id)
-                self._note_mutation()
-            return self.add(
-                text,
-                metadata=metadata,
-                namespace=namespace,
+                self._storage.insert_doc(
+                    text=text,
+                    embedding=vec,
+                    metadata=metadata or {},
+                    namespace=namespace,
+                    modality=modality,
+                    doc_id=doc_id,
+                )
+            self._tombstone(doc_id)
+            self._index_documents([doc_id], namespace, vec.reshape(1, -1), [text])
+            self._audit.log(
+                actor=self._rbac.key_id,
+                operation="upsert",
                 doc_id=doc_id,
-                modality=modality,
-                embedding=embedding,
+                namespace=namespace,
             )
+            return doc_id
 
     def update_metadata(
         self, doc_id: str, metadata: dict[str, Any], merge: bool = True
@@ -814,7 +878,6 @@ class VecForge:
                 raise DocumentNotFoundError(doc_id)
             new_meta = {**doc.metadata, **metadata} if merge else dict(metadata)
             self._storage.update_doc(doc_id, metadata=new_meta)
-            self._note_mutation()
             self._audit.log(
                 actor=self._rbac.key_id,
                 operation="update_metadata",
@@ -851,6 +914,7 @@ class VecForge:
         """
         with self._lock:
             self._check_open()
+            self._rbac.require("read")
             return doc_id in self._doc_id_to_index
 
     def exists_namespace(self, name: str) -> bool:
@@ -861,6 +925,7 @@ class VecForge:
         """
         with self._lock:
             self._check_open()
+            self._rbac.require("read")
             return self._namespace_mgr.exists(name)
 
     def get_embedding(self, doc_id: str) -> NDArray[np.float32] | None:
@@ -891,6 +956,8 @@ class VecForge:
             Time: O(1)
         """
         with self._lock:
+            self._check_open()
+            self._rbac.require("read")
             if namespace is None:
                 return len(self._doc_id_to_index)
             return len(self._ns_positions.get(namespace, ()))
@@ -1016,12 +1083,22 @@ class VecForge:
                 if allowed.size == 0:
                     return []
             excluded = self._tombstone_array()
+            extra: list[int] = []
             if exclude_doc_ids:
-                extra = [
-                    self._doc_id_to_index[d]
-                    for d in exclude_doc_ids
-                    if d in self._doc_id_to_index
-                ]
+                allowed_set = (
+                    self._ns_positions.get(namespace, set())
+                    if namespace is not None
+                    else None
+                )
+                # why: only live, in-scope documents shrink the pool
+                extra = sorted(
+                    {
+                        pos
+                        for d in set(exclude_doc_ids)
+                        if (pos := self._doc_id_to_index.get(d)) is not None
+                        and (allowed_set is None or pos in allowed_set)
+                    }
+                )
                 if extra:
                     excl_list = (
                         excluded.tolist() if excluded is not None else []
@@ -1030,8 +1107,7 @@ class VecForge:
             pool = (
                 int(allowed.size) if allowed is not None else len(self._doc_id_to_index)
             )
-            if exclude_doc_ids:
-                pool = max(0, pool - len(exclude_doc_ids))
+            pool = max(0, pool - len(extra))
             if pool <= 0:
                 return []
 
@@ -1107,10 +1183,13 @@ class VecForge:
         scores = [r.score for r in results]
         s_min, s_max = min(scores), max(scores)
         s_range = (s_max - s_min) or 1.0
-        max_age = max((now - r.timestamp) for r in results) or 1.0
-        for r in results:
+        ages = [max(0.0, now - r.timestamp) for r in results]
+        a_min, a_max = min(ages), max(ages)
+        a_range = a_max - a_min
+        for r, age in zip(results, ages, strict=True):
             norm = (r.score - s_min) / s_range if s_max > s_min else 1.0
-            age_factor = 1.0 - min(1.0, max(0.0, now - r.timestamp) / max_age)
+            # why: newest result → 1.0, oldest → 0.0; all equal → 1.0
+            age_factor = 1.0 - (age - a_min) / a_range if a_range > 0 else 1.0
             blended = (1.0 - weight) * norm + weight * age_factor
             r.score = float(min(1.0, max(0.0, blended)))
         results.sort(key=lambda r: r.score, reverse=True)
@@ -1224,6 +1303,7 @@ class VecForge:
         """
         with self._lock:
             self._check_open()
+            self._rbac.require("read")
             doc = self._storage.get_doc(doc_id)
             if doc is None:
                 raise DocumentNotFoundError(doc_id)
@@ -1366,6 +1446,7 @@ class VecForge:
         Performance:
             Time: O(K log N)
         """
+        doc_ids = list(dict.fromkeys(doc_ids))
         with self._lock:
             self._check_open()
             self._rbac.require("delete")
@@ -1433,9 +1514,12 @@ class VecForge:
         """
         with self._lock:
             self._check_open()
+            self._rbac.require("write")
             self._rebuild_from_storage()
-            self.save()
-            logger.info("Vault compacted: %d live documents", self.count())
+            self._save()
+            logger.info(
+                "Vault compacted: %d live documents", len(self._doc_id_to_index)
+            )
 
     def reembed(self, batch_size: int = 256) -> int:
         """Re-embed every document with the current embedder and rebuild.
@@ -1461,7 +1545,7 @@ class VecForge:
                 for doc, vec in zip(batch, vectors, strict=True):
                     self._storage.update_doc(doc.doc_id, embedding=vec)
             self._rebuild_from_storage()
-            self.save()
+            self._save()
             return len(docs)
 
     # ─── API keys (RBAC) ───
@@ -1489,7 +1573,7 @@ class VecForge:
         with self._lock:
             self._check_open()
             self._rbac.register_key(api_key, role)
-            self._storage.kv_set(_RBAC_KV_KEY, self._rbac.key_roles)
+            self._storage.kv_set(_RBAC_KV_KEY, self._rbac.key_roles, _internal=True)
             self._audit.log(
                 actor=self._rbac.key_id,
                 operation="register_api_key",
@@ -1511,7 +1595,7 @@ class VecForge:
         with self._lock:
             self._check_open()
             removed = self._rbac.revoke_key(api_key)
-            self._storage.kv_set(_RBAC_KV_KEY, self._rbac.key_roles)
+            self._storage.kv_set(_RBAC_KV_KEY, self._rbac.key_roles, _internal=True)
             if removed:
                 self._audit.log(actor=self._rbac.key_id, operation="revoke_api_key")
             return removed
@@ -1566,6 +1650,7 @@ class VecForge:
         """
         with self._lock:
             self._check_open()
+            self._rbac.require("read")
             return self._namespace_mgr.list_all()
 
     def stats(self) -> dict[str, Any]:
@@ -1583,6 +1668,7 @@ class VecForge:
         """
         with self._lock:
             self._check_open()
+            self._rbac.require("read")
             from vecforge import __version__
 
             ns_counts = self._storage.count_by_namespace()
@@ -1615,9 +1701,19 @@ class VecForge:
         Documents are always durable in SQLite; this stores the derived
         indexes so the next ``VecForge(path)`` skips the rebuild.
 
+        Raises:
+            VecForgePermissionError: If the key cannot write.
+
         Performance:
             Time: O(N * d)
         """
+        with self._lock:
+            self._check_open()
+            self._rbac.require("write")
+            self._save()
+
+    def _save(self) -> None:
+        """Persist the snapshot without a permission check (internal)."""
         with self._lock:
             self._check_open()
             if self._path == ":memory:":
@@ -1663,7 +1759,7 @@ class VecForge:
         with self._lock:
             self._check_open()
             self._rbac.require("backup")
-            self.save()
+            self._save()
             return self._storage.backup(dest_path)
 
     def close(self) -> None:
@@ -1677,7 +1773,10 @@ class VecForge:
                 return
             try:
                 if self._mutations_since_save or self._path != ":memory:":
-                    self.save()
+                    try:
+                        self._save()
+                    except Exception as exc:
+                        logger.warning("Index snapshot not saved on close: %s", exc)
             finally:
                 self._storage.close()
                 self._closed = True
@@ -1702,12 +1801,31 @@ class VecForge:
         return self._embedder
 
     @property
-    def storage(self) -> StorageBackend:
-        """Return the storage backend (sessions, key/value store, backups).
+    def lock(self) -> threading.RLock:
+        """Return the vault's re-entrant lock.
+
+        Layers built on the vault (memory stores, servers) hold it so that
+        every access to the shared SQLite connection is serialised.
 
         Performance:
             Time: O(1)
         """
+        return self._lock
+
+    @property
+    def storage(self) -> StorageBackend:
+        """Return the raw storage backend (admin only).
+
+        Raw storage bypasses RBAC, so it is only handed to keys that may
+        manage keys (and to the local admin).
+
+        Raises:
+            VecForgePermissionError: For non-admin keys.
+
+        Performance:
+            Time: O(1)
+        """
+        self._rbac.require("manage_keys")
         return self._storage
 
     @property

@@ -34,10 +34,10 @@ from __future__ import annotations
 import json
 import logging
 import math
-import threading
 import time
 import uuid
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Sequence
+from contextlib import contextmanager
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any
@@ -47,7 +47,11 @@ import numpy as np
 from vecforge.core.embedder import EmbedderLike
 from vecforge.core.storage import SessionRecord, content_hash
 from vecforge.core.vault import SearchResult, VecForge
-from vecforge.exceptions import DocumentNotFoundError, VaultEmptyError
+from vecforge.exceptions import (
+    DocumentNotFoundError,
+    VaultClosedError,
+    VaultEmptyError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -241,7 +245,6 @@ class MemoryStore:
         self._agent = agent or "default"
         self._namespace = f"memory:{self._agent}"
         self._dedup_threshold = float(dedup_threshold)
-        self._lock = threading.RLock()
         self._current_session: Session | None = None
 
         if vault is not None:
@@ -258,6 +261,10 @@ class MemoryStore:
                 quantum=quantum,
             )
             self._owns_vault = True
+
+        # why: every store on a vault (REST, MCP, several agents) must
+        # serialise with the vault itself, which owns the SQLite connection
+        self._lock = self._vault.lock
 
         if not self._vault.exists_namespace(self._namespace):
             self._vault.create_namespace(self._namespace)
@@ -294,6 +301,14 @@ class MemoryStore:
         """The session started by :meth:`start_session`, if any."""
         return self._current_session
 
+    @contextmanager
+    def _guard(self) -> Iterator[None]:
+        """Hold the vault lock and fail cleanly if the vault is closed."""
+        with self._lock:
+            if self._vault.closed:
+                raise VaultClosedError(self._vault.path)
+            yield
+
     # ─── Conversions ───
 
     def _to_memory(self, r: SearchResult, score: float | None = None) -> Memory:
@@ -305,7 +320,7 @@ class MemoryStore:
             importance=float(meta.get("importance", 0.5)),
             tags=list(meta.get("tags", [])),
             created_at=float(meta.get("created_at", r.timestamp)),
-            updated_at=r.updated_at,
+            updated_at=meta.get("edited_at"),
             last_accessed=meta.get("last_accessed"),
             access_count=int(meta.get("access_count", 0)),
             session_id=meta.get("session_id"),
@@ -336,6 +351,8 @@ class MemoryStore:
         session_id: str | None = None,
         source: str | None = None,
         dedup: bool = True,
+        created_at: float | None = None,
+        _count_turn: bool = True,
     ) -> Memory:
         """Store a memory (or reinforce an existing near-duplicate).
 
@@ -350,6 +367,7 @@ class MemoryStore:
                 the current session, if one was started.
             source: Origin label (``"user"``, ``"assistant"``, a URL…).
             dedup: Merge into an existing duplicate instead of inserting.
+            created_at: Original creation time (used when importing).
 
         Returns:
             The stored (or reinforced) :class:`Memory`.
@@ -367,12 +385,14 @@ class MemoryStore:
                 "Memory content must not be empty.\n"
                 "VecForge by Suneel Bose K · ArcGX TechLabs"
             )
-        with self._lock:
+        with self._guard():
             kind = self._normalise_kind(kind)
             importance = self._clamp(importance)
             tag_list = sorted({t.strip() for t in (tags or []) if t and t.strip()})
             if session_id is None and self._current_session is not None:
                 session_id = self._current_session.session_id
+            if session_id is not None:
+                self._require_own_session(session_id, create=True)
 
             if dedup:
                 existing = self._find_duplicate(content, kind)
@@ -387,7 +407,7 @@ class MemoryStore:
                     logger.debug("Memory deduplicated into %s", merged.memory_id)
                     return merged
 
-            now = time.time()
+            now = time.time() if created_at is None else float(created_at)
             meta: dict[str, Any] = {
                 "kind": kind,
                 "importance": importance,
@@ -408,7 +428,7 @@ class MemoryStore:
                 doc_id=memory_id,
                 modality="memory",
             )
-            if session_id:
+            if session_id and _count_turn:
                 self._bump_session(session_id)
             return Memory(
                 memory_id=memory_id,
@@ -446,14 +466,14 @@ class MemoryStore:
         return out
 
     def _find_duplicate(self, content: str, kind: str) -> Memory | None:
-        storage = self._vault.storage
-        exact = storage.find_by_content_hash(
+        storage = self._vault._storage
+        for exact in storage.find_all_by_content_hash(
             self._namespace, content_hash(self._namespace, content)
-        )
-        if exact is not None and exact.metadata.get("kind") == kind:
-            result = self._vault.get(exact.doc_id)
-            if result is not None:
-                return self._to_memory(result, score=1.0)
+        ):
+            if exact.metadata.get("kind") == kind:
+                result = self._vault.get(exact.doc_id)
+                if result is not None:
+                    return self._to_memory(result, score=1.0)
 
         if self._dedup_threshold >= 1.0 or self._vault.count(self._namespace) == 0:
             return None
@@ -519,7 +539,7 @@ class MemoryStore:
         Raises:
             DocumentNotFoundError: If the memory does not exist.
         """
-        with self._lock:
+        with self._guard():
             memory = self.get(memory_id)
             if memory is None:
                 raise DocumentNotFoundError(memory_id)
@@ -550,11 +570,12 @@ class MemoryStore:
         Raises:
             DocumentNotFoundError: If the memory does not exist.
         """
-        with self._lock:
+        with self._guard():
             current = self._vault.get(memory_id)
-            if current is None:
+            if current is None or current.namespace != self._namespace:
                 raise DocumentNotFoundError(memory_id)
             meta = dict(current.metadata)
+            meta["edited_at"] = time.time()
             if importance is not None:
                 meta["importance"] = self._clamp(importance)
             if tags is not None:
@@ -571,7 +592,6 @@ class MemoryStore:
                     namespace=self._namespace,
                     modality="memory",
                 )
-                self._vault.update_metadata(memory_id, {"updated_at_ts": time.time()})
             else:
                 self._vault.update_metadata(memory_id, meta, merge=False)
             refreshed = self._vault.get(memory_id)
@@ -587,7 +607,9 @@ class MemoryStore:
         Returns:
             True if it existed.
         """
-        with self._lock:
+        with self._guard():
+            if self.get(memory_id) is None:
+                return False
             return self._vault.delete(memory_id)
 
     def forget_many(self, memory_ids: Sequence[str]) -> int:
@@ -596,8 +618,9 @@ class MemoryStore:
         Returns:
             Number deleted.
         """
-        with self._lock:
-            return self._vault.delete_many(list(memory_ids))
+        with self._guard():
+            own = [m for m in dict.fromkeys(memory_ids) if self.get(m) is not None]
+            return self._vault.delete_many(own) if own else 0
 
     def clear(self, kind: str | None = None) -> int:
         """Delete all memories (optionally only one kind).
@@ -608,7 +631,7 @@ class MemoryStore:
         Returns:
             Number deleted.
         """
-        with self._lock:
+        with self._guard():
             ids = [
                 m.memory_id
                 for m in self.list_memories(kinds=[kind] if kind else None, limit=0)
@@ -623,7 +646,7 @@ class MemoryStore:
         Returns:
             The memory, or None.
         """
-        with self._lock:
+        with self._guard():
             r = self._vault.get(memory_id)
             if r is None or r.namespace != self._namespace:
                 return None
@@ -652,11 +675,11 @@ class MemoryStore:
         Performance:
             Time: O(M) over this agent's memories
         """
-        with self._lock:
+        with self._guard():
             kind_set = {self._normalise_kind(k) for k in kinds} if kinds else None
             tag_set = set(tags) if tags else None
             out: list[Memory] = []
-            for doc in self._vault.storage.iter_docs(namespace=self._namespace):
+            for doc in self._vault._storage.iter_docs(namespace=self._namespace):
                 meta = doc.metadata
                 if kind_set and meta.get("kind") not in kind_set:
                     continue
@@ -732,8 +755,8 @@ class MemoryStore:
             ...     print(m.score, m.content)
         """
         query = (query or "").strip()
-        with self._lock:
-            if self._vault.count(self._namespace) == 0:
+        with self._guard():
+            if top_k <= 0 or self._vault.count(self._namespace) == 0:
                 return []
             filters: dict[str, Any] = {}
             if kinds:
@@ -812,14 +835,23 @@ class MemoryStore:
         Returns:
             The new session.
         """
-        with self._lock:
+        with self._guard():
+            if session_id is not None:
+                existing = self._require_own_session(session_id, create=False)
+                if existing is not None:
+                    # why: resume instead of wiping summary and turn count
+                    existing.ended_at = None
+                    existing.metadata.update(metadata or {})
+                    self._vault._storage.upsert_session(existing._to_record())
+                    self._current_session = existing
+                    return existing
             session = Session(
                 session_id=session_id or "sess_" + uuid.uuid4().hex[:12],
                 agent=self._agent,
                 started_at=time.time(),
                 metadata=dict(metadata or {}),
             )
-            self._vault.storage.upsert_session(session._to_record())
+            self._vault._storage.upsert_session(session._to_record())
             self._current_session = session
             return session
 
@@ -836,19 +868,25 @@ class MemoryStore:
         Returns:
             The ended session, or None if it does not exist.
         """
-        with self._lock:
+        with self._guard():
             sid = session_id or (
                 self._current_session.session_id if self._current_session else None
             )
             if sid is None:
                 return None
-            rec = self._vault.storage.get_session(sid)
-            if rec is None:
+            rec = self._vault._storage.get_session(sid)
+            if rec is None or rec.agent != self._agent:
                 return None
             session = Session._from_record(rec)
+            new_summary = summary.strip()
+            if session.ended_at is not None and not new_summary:
+                # why: ending twice must not wipe the stored summary
+                if self._current_session and self._current_session.session_id == sid:
+                    self._current_session = None
+                return session
             session.ended_at = time.time()
-            session.summary = summary.strip()
-            if session.summary:
+            session.summary = new_summary or session.summary
+            if new_summary:
                 self.remember(
                     session.summary,
                     kind="summary",
@@ -858,34 +896,54 @@ class MemoryStore:
                     dedup=False,
                 )
                 session.turn_count += 1
-            self._vault.storage.upsert_session(session._to_record())
+            self._vault._storage.upsert_session(session._to_record())
             if self._current_session and self._current_session.session_id == sid:
                 self._current_session = None
             return session
 
-    def _bump_session(self, session_id: str) -> None:
-        storage = self._vault.storage
-        if storage.get_session(session_id) is None:
-            storage.upsert_session(
-                SessionRecord(
-                    session_id=session_id, agent=self._agent, started_at=time.time()
-                )
+    def _require_own_session(self, session_id: str, create: bool) -> Session | None:
+        """Return this agent's session, creating it if asked.
+
+        Raises:
+            ValueError: If the session belongs to another agent.
+        """
+        storage = self._vault._storage
+        rec = storage.get_session(session_id)
+        if rec is not None and rec.agent != self._agent:
+            raise ValueError(
+                f"Session '{session_id}' belongs to agent '{rec.agent}'.\n"
+                "VecForge by Suneel Bose K · ArcGX TechLabs"
             )
+        if rec is None and create:
+            rec = SessionRecord(
+                session_id=session_id, agent=self._agent, started_at=time.time()
+            )
+            storage.upsert_session(rec)
+        return Session._from_record(rec) if rec is not None else None
+
+    def _bump_session(self, session_id: str) -> None:
+        storage = self._vault._storage
         storage.increment_session_turns(session_id)
         if self._current_session and self._current_session.session_id == session_id:
             self._current_session.turn_count += 1
 
     def get_session(self, session_id: str) -> Session | None:
-        """Fetch a session by ID."""
-        rec = self._vault.storage.get_session(session_id)
-        return Session._from_record(rec) if rec else None
+        """Fetch one of this agent's sessions by ID."""
+        with self._guard():
+            rec = self._vault._storage.get_session(session_id)
+            if rec is None or rec.agent != self._agent:
+                return None
+            return Session._from_record(rec)
 
     def list_sessions(self, limit: int = 10) -> list[Session]:
         """List this agent's sessions, newest first."""
-        return [
-            Session._from_record(r)
-            for r in self._vault.storage.list_sessions(agent=self._agent, limit=limit)
-        ]
+        with self._guard():
+            return [
+                Session._from_record(r)
+                for r in self._vault._storage.list_sessions(
+                    agent=self._agent, limit=max(0, limit)
+                )
+            ]
 
     def last_session(self, exclude_current: bool = True) -> Session | None:
         """Return the most recent session (excluding the current one).
@@ -944,7 +1002,9 @@ class MemoryStore:
         Performance:
             Time: one recall + O(k) formatting
         """
-        with self._lock:
+        if max_chars <= 0:
+            return ""
+        with self._guard():
             memories = self.recall(query or "", top_k=top_k, kinds=kinds, touch=touch)
             lines: list[str] = []
             header = f"## Memory for agent '{self._agent}'" + (
@@ -959,6 +1019,11 @@ class MemoryStore:
                         "%Y-%m-%d %H:%M", time.localtime(last.started_at)
                     )
                     lines.append(f"\n### Last session ({when})\n{last.summary}")
+                    memories = [
+                        m
+                        for m in memories
+                        if not (m.kind == "summary" and m.content == last.summary)
+                    ]
 
             if memories:
                 grouped: dict[str, list[Memory]] = {}
@@ -988,7 +1053,7 @@ class MemoryStore:
         Returns:
             The exported memory records.
         """
-        with self._lock:
+        with self._guard():
             memories = [
                 m.to_dict() for m in self.list_memories(limit=0, newest_first=False)
             ]
@@ -1014,13 +1079,29 @@ class MemoryStore:
         Returns:
             Number of memories imported (duplicates excluded).
         """
-        with self._lock:
+        with self._guard():
             payload = json.loads(Path(path).expanduser().read_text(encoding="utf-8"))
             records = (
                 payload.get("memories", payload)
                 if isinstance(payload, dict)
                 else payload
             )
+            sessions = payload.get("sessions", []) if isinstance(payload, dict) else []
+            for sess in sessions:
+                existing = self._vault._storage.get_session(sess["session_id"])
+                if existing is not None and existing.agent != self._agent:
+                    continue
+                self._vault._storage.upsert_session(
+                    SessionRecord(
+                        session_id=sess["session_id"],
+                        agent=self._agent,
+                        started_at=float(sess.get("started_at", 0.0)),
+                        ended_at=sess.get("ended_at"),
+                        summary=sess.get("summary", ""),
+                        metadata=sess.get("metadata") or {},
+                        turn_count=int(sess.get("turn_count", 0)),
+                    )
+                )
             imported = 0
             for rec in records:
                 m = self.remember(
@@ -1032,29 +1113,18 @@ class MemoryStore:
                     session_id=rec.get("session_id"),
                     source=rec.get("source"),
                     dedup=dedup,
+                    created_at=rec.get("created_at"),
+                    _count_turn=False,
                 )
                 if not m.deduplicated:
                     imported += 1
-            for s in payload.get("sessions", []) if isinstance(payload, dict) else []:
-                if self._vault.storage.get_session(s["session_id"]) is None:
-                    self._vault.storage.upsert_session(
-                        SessionRecord(
-                            session_id=s["session_id"],
-                            agent=self._agent,
-                            started_at=float(s.get("started_at", 0.0)),
-                            ended_at=s.get("ended_at"),
-                            summary=s.get("summary", ""),
-                            metadata=s.get("metadata") or {},
-                            turn_count=int(s.get("turn_count", 0)),
-                        )
-                    )
             return imported
 
     # ─── Stats / lifecycle ───
 
     def stats(self) -> dict[str, Any]:
         """Return memory statistics for this agent."""
-        with self._lock:
+        with self._guard():
             memories = self.list_memories(limit=0)
             by_kind: dict[str, int] = {}
             for m in memories:

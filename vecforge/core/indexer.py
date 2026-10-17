@@ -251,12 +251,13 @@ class FaissIndexer:
         if sel is None and not self._is_hnsw:
             return None
         if self._is_hnsw:
-            params = faiss.SearchParametersHNSW()
+            params = faiss.SearchParametersHNSW()  # type: ignore[attr-defined]
             params.efSearch = int(ef or self._ef_search)
             if sel is not None:
                 params.sel = sel
-            return params
-        return faiss.SearchParameters(sel=sel)
+            hnsw_params: faiss.SearchParameters = params
+            return hnsw_params
+        return faiss.SearchParameters(sel=sel)  # type: ignore[call-arg]
 
     def search_batch(
         self,
@@ -467,5 +468,5 @@ class FaissIndexer:
             isinstance(index, faiss.IndexHNSW) or "HNSW" in type(index).__name__
         )
         if instance._is_hnsw:
-            index.hnsw.efSearch = instance._ef_search
+            index.hnsw.efSearch = instance._ef_search  # type: ignore[attr-defined]
         return instance

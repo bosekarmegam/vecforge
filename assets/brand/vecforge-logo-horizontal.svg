@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 512" role="img" aria-labelledby="t">
+  <title id="t">VecForge</title>
+  <defs>
+    <linearGradient id="vf-tile" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#2A1F7A"/><stop offset="0.55" stop-color="#4B3BD1"/><stop offset="1" stop-color="#6C5CE7"/>
+    </linearGradient>
+    <linearGradient id="vf-arm" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#67E8F9"/><stop offset="0.6" stop-color="#C4B5FD"/><stop offset="1" stop-color="#FFB86B"/>
+    </linearGradient>
+    <radialGradient id="vf-spark" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFF4D6"/><stop offset="0.35" stop-color="#FFB547"/><stop offset="1" stop-color="#FF6A00" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="vf-sheen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.16"/><stop offset="0.5" stop-color="#FFFFFF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="vf-word" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#4B3BD1"/><stop offset="1" stop-color="#6C5CE7"/>
+    </linearGradient>
+  </defs>
+  <g>
+    <rect x="16" y="16" width="480" height="480" rx="112" fill="url(#vf-tile)"/>
+    <rect x="16" y="16" width="480" height="240" rx="112" fill="url(#vf-sheen)"/>
+    <g stroke="#FFFFFF" stroke-opacity="0.07" stroke-width="2">
+      <line x1="96" y1="176" x2="416" y2="176"/><line x1="96" y1="256" x2="416" y2="256"/><line x1="96" y1="336" x2="416" y2="336"/>
+    </g>
+    <g fill="none" stroke="url(#vf-arm)" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M128 132 L256 384" stroke-width="52"/><path d="M384 132 L256 384" stroke-width="52"/>
+    </g>
+    <g fill="#FFFFFF"><circle cx="128" cy="132" r="26"/><circle cx="384" cy="132" r="26"/></g>
+    <g fill="#2A1F7A"><circle cx="128" cy="132" r="11"/><circle cx="384" cy="132" r="11"/></g>
+    <g fill="#FFFFFF" fill-opacity="0.9"><circle cx="176" cy="226" r="9"/><circle cx="336" cy="226" r="9"/></g>
+    <circle cx="256" cy="384" r="78" fill="url(#vf-spark)"/>
+    <path d="M256 338 L266 374 L302 384 L266 394 L256 430 L246 394 L210 384 L246 374 Z" fill="#FFF7E6"/>
+  </g>
+  <text x="570" y="318" font-family="Inter, 'Inter Display', -apple-system, 'Segoe UI', sans-serif" font-size="196" font-weight="800" letter-spacing="-6" fill="#1A1D2E">Vec<tspan fill="url(#vf-word)">Forge</tspan></text>
+  <text x="576" y="404" font-family="Inter, -apple-system, 'Segoe UI', sans-serif" font-size="42" font-weight="600" letter-spacing="7" fill="#5A5F7A">LOCAL-FIRST VECTOR DATABASE</text>
+</svg>

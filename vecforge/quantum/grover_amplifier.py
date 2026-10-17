@@ -51,6 +51,22 @@ logger = logging.getLogger(__name__)
 Method = Literal["closed_form", "iterative"]
 
 
+def _sanitize(a: NDArray[np.float64]) -> NDArray[np.float64]:
+    """Map NaN → 0, +inf → above the finite max, -inf → the finite min."""
+    finite = np.isfinite(a)
+    if finite.all():
+        return a
+    if finite.any():
+        hi, lo = float(np.max(a[finite])), float(np.min(a[finite]))
+    else:
+        hi, lo = 1.0, 0.0
+    # why: +inf must still outrank every finite score after sanitising
+    top = hi + max(abs(hi), 1.0)
+    out = np.where(np.isposinf(a), top, a)
+    out = np.where(np.isneginf(out), lo, out)
+    return np.where(np.isnan(out), 0.0, out)
+
+
 class GroverAmplifier:
     """Grover amplitude amplification on classical hardware.
 
@@ -196,8 +212,12 @@ class GroverAmplifier:
         """
         a = np.asarray(scores, dtype=np.float64).copy()
         n = len(a)
-        if n <= 1:
-            return a.astype(np.float32)
+        if n == 0:
+            empty: NDArray[np.float32] = a.astype(np.float32)
+            return empty
+        a = _sanitize(a)
+        if n == 1:
+            return np.ones(1, dtype=np.float32)
 
         norm = float(np.linalg.norm(a))
         a = np.full(n, 1.0 / math.sqrt(n)) if norm == 0.0 else a / norm
@@ -256,7 +276,8 @@ class GroverAmplifier:
         for _ in range(k):
             out[mask] *= -1.0  # oracle: phase flip on marked
             out = 2.0 * out.mean() - out  # diffusion: inversion about mean
-        return out
+        result: NDArray[np.float64] = out
+        return result
 
     @staticmethod
     def _amplify_closed_form(

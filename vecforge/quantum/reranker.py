@@ -186,7 +186,7 @@ class QuantumReranker:
             else:
                 new_scores[unmarked] = residual / float(unmarked.sum())
 
-        max_score = float(new_scores.max())
+        max_score = float(np.max(new_scores))
         if max_score > 0.0:
             new_scores = new_scores / max_score
 

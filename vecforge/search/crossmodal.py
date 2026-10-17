@@ -142,15 +142,18 @@ class CrossModalSearcher:
         detected = modality or self.detect_modality(query)
 
         if detected == "image":
-            embedder = self._get_image_embedder()
-            return embedder.embed(query)
+            image_vec: NDArray[np.float32] = self._get_image_embedder().embed_image(
+                query
+            )
+            return image_vec
 
         elif detected == "audio":
-            embedder = self._get_audio_embedder()
-            return embedder.embed(query)
+            audio_vec: NDArray[np.float32] = self._get_audio_embedder().embed(query)
+            return audio_vec
 
         elif detected == "text":
-            return self._get_text_embedder().embed(str(query))
+            text_vec: NDArray[np.float32] = self._get_text_embedder().embed(str(query))
+            return text_vec
 
         else:
             raise ValueError(

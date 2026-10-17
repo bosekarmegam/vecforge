@@ -248,7 +248,9 @@ def require_api_key(
     expected: str | None = getattr(request.app.state, "api_key", None)
     if not expected:
         return
-    if x_api_key is None or not hmac.compare_digest(x_api_key, expected):
+    if x_api_key is None or not hmac.compare_digest(
+        x_api_key.encode("utf-8"), expected.encode("utf-8")
+    ):
         raise HTTPException(status_code=401, detail="Invalid or missing X-API-Key")
 
 

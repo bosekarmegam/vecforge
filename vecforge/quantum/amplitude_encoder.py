@@ -73,9 +73,16 @@ class AmplitudeEncoder:
 
         finite = np.isfinite(arr)
         if not finite.all():
-            arr = np.where(finite, arr, 0.0)
+            # why: +inf is "the most relevant", not "irrelevant"
+            if finite.any():
+                hi, lo = float(np.max(arr[finite])), float(np.min(arr[finite]))
+            else:
+                hi, lo = 1.0, 0.0
+            arr = np.where(np.isposinf(arr), hi + max(abs(hi), 1.0), arr)
+            arr = np.where(np.isneginf(arr), lo, arr)
+            arr = np.where(np.isnan(arr), 0.0, arr)
 
-        min_val = float(arr.min())
+        min_val = float(np.min(arr))
         if min_val < 0.0:
             arr = arr - min_val
 

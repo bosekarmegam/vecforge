@@ -102,7 +102,9 @@ class SnapshotManager:
 
         if _is_sqlite_file(self._vault_path):
             # security/why: online backup copies committed WAL content too
-            src = sqlite3.connect(f"file:{self._vault_path}?mode=ro", uri=True)
+            # why: as_uri() percent-encodes '#', '?' and spaces in the path
+            src_uri = self._vault_path.resolve().as_uri() + "?mode=ro"
+            src = sqlite3.connect(src_uri, uri=True)
             dest = sqlite3.connect(str(snapshot_path))
             try:
                 src.backup(dest)

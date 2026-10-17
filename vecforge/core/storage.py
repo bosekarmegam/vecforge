@@ -39,7 +39,9 @@ import sqlite3
 import time
 import uuid
 from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -53,6 +55,9 @@ _IN_CHUNK = 500
 # 1.5 GB, so index snapshots are stored in fixed-size chunks.
 _BLOB_CHUNK_BYTES = 64 * 1024 * 1024
 _GENERATION_KEY = "__doc_generation__"
+# security: keys starting with this prefix are owned by VecForge itself
+# (generation counter, API-key registry) and cannot be set through kv_set
+_RESERVED_PREFIX = "__"
 
 
 @dataclass
@@ -190,8 +195,10 @@ class StorageBackend:
         self._path = path
         self._encryption_key = encryption_key
         self._conn: sqlite3.Connection | None = None
+        self._db: Any = sqlite3  # driver module: sqlite3 or sqlcipher3
         self._encrypted = False
         self._schema_version = 0
+        self._tx_depth = 0
 
         self._connect()
         self._init_schema()
@@ -220,7 +227,10 @@ class StorageBackend:
             try:
                 import sqlcipher3
 
-                self._conn = sqlcipher3.connect(self._path, check_same_thread=False)
+                self._db = sqlcipher3
+                self._conn = sqlcipher3.connect(
+                    self._path, check_same_thread=False, isolation_level=None
+                )
                 escaped = self._escape_pragma_key(self._encryption_key)
                 self._conn.execute(f"PRAGMA key = '{escaped}'")
                 # why: fail fast on a wrong key instead of at first query
@@ -232,16 +242,57 @@ class StorageBackend:
                     "sqlcipher3 not installed — falling back to unencrypted "
                     "SQLite. Install sqlcipher3 for AES-256 encryption."
                 )
-                self._conn = sqlite3.connect(self._path, check_same_thread=False)
+                self._conn = sqlite3.connect(
+                    self._path, check_same_thread=False, isolation_level=None
+                )
         else:
-            self._conn = sqlite3.connect(self._path, check_same_thread=False)
+            # why: autocommit + explicit transactions (see _tx) — Python's
+            # implicit transactions leak after a failed statement and break
+            # the next explicit BEGIN
+            self._conn = sqlite3.connect(
+                self._path, check_same_thread=False, isolation_level=None
+            )
 
         # perf: WAL mode for concurrent reads (no-op for :memory:)
         if self._path != ":memory:":
             self._conn.execute("PRAGMA journal_mode=WAL")
         self._conn.execute("PRAGMA synchronous=NORMAL")
         self._conn.execute("PRAGMA foreign_keys=ON")
-        self._conn.row_factory = sqlite3.Row
+        self._conn.row_factory = self._db.Row
+
+    @contextmanager
+    def _tx(self) -> Iterator[None]:
+        """Run the enclosed statements in one transaction (re-entrant)."""
+        assert self._conn is not None
+        if self._tx_depth:
+            self._tx_depth += 1
+            try:
+                yield
+            finally:
+                self._tx_depth -= 1
+            return
+        self._conn.execute("BEGIN IMMEDIATE")
+        self._tx_depth = 1
+        try:
+            yield
+        except BaseException:
+            self._tx_depth = 0
+            self._conn.execute("ROLLBACK")
+            raise
+        self._tx_depth = 0
+        self._conn.execute("COMMIT")
+
+    @property
+    def IntegrityError(self) -> type[Exception]:  # noqa: N802 - mirrors DB-API
+        """The driver's IntegrityError class (sqlite3 or sqlcipher3)."""
+        err: type[Exception] = self._db.IntegrityError
+        return err
+
+    @property
+    def Error(self) -> type[Exception]:  # noqa: N802 - mirrors DB-API
+        """The driver's base Error class (sqlite3 or sqlcipher3)."""
+        err: type[Exception] = self._db.Error
+        return err
 
     def _init_schema(self) -> None:
         """Initialize or migrate the database schema.
@@ -559,8 +610,7 @@ class StorageBackend:
                 )
             )
 
-        try:
-            self._conn.execute("BEGIN")
+        with self._tx():
             self._conn.executemany(
                 """
                 INSERT INTO documents (doc_id, text, embedding, metadata_json,
@@ -570,10 +620,6 @@ class StorageBackend:
                 rows,
             )
             self._bump_generation()
-            self._conn.commit()
-        except Exception:
-            self._conn.rollback()
-            raise
         return stored
 
     def update_doc(
@@ -626,12 +672,14 @@ class StorageBackend:
         sets.append("updated_at = ?")
         params.append(time.time())
         params.append(doc_id)
-        cursor = self._conn.execute(
-            f"UPDATE documents SET {', '.join(sets)} WHERE doc_id = ?", params
-        )
-        if cursor.rowcount > 0:
-            self._bump_generation()
-        self._conn.commit()
+        with self._tx():
+            cursor = self._conn.execute(
+                f"UPDATE documents SET {', '.join(sets)} WHERE doc_id = ?", params
+            )
+            # why: metadata/modality are read from SQLite at query time, so
+            # only text/vector changes invalidate the index snapshot
+            if cursor.rowcount > 0 and (text is not None or embedding is not None):
+                self._bump_generation()
         return cursor.rowcount > 0
 
     def delete_doc(self, doc_id: str) -> bool:
@@ -664,8 +712,7 @@ class StorageBackend:
         if not doc_ids:
             return 0
         deleted = 0
-        try:
-            self._conn.execute("BEGIN")
+        with self._tx():
             for i in range(0, len(doc_ids), _IN_CHUNK):
                 chunk = list(doc_ids[i : i + _IN_CHUNK])
                 placeholders = ",".join("?" for _ in chunk)
@@ -675,10 +722,6 @@ class StorageBackend:
                 deleted += cursor.rowcount
             if deleted:
                 self._bump_generation()
-            self._conn.commit()
-        except Exception:
-            self._conn.rollback()
-            raise
         return deleted
 
     def delete_namespace_docs(self, namespace: str) -> int:
@@ -694,12 +737,12 @@ class StorageBackend:
             Time: O(K log N)
         """
         assert self._conn is not None
-        cursor = self._conn.execute(
-            "DELETE FROM documents WHERE namespace = ?", (namespace,)
-        )
-        if cursor.rowcount:
-            self._bump_generation()
-        self._conn.commit()
+        with self._tx():
+            cursor = self._conn.execute(
+                "DELETE FROM documents WHERE namespace = ?", (namespace,)
+            )
+            if cursor.rowcount:
+                self._bump_generation()
         return int(cursor.rowcount)
 
     # ─── Documents: read ───
@@ -893,6 +936,22 @@ class StorageBackend:
         ).fetchone()
         return self._row_to_document(row) if row is not None else None
 
+    def find_all_by_content_hash(
+        self, namespace: str, chash: str
+    ) -> list[StoredDocument]:
+        """Return every document in a namespace with this content hash.
+
+        Performance:
+            Time: O(log N + matches)
+        """
+        assert self._conn is not None
+        rows = self._conn.execute(
+            "SELECT * FROM documents WHERE namespace = ? AND content_hash = ? "
+            "ORDER BY rowid",
+            (namespace, chash),
+        ).fetchall()
+        return [self._row_to_document(r) for r in rows]
+
     def count_docs(self, namespace: str | None = None) -> int:
         """Count documents in the vault.
 
@@ -1069,8 +1128,7 @@ class StorageBackend:
             Time: O(size of blobs)
         """
         assert self._conn is not None
-        try:
-            self._conn.execute("BEGIN")
+        with self._tx():
             self._write_chunks("faiss", state.faiss_blob)
             self._write_chunks("bm25", state.bm25_blob)
             self._conn.execute(
@@ -1095,10 +1153,6 @@ class StorageBackend:
                     time.time(),
                 ),
             )
-            self._conn.commit()
-        except Exception:
-            self._conn.rollback()
-            raise
 
     def load_index_state(self) -> IndexState | None:
         """Load the persisted index snapshot, if any.
@@ -1140,9 +1194,9 @@ class StorageBackend:
             Time: O(1)
         """
         assert self._conn is not None
-        self._conn.execute("DELETE FROM index_state")
-        self._conn.execute("DELETE FROM index_chunks")
-        self._conn.commit()
+        with self._tx():
+            self._conn.execute("DELETE FROM index_state")
+            self._conn.execute("DELETE FROM index_chunks")
 
     # ─── Sessions (memory layer) ───
 
@@ -1246,16 +1300,20 @@ class StorageBackend:
 
     # ─── Key/value store ───
 
-    def kv_set(self, key: str, value: Any) -> None:
+    def kv_set(self, key: str, value: Any, _internal: bool = False) -> None:
         """Store a JSON-serialisable value under a key.
+
+        Keys starting with ``__`` are reserved for VecForge.
 
         Performance:
             Time: O(log K)
         """
         assert self._conn is not None
-        if key == _GENERATION_KEY:
+        if key == _GENERATION_KEY or (
+            key.startswith(_RESERVED_PREFIX) and not _internal
+        ):
             raise ValueError(
-                "Reserved key.\nVecForge by Suneel Bose K · ArcGX TechLabs"
+                f"Key '{key}' is reserved.\nVecForge by Suneel Bose K · ArcGX TechLabs"
             )
         self._conn.execute(
             "INSERT OR REPLACE INTO kv (key, value_json, updated_at) VALUES (?, ?, ?)",
@@ -1282,7 +1340,7 @@ class StorageBackend:
             Time: O(log K)
         """
         assert self._conn is not None
-        if key == _GENERATION_KEY:
+        if key.startswith(_RESERVED_PREFIX):
             return False
         cursor = self._conn.execute("DELETE FROM kv WHERE key = ?", (key,))
         self._conn.commit()
@@ -1295,11 +1353,13 @@ class StorageBackend:
             Time: O(K)
         """
         assert self._conn is not None
+        # why: exact, case-sensitive prefix match (LIKE treats _ and % as
+        # wildcards and ignores case)
         rows = self._conn.execute(
-            "SELECT key FROM kv WHERE key LIKE ? ORDER BY key",
-            (prefix.replace("%", "\\%") + "%",),
+            "SELECT key FROM kv WHERE substr(key, 1, ?) = ? ORDER BY key",
+            (len(prefix), prefix),
         ).fetchall()
-        return [r["key"] for r in rows if r["key"] != _GENERATION_KEY]
+        return [r["key"] for r in rows if not r["key"].startswith(_RESERVED_PREFIX)]
 
     # ─── Maintenance ───
 
@@ -1319,11 +1379,25 @@ class StorageBackend:
             Time: O(file size)
         """
         assert self._conn is not None
-        dest = sqlite3.connect(dest_path)
-        try:
-            self._conn.backup(dest)
-        finally:
-            dest.close()
+        if self._encrypted:
+            # security: export through SQLCipher so the copy is encrypted
+            # with the same key (a plain sqlite3 target would be plaintext)
+            if Path(dest_path).exists():
+                Path(dest_path).unlink()
+            self._conn.execute(
+                "ATTACH DATABASE ? AS vf_backup KEY ?",
+                (dest_path, self._encryption_key),
+            )
+            try:
+                self._conn.execute("SELECT sqlcipher_export('vf_backup')")
+            finally:
+                self._conn.execute("DETACH DATABASE vf_backup")
+        else:
+            dest = sqlite3.connect(dest_path)
+            try:
+                self._conn.backup(dest)
+            finally:
+                dest.close()
         logger.info("Vault backed up to %s", dest_path)
         return dest_path
 
@@ -1397,7 +1471,7 @@ class StorageBackend:
             Time: O(1)
         """
         if self._conn:
-            with contextlib.suppress(sqlite3.Error):
+            with contextlib.suppress(self._db.Error):
                 self._conn.commit()
             self._conn.close()
             self._conn = None
