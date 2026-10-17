@@ -10,6 +10,7 @@ Each test reproduces a bug that was confirmed against the first 2.0 build.
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import threading
 from pathlib import Path
@@ -210,7 +211,9 @@ class TestRbacCoverage:
         s.close()
 
     def test_snapshot_path_with_special_characters(self, tmp_path: Path) -> None:
-        path = tmp_path / "my#vault?.db"
+        # '?' is not allowed in Windows file names; '#', '%' and spaces are
+        name = "my#vault 100%.db" if os.name == "nt" else "my#vault? 100%.db"
+        path = tmp_path / name
         db = VecForge(str(path), model_name="hash")
         db.add("hello")
         snap = SnapshotManager(str(path)).create_snapshot(str(tmp_path / "bk"))

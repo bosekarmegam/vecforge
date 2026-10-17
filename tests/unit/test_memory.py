@@ -196,6 +196,7 @@ class TestPersistenceAndIO:
         self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
     ) -> None:
         monkeypatch.setenv("HOME", str(tmp_path))
+        monkeypatch.setenv("USERPROFILE", str(tmp_path))  # Windows home
         store = MemoryStore(agent="a", model_name="hash")
         assert (tmp_path / ".vecforge" / "memory.db").exists()
         store.close()

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>VecForge 2.0 — Complete Instructions</title>
+<title>VecForge 2.0 Complete Instructions</title>
 <meta name="author" content="Suneel Bose K · ArcGX TechLabs Private Limited">
 <style>
   @page { size: A4; margin: 22mm 18mm 22mm 18mm; }
@@ -34,6 +34,7 @@
   th { text-align: left; background: var(--accent-soft); color: #2A1F7A; font-weight: 700; padding: 1.8mm 2.4mm; border-bottom: 1px solid #D9D4FF; }
   td { padding: 1.6mm 2.4mm; border-bottom: 1px solid var(--line); vertical-align: top; }
   td code, th code { font-size: 8pt; }
+  td.no { color: #B4B8CC; }
   .note, .tip, .warn { border-radius: 6px; padding: 3mm 4mm; margin: 0 0 4mm; break-inside: avoid; font-size: 9.4pt; }
   .note { background: var(--accent-soft); border-left: 3px solid var(--accent-2); }
   .tip { background: var(--ok-soft); border-left: 3px solid var(--ok); }
@@ -82,7 +83,7 @@
   <div class="inner">
     <img class="mark" src="../../assets/brand/vecforge-mark.svg" alt="VecForge">
     <h1>Vec<span>Forge</span> 2.0</h1>
-    <div class="sub">Complete Instructions — install, search, remember, serve.</div>
+    <div class="sub">Complete Instructions: install, search, remember, serve.</div>
     <div class="pills">
       <span>Local-first</span><span>AES-256 encrypted</span><span>Hybrid dense + BM25 search</span>
       <span>AI memory for Claude</span><span>MCP server</span><span>Quantum-inspired rerank</span>
@@ -122,7 +123,7 @@
 <!-- ───────────── 1 ───────────── -->
 <section class="chapter">
   <h1><span class="num">1</span>What VecForge is</h1>
-  <p class="lead">VecForge is a vector database that runs inside your Python process and stores everything in one file on your machine. It finds documents by meaning and by keyword at the same time, can encrypt the file, and — new in 2.0 — gives AI assistants a long-term memory they can use across sessions.</p>
+  <p class="lead">VecForge is a vector database that runs inside your Python process and stores everything in one file on your machine. It finds documents by meaning and by keyword at the same time, can encrypt the file. New in 2.0, it also gives AI assistants a long-term memory they can use across sessions.</p>
 
   <div class="grid2">
     <div class="card"><h4>Local-first</h4><p>No server to run, no account, no API key. A vault is a single SQLite file you own.</p></div>
@@ -135,7 +136,7 @@
   <ol>
     <li><b>Dense retrieval.</b> Your query is turned into a vector and compared with every document vector in FAISS.</li>
     <li><b>Keyword retrieval.</b> VecForge's own BM25 inverted index scores documents that share words with the query.</li>
-    <li><b>Fusion.</b> Both score lists are normalised to 0–1 and blended with <code>alpha</code> (0 = keywords only, 1 = meaning only).</li>
+    <li><b>Fusion.</b> Both score lists are normalised to the range 0 to 1 and blended with <code>alpha</code> (0 = keywords only, 1 = meaning only).</li>
     <li><b>Hydration and filters.</b> Matching documents are loaded and metadata filters are applied. If a filter removes too many, VecForge automatically looks further down the list.</li>
     <li><b>Reranking (optional).</b> A cross-encoder model and/or Grover amplitude amplification reorder the top results.</li>
     <li><b>Recency (optional).</b> Newer documents can be nudged up.</li>
@@ -155,7 +156,7 @@
 <!-- ───────────── 2 ───────────── -->
 <section class="chapter">
   <h1><span class="num">2</span>Installation</h1>
-  <p class="lead">VecForge needs Python 3.10 or newer. It is tested on Linux, macOS and Windows with Python 3.10 – 3.13.</p>
+  <p class="lead">VecForge needs Python 3.10 or newer. It is tested on Linux, macOS and Windows with Python 3.10 to 3.13.</p>
 
   <h2>Install from PyPI</h2>
 <pre><span class="c"># core library, CLI and REST server</span>
@@ -190,7 +191,7 @@ pytest tests/ -q</pre>
 <pre>db = VecForge(<span class="s">"vault.db"</span>, model_name=<span class="s">"hash"</span>)
 <span class="c"># or for every command and script:</span>
 export VECFORGE_MODEL=hash</pre>
-  <div class="note"><b>What "hash" means</b>The hash embedder matches shared words and spellings, not meaning. It is ideal for tests, keyword-heavy data and offline use. For semantic search, use a sentence-transformers model.</div>
+  <div class="note"><b>What "hash" means</b>The hash embedder matches shared words and spellings, not meaning. It suits tests, keyword-heavy data and offline use. For semantic search, use a sentence-transformers model.</div>
 
   <h2>Platform notes</h2>
   <ul>
@@ -280,10 +281,10 @@ db.<span class="f">delete_namespace</span>(<span class="s">"hospital_a"</span>) 
   <ul>
     <li><b>FAISS</b> holds the vectors. <code>flat</code> is exact; <code>hnsw</code> is approximate and much faster on very large vaults.</li>
     <li><b>BM25</b> is an inverted index built into VecForge; adding a document only touches that document's words.</li>
-    <li><b>Deletes</b> mark the document as gone instantly. When deleted entries pass 20% of the vault, the indexes are rebuilt automatically (or call <code>db.compact()</code>).</li>
-    <li><b>Snapshots.</b> <code>save()</code> and <code>close()</code> store the indexes inside the vault. On open, VecForge checks the snapshot is current and loads it; if not, it rebuilds from the stored vectors — it never needs to re-embed.</li>
+    <li><b>Deletes</b> mark the document as gone at once. When deleted entries pass 20% of the vault, the indexes are rebuilt automatically (or call <code>db.compact()</code>).</li>
+    <li><b>Snapshots.</b> <code>save()</code> and <code>close()</code> store the indexes inside the vault. On open, VecForge checks the snapshot is current and loads it; if not, it rebuilds from the stored vectors without re-embedding anything.</li>
   </ul>
-  <div class="tip"><b>Always close</b>Use <code>with VecForge(...) as db:</code> or call <code>db.close()</code> so the snapshot is saved. If a process is killed, nothing is lost — the next open simply rebuilds the indexes once.</div>
+  <div class="tip"><b>Always close</b>Use <code>with VecForge(...) as db:</code> or call <code>db.close()</code> so the snapshot is saved. If a process is killed, nothing is lost. The next open rebuilds the indexes once.</div>
 
   <h2>Thread safety</h2>
   <p>All public methods of a <code>VecForge</code> object take an internal lock, so one vault can be shared by threads, the REST server and a memory store in the same process. Do not open the same file from two processes for writing at the same time.</p>
@@ -295,7 +296,7 @@ db.<span class="f">delete_namespace</span>(<span class="s">"hospital_a"</span>) 
 
   <h2>Add one document</h2>
 <pre>doc_id = db.<span class="f">add</span>(
-    <span class="s">"Patient P4821 — Type 2 diabetes"</span>,
+    <span class="s">"Patient P4821: Type 2 diabetes"</span>,
     metadata={<span class="s">"ward"</span>: <span class="s">"7"</span>, <span class="s">"year"</span>: <span class="o">2026</span>},
     namespace=<span class="s">"hospital_a"</span>,
     doc_id=<span class="s">"P4821"</span>,          <span class="c"># optional; error if it already exists</span>
@@ -303,7 +304,7 @@ db.<span class="f">delete_namespace</span>(<span class="s">"hospital_a"</span>) 
 
   <h2>Add many documents (fastest)</h2>
 <pre>ids = db.<span class="f">add_batch</span>(texts, metadata_list=metas, namespace=<span class="s">"docs"</span>)</pre>
-  <p>One model call, one database transaction and one index update for the whole batch — 10 to 50 times faster than calling <code>add()</code> in a loop. If any custom ID already exists, nothing is inserted.</p>
+  <p>One model call, one database transaction and one index update for the whole batch. That is 10 to 50 times faster than calling <code>add()</code> in a loop. If any custom ID already exists, nothing is inserted.</p>
 
   <h2>Insert or replace, and edit metadata</h2>
 <pre>db.<span class="f">upsert</span>(<span class="s">"Updated discharge note"</span>, doc_id=<span class="s">"P4821"</span>)          <span class="c"># replace text + re-embed</span>
@@ -370,21 +371,21 @@ db.<span class="f">compact</span>()                        <span class="c"># reb
     <tr><td><code>{"tags": {"all": ["ops", "prod"]}}</code></td><td>list contains all items</td></tr>
     <tr><td><code>{"reviewed": {"exists": False}}</code></td><td>key missing or null</td></tr>
   </table>
-  <p>Several keys combine with AND. Comparing different types (text against a number) simply does not match.</p>
+  <p>Several keys combine with AND. Comparing different types (text against a number) does not match.</p>
 
   <h2>Reranking</h2>
   <ul>
-    <li><b><code>rerank=True</code></b> — a cross-encoder reads the query and each candidate together. Most accurate, adds 20–50 ms, downloads a second small model on first use.</li>
-    <li><b><code>quantum_rerank=True</code></b> — Grover amplitude amplification. Candidates found by both the semantic and keyword retrievers are boosted; the best result always stays first; relative order inside each group is kept. Costs under a millisecond. Use both flags to run the cross-encoder only on the boosted survivors.</li>
-    <li><b><code>recency_weight=0.3</code></b> — blends in how new each document is, applied after reranking.</li>
+    <li><b><code>rerank=True</code></b>: a cross-encoder reads the query and each candidate together. Most accurate, adds 20 to 50 ms, downloads a second small model on first use.</li>
+    <li><b><code>quantum_rerank=True</code></b>: Grover amplitude amplification. Candidates found by both the semantic and keyword retrievers move up; the best result always stays first; relative order inside each group is kept. Costs under a millisecond. Use both flags to run the cross-encoder only on the candidates that move up.</li>
+    <li><b><code>recency_weight=0.3</code></b>: blends in how new each document is, applied after reranking.</li>
   </ul>
 
   <h2>Reading results</h2>
   <table>
     <tr><th>Field</th><th>Meaning</th></tr>
     <tr><td><code>text</code>, <code>doc_id</code>, <code>metadata</code>, <code>namespace</code>, <code>modality</code></td><td>the document</td></tr>
-    <tr><td><code>score</code></td><td>relevance, higher is better (0–1 unless a cross-encoder is used)</td></tr>
-    <tr><td><code>signals</code></td><td><code>["dense"]</code>, <code>["sparse"]</code> or both — which retrievers found it</td></tr>
+    <tr><td><code>score</code></td><td>relevance, higher is better (0 to 1 unless a cross-encoder is used)</td></tr>
+    <tr><td><code>signals</code></td><td><code>["dense"]</code>, <code>["sparse"]</code> or both, naming the retrievers that found it</td></tr>
     <tr><td><code>dense_score</code>, <code>sparse_score</code></td><td>per-retriever normalised scores (None if that retriever missed it)</td></tr>
     <tr><td><code>timestamp</code>, <code>updated_at</code></td><td>created and last edited</td></tr>
   </table>
@@ -457,11 +458,11 @@ coder  = <span class="f">MemoryStore</span>(vault=vault, agent=<span class="s">"
   <h1><span class="num">8</span>Connecting Claude over MCP</h1>
   <p class="lead">The Model Context Protocol lets Claude call tools on your computer. <code>vecforge mcp</code> runs a local MCP server so Claude can store and recall memories. Nothing leaves your machine.</p>
 
-  <h2>Claude Desktop — step by step</h2>
+  <h2>Claude Desktop, step by step</h2>
   <ol class="steps">
     <li>Install: <code>pip install "vecforge[mcp]"</code></li>
     <li>Print the configuration: <code>vecforge mcp --print-config claude-desktop</code>. Add <code>--model hash</code> before <code>--print-config</code> for the offline embedder; the printed command keeps it.</li>
-    <li>Open Claude Desktop's config file — macOS <code>~/Library/Application Support/Claude/claude_desktop_config.json</code>, Windows <code>%APPDATA%\Claude\claude_desktop_config.json</code> — and merge the printed <code>mcpServers</code> entry into it.</li>
+    <li>Open Claude Desktop's config file. On macOS it is <code>~/Library/Application Support/Claude/claude_desktop_config.json</code>; on Windows it is <code>%APPDATA%\Claude\claude_desktop_config.json</code>. Merge the printed <code>mcpServers</code> entry into it.</li>
     <li>Restart Claude Desktop. The VecForge tools appear in the tools menu.</li>
     <li>Ask Claude: <i>"Remember that I prefer short answers."</i> In a new chat: <i>"What do you remember about how I like answers?"</i></li>
   </ol>
@@ -487,7 +488,7 @@ vecforge mcp --print-config claude-code &gt; .mcp.json</pre>
   <h2>Tools Claude gets</h2>
   <table>
     <tr><th>Tool</th><th>What it does</th></tr>
-    <tr><td><code>context_pack</code></td><td>Briefing of what Claude remembers — call at the start of a session</td></tr>
+    <tr><td><code>context_pack</code></td><td>Briefing of what Claude remembers. Call it at the start of a session</td></tr>
     <tr><td><code>remember</code></td><td>Store a memory (duplicates reinforce)</td></tr>
     <tr><td><code>recall</code></td><td>Search memories (kinds, tags, since_days, min_importance)</td></tr>
     <tr><td><code>forget</code> / <code>reinforce</code></td><td>Delete a memory / raise its importance</td></tr>
@@ -508,7 +509,7 @@ vecforge mcp --print-config claude-code &gt; .mcp.json</pre>
     <tr><td><code>--model</code></td><td>all-MiniLM-L6-v2, or <code>hash</code></td></tr>
     <tr><td><code>VECFORGE_KEY</code> env var</td><td>opens an encrypted vault</td></tr>
   </table>
-  <div class="tip"><b>Fast sessions</b>The server loads the embedding model in the background while Claude connects, restores indexes from the snapshot, and saves the snapshot every 25 writes and at shutdown — so the next session starts instantly.</div>
+  <div class="tip"><b>Fast sessions</b>The server loads the embedding model in the background while Claude connects, restores indexes from the snapshot, and saves the snapshot every 25 writes and at shutdown, so the next session starts without a rebuild.</div>
 </section>
 
 <!-- ───────────── 9 ───────────── -->
@@ -542,7 +543,7 @@ db.<span class="f">reembed</span>()</pre>
 <pre>pip install <span class="s">"vecforge[encryption]"</span>
 db = <span class="f">VecForge</span>(<span class="s">"secure.db"</span>, encryption_key=os.environ[<span class="s">"VECFORGE_KEY"</span>])</pre>
   <ul>
-    <li>The whole file — documents, vectors and index snapshots — is AES-256 encrypted by SQLCipher.</li>
+    <li>SQLCipher encrypts the whole file with AES-256: documents, vectors and index snapshots.</li>
     <li>A wrong key fails when the vault opens. A lost key means lost data.</li>
     <li>Without SQLCipher installed, VecForge warns and stores the vault unencrypted.</li>
     <li>Keep keys in environment variables or a secrets manager, never in code.</li>
@@ -552,9 +553,9 @@ db = <span class="f">VecForge</span>(<span class="s">"secure.db"</span>, encrypt
   <table>
     <tr><th>Role</th><th>read</th><th>write</th><th>delete</th><th>namespaces</th><th>keys</th><th>backup</th></tr>
     <tr><td><code>admin</code></td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
-    <tr><td><code>read-write</code></td><td>✓</td><td>✓</td><td>✓</td><td>–</td><td>–</td><td>–</td></tr>
-    <tr><td><code>read-only</code></td><td>✓</td><td>–</td><td>–</td><td>–</td><td>–</td><td>–</td></tr>
-    <tr><td>unregistered key</td><td>–</td><td>–</td><td>–</td><td>–</td><td>–</td><td>–</td></tr>
+    <tr><td><code>read-write</code></td><td>✓</td><td>✓</td><td>✓</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td></tr>
+    <tr><td><code>read-only</code></td><td>✓</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td></tr>
+    <tr><td>unregistered key</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td><td class="no">✗</td></tr>
   </table>
 <pre>admin = <span class="f">VecForge</span>(<span class="s">"vault.db"</span>)                                 <span class="c"># no key = local admin</span>
 admin.<span class="f">register_api_key</span>(os.environ[<span class="s">"TEAM_KEY"</span>], <span class="s">"read-only"</span>)   <span class="c"># stored as SHA-256 digest</span>
@@ -569,7 +570,7 @@ admin.<span class="f">revoke_api_key</span>(os.environ[<span class="s">"TEAM_KEY
   <h2>Backups</h2>
 <pre>db.<span class="f">backup</span>(<span class="s">"backups/vault-2026-10-17.db"</span>)        <span class="c"># safe while the vault is open</span>
 vecforge backup my.db backups/my-copy.db           <span class="c"># same, from the terminal</span></pre>
-  <p><code>SnapshotManager</code> creates timestamped snapshots and restores them, cleaning up stale journal files. Encrypted vaults stay encrypted in backups. <code>CloudSync</code> uploads to S3, GCS or Azure but refuses plain <code>.db</code> files — encrypt first.</p>
+  <p><code>SnapshotManager</code> creates timestamped snapshots and restores them, cleaning up stale journal files. Encrypted vaults stay encrypted in backups. <code>CloudSync</code> uploads to S3, GCS or Azure but refuses plain <code>.db</code> files, so encrypt first.</p>
 
   <h2>Deletion protection</h2>
   <p><code>VecForge("vault.db", deletion_protection=True)</code> blocks <code>delete</code>, <code>delete_many</code>, <code>delete_namespace</code> and upserts that would replace a document.</p>
@@ -672,7 +673,7 @@ db.<span class="f">add</span>(transcript, embedding=vec, modality=<span class="s
   <table>
     <tr><th><code>index_type</code></th><th>Search</th><th>When</th></tr>
     <tr><td><code>flat</code></td><td>exact</td><td>up to ~100k documents, or when every result must be exact</td></tr>
-    <tr><td><code>hnsw</code></td><td>approximate, very fast at millions</td><td>large vaults; namespace searches under 20k documents are still exact</td></tr>
+    <tr><td><code>hnsw</code></td><td>approximate, fast at millions</td><td>large vaults; namespace searches under 20k documents are still exact</td></tr>
     <tr><td><code>auto</code></td><td>flat, switches to HNSW at 50k</td><td>default</td></tr>
   </table>
 
@@ -689,12 +690,12 @@ db.<span class="f">add</span>(transcript, embedding=vec, modality=<span class="s
 <!-- ───────────── 15 ───────────── -->
 <section class="chapter">
   <h1><span class="num">15</span>Upgrading from 1.x</h1>
-  <p class="lead">Open your existing vault with 2.0 — it is migrated automatically. The first open rebuilds the indexes once; after that, snapshots make opening fast.</p>
+  <p class="lead">Open your existing vault with 2.0 and it is migrated automatically. The first open rebuilds the indexes once; after that, snapshots make opening fast.</p>
   <table>
     <tr><th>Change</th><th>What to do</th></tr>
     <tr><td>Unregistered API keys now get no access (1.x gave read-only)</td><td>Register keys as admin: <code>db.register_api_key(key, "read-only")</code></td></tr>
     <tr><td><code>vecforge serve</code> listens on 127.0.0.1</td><td>Pass <code>--host 0.0.0.0</code> to expose it, ideally with <code>--api-key</code></td></tr>
-    <tr><td><code>quantum_rerank=True</code> gives different (correct) orderings, scores 0–1</td><td>Re-check any thresholds you tuned on 1.x quantum scores</td></tr>
+    <tr><td><code>quantum_rerank=True</code> gives different (correct) orderings, scores from 0 to 1</td><td>Re-check any thresholds you tuned on 1.x quantum scores</td></tr>
     <tr><td>Dependencies <code>rank-bm25</code>, <code>numba</code>, <code>joblib</code> removed</td><td>Nothing; uninstall them if unused</td></tr>
     <tr><td><code>ImageEmbedder.embed()</code> on plain text now embeds text</td><td>Use <code>embed_image()</code> for images explicitly</td></tr>
     <tr><td>New result fields (<code>signals</code>, <code>dense_score</code>, …)</td><td>Optional; existing fields unchanged</td></tr>
@@ -763,7 +764,7 @@ mem.<span class="f">forget</span>(id)  mem.<span class="f">reinforce</span>(id) 
     <tr><td><code>VECFORGE_API_KEY</code></td><td>Key required by the REST server</td></tr>
   </table>
 
-  <div class="note"><b>License</b>Business Source License 1.1 — free for personal, research, open-source and non-commercial use. Commercial use requires a licence from ArcGX TechLabs Private Limited (suneelbose@arcgx.in).</div>
+  <div class="note"><b>License</b>Business Source License 1.1. Free for personal, research, open-source and non-commercial use. Commercial use requires a licence from ArcGX TechLabs Private Limited (suneelbose@arcgx.in).</div>
   <p class="muted" style="margin-top:8mm">VecForge is built by Suneel Bose K and powered by ArcGX TechLabs Private Limited.</p>
 </section>
 

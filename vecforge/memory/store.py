@@ -766,7 +766,7 @@ class MemoryStore:
             if session_id is not None:
                 filters["session_id"] = session_id
             if since is not None:
-                filters["created_at"] = {"gte": float(since)}
+                filters["created_at"] = {"gt": float(since)}
             if min_importance > 0.0:
                 filters["importance"] = {"gte": float(min_importance)}
 
@@ -776,7 +776,7 @@ class MemoryStore:
                 )
                 items = [m for m in items if m.importance >= min_importance]
                 if since is not None:
-                    items = [m for m in items if m.created_at >= since]
+                    items = [m for m in items if m.created_at > since]
                 now = time.time()
                 for m in items:
                     m.score = importance_weight * m.importance + (

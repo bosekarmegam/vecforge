@@ -95,7 +95,7 @@ def footer_page(width: float, height: float, number: int, total: int) -> PdfRead
     c.line(51, 40, width - 51, 40)
     c.setFillColor(HexColor("#8B90A8"))
     c.setFont("Helvetica", 7.5)
-    c.drawString(51, 28, "VecForge 2.0 — Complete Instructions")
+    c.drawString(51, 28, "VecForge 2.0 Complete Instructions")
     c.drawCentredString(width / 2, 28, "Powered by ArcGX TechLabs")
     c.drawRightString(width - 51, 28, f"{number} / {total}")
     c.save()
@@ -142,7 +142,7 @@ def build(chrome: str) -> Path:
 
         writer.add_metadata(
             {
-                "/Title": "VecForge 2.0 — Complete Instructions",
+                "/Title": "VecForge 2.0 Complete Instructions",
                 "/Author": "Suneel Bose K · ArcGX TechLabs Private Limited",
                 "/Subject": "Installation, search, AI memory, MCP, REST, CLI, security",
                 "/Keywords": "VecForge, vector database, MCP, Claude, AI memory",
