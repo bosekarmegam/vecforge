@@ -194,18 +194,18 @@ class ImageEmbedder:
             >>> vec.shape
             (512,)
         """
+        # why: report a bad path before importing the optional image stack
+        if isinstance(image, (str, Path)) and not Path(image).exists():
+            raise FileNotFoundError(
+                f"Image not found: {image}\n"
+                "VecForge by Suneel Bose K · ArcGX TechLabs"
+            )
         self._load()
         import torch
         from PIL import Image as PILImage
 
         if isinstance(image, (str, Path)):
-            path = Path(image)
-            if not path.exists():
-                raise FileNotFoundError(
-                    f"Image not found: {path}\n"
-                    "VecForge by Suneel Bose K · ArcGX TechLabs"
-                )
-            img = PILImage.open(path).convert("RGB")
+            img = PILImage.open(Path(image)).convert("RGB")
         else:
             img = image.convert("RGB")
 
