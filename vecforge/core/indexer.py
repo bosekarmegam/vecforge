@@ -49,6 +49,9 @@ AUTO_HNSW_THRESHOLD = 50_000
 _HNSW_M = 32
 _HNSW_EF_CONSTRUCTION = 200
 _HNSW_EF_SEARCH = 64
+# why: graph search under a restrictive filter can miss members; small
+# allowed sets (one namespace) are searched exactly instead — still cheap
+_EXACT_SUBSET_MAX = 20_000
 
 
 class FaissIndexer:
@@ -243,13 +246,13 @@ class FaissIndexer:
         return faiss.IDSelectorAnd(selectors[0], selectors[1])
 
     def _search_params(
-        self, sel: faiss.IDSelector | None
+        self, sel: faiss.IDSelector | None, ef: int | None = None
     ) -> faiss.SearchParameters | None:
         if sel is None and not self._is_hnsw:
             return None
         if self._is_hnsw:
             params = faiss.SearchParametersHNSW()
-            params.efSearch = self._ef_search
+            params.efSearch = int(ef or self._ef_search)
             if sel is not None:
                 params.sel = sel
             return params
@@ -297,17 +300,54 @@ class FaissIndexer:
                 np.zeros((queries.shape[0], 0), dtype=np.int64),
             )
 
-        # why: selectors need the extra search breadth to fill k slots
+        if (
+            self._is_hnsw
+            and allowed_ids is not None
+            and len(allowed_ids) <= _EXACT_SUBSET_MAX
+        ):
+            return self._exact_subset_search(
+                queries, effective_k, allowed_ids, excluded_ids
+            )
+
+        # why: selectors need extra search breadth to fill k slots
+        ef = self._ef_search
         if self._is_hnsw and (allowed_ids is not None or excluded_ids is not None):
-            self._index.hnsw.efSearch = max(self._ef_search, 4 * effective_k)
+            ef = max(self._ef_search, 4 * effective_k)
 
         sel = self._build_selector(allowed_ids, excluded_ids)
-        params = self._search_params(sel)
+        params = self._search_params(sel, ef)
         if params is None:
             distances, indices = self._index.search(queries, effective_k)
         else:
             distances, indices = self._index.search(queries, effective_k, params=params)
         return distances.astype(np.float32), indices.astype(np.int64)
+
+    def _exact_subset_search(
+        self,
+        queries: NDArray[np.float32],
+        k: int,
+        allowed_ids: NDArray[np.int64],
+        excluded_ids: NDArray[np.int64] | None,
+    ) -> tuple[NDArray[np.float32], NDArray[np.int64]]:
+        """Exact inner-product search over a subset of positions."""
+        ids = np.asarray(allowed_ids, dtype=np.int64)
+        if excluded_ids is not None and len(excluded_ids) > 0:
+            ids = ids[~np.isin(ids, np.asarray(excluded_ids, dtype=np.int64))]
+        q = queries.shape[0]
+        out_d = np.full((q, k), -np.inf, dtype=np.float32)
+        out_i = np.full((q, k), -1, dtype=np.int64)
+        if ids.size == 0:
+            return out_d, out_i
+        vectors = np.asarray(self._index.reconstruct_batch(ids), dtype=np.float32)
+        scores = queries @ vectors.T  # (q, |ids|)
+        kk = min(k, ids.size)
+        for row in range(q):
+            sc = scores[row]
+            top = np.argpartition(sc, -kk)[-kk:] if kk < sc.size else np.arange(sc.size)
+            top = top[np.argsort(sc[top])[::-1]]
+            out_d[row, :kk] = sc[top]
+            out_i[row, :kk] = ids[top]
+        return out_d, out_i
 
     def search(
         self,

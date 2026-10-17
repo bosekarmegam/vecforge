@@ -137,3 +137,17 @@ class TestSerialisation:
 
     def test_reconstruct_empty(self) -> None:
         assert FaissIndexer(4).reconstruct_all().shape == (0, 4)
+
+
+class TestHNSWSubsetExactness:
+    def test_small_allowed_set_is_searched_exactly(self) -> None:
+        """Graph search under a tight filter can miss members; 2.0 is exact."""
+        x = _unit(3000, seed=4)
+        idx = FaissIndexer(16, index_type="hnsw", ef_search=8)
+        idx.add(x)
+        allowed = np.arange(0, 3000, 125, dtype=np.int64)  # 24 scattered ids
+        d, i = idx.search(x[0], top_k=50, allowed_ids=allowed)
+        assert sorted(i.tolist()) == sorted(allowed.tolist())
+        assert np.all(np.diff(d) <= 1e-6)  # sorted by score
+        d, i = idx.search(x[0], top_k=50, allowed_ids=allowed, excluded_ids=allowed[:4])
+        assert sorted(i.tolist()) == sorted(allowed[4:].tolist())

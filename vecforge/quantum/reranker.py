@@ -190,7 +190,11 @@ class QuantumReranker:
         if max_score > 0.0:
             new_scores = new_scores / max_score
 
-        order = np.lexsort((-window_scores.astype(np.float64), -new_scores))
+        # why: ties keep the caller's input order (window_indices may come from
+        # argpartition, whose order is arbitrary)
+        order = np.lexsort(
+            (window_indices, -window_scores.astype(np.float64), -new_scores)
+        )
         self.last_explanation = {
             "candidates": int(n),
             "window": int(k_window),

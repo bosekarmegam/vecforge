@@ -56,3 +56,21 @@ class TestRobustness:
     def test_in_with_unhashable_threshold(self) -> None:
         assert MetadataFilter({"k": {"in": [1, 2]}}).matches({"k": 2})
         assert not MetadataFilter({"k": {"in": 5}}).matches({"k": 2})
+
+
+class TestFusionTieBreak:
+    def test_consensus_wins_ties(self) -> None:
+        import numpy as np
+
+        from vecforge.search.hybrid import weighted_linear_fusion_detailed
+
+        # doc 1: best dense, no sparse → 0.5 ; doc 2: worst dense + best sparse → 0.5
+        hits = weighted_linear_fusion_detailed(
+            dense_ids=np.array([1, 3, 2]),
+            dense_scores=np.array([0.9, 0.5, 0.1], dtype=np.float32),
+            sparse_ids=[2],
+            sparse_scores=[4.0],
+            alpha=0.5,
+        )
+        assert hits[0].doc_index == 2 and hits[0].signals == ["dense", "sparse"]
+        assert hits[0].score == hits[1].score

@@ -198,9 +198,15 @@ def weighted_linear_fusion_detailed(
                 hit.sparse_score = norm_score
                 hit.raw_sparse = float(score)
 
+    # why: on equal fused scores prefer documents both retrievers agreed on,
+    # then the higher raw semantic similarity
     return sorted(
         hits.values(),
-        key=lambda h: (h.score, h.raw_dense if h.raw_dense is not None else -1.0),
+        key=lambda h: (
+            round(h.score, 9),
+            len(h.signals),
+            h.raw_dense if h.raw_dense is not None else -1.0,
+        ),
         reverse=True,
     )
 
