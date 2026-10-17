@@ -197,7 +197,8 @@ def swell(length: float, peak: float = 0.22) -> np.ndarray:
 def impact() -> np.ndarray:
     n = at(2.2)
     tt = np.arange(n) / SR
-    boom = np.sin(2 * np.pi * (38 + 40 * np.exp(-tt / 0.08)) * tt) * env_ad(n, 0.002, 0.7)
+    sweep = 38 + 40 * np.exp(-tt / 0.08)
+    boom = np.sin(2 * np.pi * sweep * tt) * env_ad(n, 0.002, 0.7)
     return boom * 0.7 + np.pad(kick(), (0, n - at(0.45)))
 
 
@@ -225,10 +226,10 @@ def build() -> np.ndarray:
         beat_in_bar = i % 4
         full = 10.0 <= t < 35.0
         half = (5.0 <= t < 10.0 or 35.0 <= t < 40.0) and beat_in_bar in (0, 2)
-        if full or half:
-            if t >= 5.01 or t < 4.99:
-                place(drums, k, t)
-                place(kick_env, env_ad(at(0.3), 0.002, 0.12), t)
+        on_impact = 4.99 <= t < 5.01  # the impact already carries a kick
+        if (full or half) and not on_impact:
+            place(drums, k, t)
+            place(kick_env, env_ad(at(0.3), 0.002, 0.12), t)
         if full and beat_in_bar in (1, 3):
             place(drums, clap(), t)
             place(send, clap() * 0.5, t)
@@ -266,7 +267,8 @@ def build() -> np.ndarray:
     right *= duck
     mono *= 0.85 + 0.15 * duck
 
-    rl, rr = reverb(send + 0.5 * (left + right), 0.0), reverb(send + 0.5 * (left + right), 2.3)
+    wet = send + 0.5 * (left + right)
+    rl, rr = reverb(wet, 0.0), reverb(wet, 2.3)
     out_l = left + mono + drums + arp_l + rl * 1.4
     out_r = right + mono + drums + arp_r + rr * 1.4
     stereo = np.stack([out_l, out_r], axis=1)
