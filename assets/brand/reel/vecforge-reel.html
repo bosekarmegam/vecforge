@@ -1,6 +1,7 @@
 <!doctype html>
 <!--
-  VecForge 2.0 brand reel (1080x1920, 45 s, 96 BPM: one scene per 2 bars).
+  VecForge 2.0 brand reel (1080x1920, 60 s, 96 BPM: one scene per 3 bars).
+  Captions come from narration.js, the same script the voiceover is generated from.
   Every frame is a pure function of time: render(t) sets all styles,
   so scripts/render_reel.cjs can step through frames deterministically.
   Open in a browser to preview in real time.
@@ -97,6 +98,20 @@
   .check i { flex:none; width:52px; height:52px; border-radius:16px; display:flex; align-items:center; justify-content:center;
     background:rgba(124,242,176,.15); color:#7CF2B0; font-style:normal; font-size:32px; font-weight:800; }
 
+  /* scene Q: quickstart */
+  .code .ln { font-family:"DejaVu Sans Mono", monospace; font-size:27px; line-height:1.3; margin:12px 0; white-space:pre; }
+  .code .p { color:var(--cyan); }
+  .code .st { color:#FFC98A; }
+  .code .out { color:#7CF2B0; }
+  .meaning { margin-top:26px; text-align:center; }
+  .meaning span { display:inline-block; padding:12px 24px; border-radius:999px; font-size:25px; font-weight:700; letter-spacing:2px;
+    color:#FFE8CC; background:rgba(255,184,107,.14); border:2px solid rgba(255,184,107,.5); }
+
+  /* captions */
+  #cap { left:70px; right:70px; top:1528px; text-align:center; opacity:0; }
+  #cap span { display:inline-block; padding:14px 26px; border-radius:22px; background:rgba(7,5,26,.72);
+    font-size:32px; font-weight:600; line-height:1.3; color:#fff; box-shadow:0 10px 30px rgba(0,0,0,.35); }
+
   #install { left:0; right:0; top:1150px; text-align:center; opacity:0; }
   #install code { display:inline-block; font-family:"DejaVu Sans Mono", monospace; font-size:42px; padding:26px 44px;
     border-radius:22px; background:rgba(7,5,26,.75); border:2px solid rgba(103,232,249,.35); color:#E6FBFF; }
@@ -158,6 +173,22 @@
   <div id="word" class="abs"><span class="wm">Vec<span class="forge">Forge</span></span></div>
   <div id="pill" class="abs"><span>VERSION 2.0</span></div>
   <div id="tagHero" class="abs"><div class="eyebrow">LOCAL-FIRST</div><div class="headline">The vector database that<br>lives on <em>your</em> machine</div></div>
+
+  <!-- Q: quickstart example -->
+  <div class="scene abs" id="sQ">
+    <div class="head"><div class="eyebrow">QUICKSTART</div><div class="headline">A few lines of Python.<br><em>Search by meaning.</em></div></div>
+    <div class="card code">
+      <div class="ln" id="q0"><span class="p">$</span> pip install vecforge</div>
+      <div class="ln" id="q1"><span class="p">&gt;&gt;&gt;</span> from vecforge import VecForge</div>
+      <div class="ln" id="q2"><span class="p">&gt;&gt;&gt;</span> db = VecForge(<span class="st">"notes.db"</span>)</div>
+      <div class="ln" id="q3"><span class="p">&gt;&gt;&gt;</span> db.add(<span class="st">"Refunds are paid within 5 days"</span>)</div>
+      <div class="ln" id="q4"><span class="p">&gt;&gt;&gt;</span> db.add(<span class="st">"Annual plans renew every March"</span>)</div>
+      <div class="ln" id="q5"><span class="p">&gt;&gt;&gt;</span> <span id="qType"></span></div>
+      <div class="ln" id="q6"><span class="p">&gt;&gt;&gt;</span> hits[0].text</div>
+      <div class="ln out" id="q7">'Refunds are paid within 5 days'</div>
+      <div class="meaning" id="q8"><span>MATCHED BY MEANING, NO SHARED WORDS</span></div>
+    </div>
+  </div>
 
   <!-- A: AI memory -->
   <div class="scene abs" id="sA">
@@ -225,6 +256,8 @@
     </div>
   </div>
 
+  <div id="cap" class="abs"><span id="capText"></span></div>
+
   <div id="install" class="abs"><code><b>$</b> pip install vecforge</code></div>
   <div id="url" class="abs">github.com/bosekarmegam/vecforge</div>
 
@@ -236,8 +269,9 @@
   <div id="fade" class="abs"></div>
 </div>
 
+<script src="narration.js"></script>
 <script>
-const DURATION = 45.0;            // 18 bars at 96 BPM
+const DURATION = 60.0;            // 24 bars at 96 BPM
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const prog = (t, a, b) => clamp((t - a) / (b - a));
 const lerp = (a, b, p) => a + (b - a) * p;
@@ -334,11 +368,13 @@ function header() {
 }
 const mix3 = (h, d, e, p1, p2) => lerp(lerp(h, d, p1), e, p2);
 
-const SCENES = ["sA", "sB", "sC", "sD", "sE"];
+const SCENES = ["sQ", "sA", "sB", "sC", "sD", "sE"];
+const SCENE_LEN = 7.5;            // 3 bars each, 10–55 s
+const NARRATION = window.NARRATION || [];
 
 function render(t) {
   const e1 = inOutCubic(prog(t, 10.0, 10.8));   // hero -> header
-  const e2 = inOutCubic(prog(t, 35.0, 35.9));   // header -> end card
+  const e2 = inOutCubic(prog(t, 55.0, 55.9));   // header -> end card
   const H = header();
   drawField(t, t < IMPACT ? 1 : lerp(lerp(1, 0.4, prog(t, 7, 10.8)), 0.75, e2));
 
@@ -373,68 +409,88 @@ function render(t) {
   const w = outCubic(prog(t, 5.3, 6.0));
   $("word").style.opacity = w;
   $("word").style.transform = `translate(${mix3(0, H.word.dx, 0, e1, e2)}px, ${lerp(50, 0, w) + mix3(0, H.word.dy, -140, e1, e2)}px) scale(${mix3(1, H.word.s, 0.92, e1, e2)})`;
-  const pl = outCubic(prog(t, 5.8, 6.4)) * (1 - prog(t, 9.6, 10.0)) + outCubic(prog(t, 35.5, 36.1));
+  const pl = outCubic(prog(t, 5.8, 6.4)) * (1 - prog(t, 9.6, 10.0)) + outCubic(prog(t, 55.5, 56.1));
   $("pill").style.opacity = pl;
   $("pill").style.transform = `translateY(${t < 20 ? lerp(30, 0, outCubic(prog(t, 5.8, 6.4))) : -145}px)`;
   const th = outCubic(prog(t, 6.6, 7.1)) * (1 - prog(t, 9.4, 9.8));
   $("tagHero").style.opacity = th;
   $("tagHero").style.transform = `translateY(${lerp(60, 0, outCubic(prog(t, 6.6, 7.1))) - 40 * prog(t, 9.4, 9.8)}px)`;
 
-  // ── feature scenes: 10–35 s, one per 2 bars
+  // ── feature scenes: 10–55 s, one per 3 bars
   SCENES.forEach((id, k) => {
-    const a = 10 + 5 * k, b = a + 5;
-    const start = k === 0 ? a + 0.8 : a + 0.35;   // scene A waits for the header move
+    const a = 10 + SCENE_LEN * k, b = a + SCENE_LEN;
+    const start = k === 0 ? a + 0.8 : a + 0.35;   // the first scene waits for the header move
     const pin = outCubic(prog(t, start, start + 0.5)), pout = prog(t, b - 0.4, b);
     $(id).style.opacity = (pin * (1 - pout)).toFixed(3);
     $(id).style.transform = `translateY(${lerp(70, 0, pin) - 50 * pout}px)`;
     $(id).style.visibility = pin * (1 - pout) > 0 ? "visible" : "hidden";
   });
-  // A: chat (10–15)
+  // Q: quickstart (10–17.5)
   let u = t - 10;
-  ["a0", "a1", "a2", "a3", "a4", "a5"].forEach((id, i) => pop(id, u, [1.1, 1.3, 1.9, 2.6, 3.1, 3.7][i]));
-  // B: tools (15–20)
-  u = t - 15;
+  ["q0", "q1", "q2", "q3", "q4", "q5"].forEach((id, i) => pop(id, u, [1.1, 1.6, 2.1, 2.6, 3.1, 3.6][i], 16));
+  typeInto("qType", 'hits = db.search("how do I get my money back?")', u, 3.7, 34);
+  ["q6", "q7"].forEach((id, i) => pop(id, u, [5.3, 5.7][i], 16));
+  const mq = outBack(prog(u, 6.0, 6.4));
+  $("q8").style.opacity = prog(u, 6.0, 6.2); $("q8").style.transform = `scale(${prog(u, 6.0, 6.4) > 0 ? mq : 0.6})`;
+  // A: chat (17.5–25)
+  u = t - 17.5;
+  ["a0", "a1", "a2", "a3", "a4", "a5"].forEach((id, i) => pop(id, u, [1.0, 1.4, 2.3, 3.4, 4.1, 5.0][i]));
+  // B: tools (25–32.5)
+  u = t - 25;
   TOOLS.forEach((_, i) => {
-    const p = prog(u, 0.7 + i * 0.1, 1.05 + i * 0.1);
+    const p = prog(u, 0.8 + i * 0.14, 1.15 + i * 0.14);
     $("tool" + i).style.opacity = p; $("tool" + i).style.transform = `scale(${p > 0 ? outBack(p) : 0.6})`;
   });
-  typeInto("bType", 'pip install "vecforge[mcp]"', u, 2.3, 22);
+  typeInto("bType", 'pip install "vecforge[mcp]"', u, 3.2, 22);
   $("bCaret").style.opacity = Math.floor(u * 3) % 2 ? 0.2 : 1;
-  // C: search (20–25)
-  u = t - 20;
-  typeInto("cType", "refund policy for annual plans", u, 0.7, 30);
-  $("cCaret").style.opacity = u < 1.8 ? (Math.floor(u * 3) % 2 ? 0.2 : 1) : 0;
-  const rr = inOutCubic(prog(u, 2.9, 3.6));
+  // C: search (32.5–40)
+  u = t - 32.5;
+  typeInto("cType", "refund policy for annual plans", u, 0.8, 26);
+  $("cCaret").style.opacity = u < 2.2 ? (Math.floor(u * 3) % 2 ? 0.2 : 1) : 0;
+  const rr = inOutCubic(prog(u, 3.9, 4.7));
   RESULTS.forEach((r, i) => {
     const el = $("res" + i), y0 = i * 104, y1 = AFTER.indexOf(i) * 104;
-    const p = outCubic(prog(u, 1.7 + i * 0.1, 2.05 + i * 0.1));
+    const p = outCubic(prog(u, 2.2 + i * 0.12, 2.6 + i * 0.12));
     el.style.opacity = p;
     el.style.transform = `translate(${lerp(40, 0, p)}px, ${lerp(y0, y1, rr)}px)`;
-    const hot = r.d && r.s ? prog(u, 2.7, 3.0) * (1 - 0.5 * prog(u, 4.0, 4.6)) : 0;
+    const hot = r.d && r.s ? prog(u, 3.6, 3.9) * (1 - 0.5 * prog(u, 5.4, 6.0)) : 0;
     el.style.borderColor = `rgba(255,184,107,${(0.7 * hot).toFixed(3)})`;
     el.style.background = `rgba(255,255,255,${(0.05 + 0.05 * hot).toFixed(3)})`;
     $("rk" + i).textContent = String((rr > 0.5 ? AFTER.indexOf(i) : i) + 1);
   });
-  const rk = outCubic(prog(u, 2.6, 3.0));
+  const rk = outCubic(prog(u, 3.4, 3.8));
   $("rerank").style.opacity = rk; $("rerank").style.transform = `scale(${lerp(0.85, 1, rk)})`;
-  // D: snapshots (25–30)
-  u = t - 25;
-  ["d0", "d1", "d2", "d3", "d4", "d5"].forEach((id, i) => pop(id, u, [0.7, 1.3, 1.8, 2.5, 3.1, 3.5][i], 20));
-  // E: security (30–35)
-  u = t - 30;
-  const lockP = outBack(prog(u, 0.9, 1.4));
-  $("shackle").setAttribute("transform", `translate(0 ${lerp(-34, 0, prog(u, 0.9, 1.4) > 0 ? lockP : 0).toFixed(2)})`);
-  ["e0", "e1", "e2", "e3"].forEach((id, i) => pop(id, u, 1.6 + i * 0.35, 20));
+  // D: snapshots (40–47.5)
+  u = t - 40;
+  ["d0", "d1", "d2", "d3", "d4", "d5"].forEach((id, i) => pop(id, u, [0.8, 1.7, 2.4, 3.4, 4.2, 4.9][i], 20));
+  // E: security (47.5–55)
+  u = t - 47.5;
+  const lockP = outBack(prog(u, 1.0, 1.5));
+  $("shackle").setAttribute("transform", `translate(0 ${lerp(-34, 0, prog(u, 1.0, 1.5) > 0 ? lockP : 0).toFixed(2)})`);
+  ["e0", "e1", "e2", "e3"].forEach((id, i) => pop(id, u, 1.9 + i * 0.6, 20));
 
   // ── end card
-  const ins = outCubic(prog(t, 36.2, 36.8));
+  const ins = outCubic(prog(t, 56.2, 56.8));
   $("install").style.opacity = ins; $("install").style.transform = `translateY(${lerp(40, 0, ins)}px)`;
-  const ur = outCubic(prog(t, 36.6, 37.2));
+  const ur = outCubic(prog(t, 56.6, 57.2));
   $("url").style.opacity = ur; $("url").style.transform = `translateY(${lerp(30, 0, ur)}px)`;
   const pw = outCubic(prog(t, 6.0, 6.6));
   $("powered").style.opacity = pw;
   $("powered").style.transform = `translateY(${lerp(20, 0, pw) + lerp(0, -180, e2)}px) scale(${lerp(1, 1.45, e2)})`;
-  $("fade").style.opacity = prog(t, 0, 0.5) < 1 ? 1 - prog(t, 0, 0.5) : prog(t, 44.0, 45.0);
+  $("fade").style.opacity = prog(t, 0, 0.5) < 1 ? 1 - prog(t, 0, 0.5) : prog(t, 59.0, 60.0);
+
+  // ── captions, in sync with the voiceover
+  const line = NARRATION.find(n => t >= n.start - 0.2 && t < n.end + 0.4);
+  // why: the end card already shows the last line in large type
+  if (line && line.start < 55) {
+    $("capText").textContent = line.text;
+    const ci = prog(t, line.start - 0.2, line.start + 0.1), co = prog(t, line.end + 0.1, line.end + 0.4);
+    $("cap").style.opacity = (ci * (1 - co)).toFixed(3);
+    const lift = line.start < 10 ? 0 : -33;   // intro caption sits below the tagline
+    $("cap").style.transform = `translateY(${lerp(16, 0, outCubic(ci)) + lift}px)`;
+  } else {
+    $("cap").style.opacity = 0;
+  }
 }
 
 window.render = render;
@@ -444,7 +500,7 @@ if (!/[?&]static/.test(location.search)) {
   const loop = now => { render(((now - t0) / 1000) % DURATION); requestAnimationFrame(loop); };
   requestAnimationFrame(loop);
 } else {
-  render(Number(new URLSearchParams(location.search).get("t") || 40));
+  render(Number(new URLSearchParams(location.search).get("t") || 57));
 }
 </script>
 </body>

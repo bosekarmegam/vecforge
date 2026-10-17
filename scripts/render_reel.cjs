@@ -4,8 +4,9 @@
 //
 // Render assets/brand/reel/vecforge-reel.html to an MP4 reel.
 //
-//   python scripts/make_reel_music.py /tmp/reel-music.wav
-//   NODE_PATH=$(npm root -g) node scripts/render_reel.cjs --audio /tmp/reel-music.wav
+//   python scripts/make_reel_voice.py --model-dir kokoro-int8-en-v0_19 --out /tmp/voice.wav
+//   python scripts/make_reel_music.py /tmp/reel-mix.wav --voice /tmp/voice.wav
+//   NODE_PATH=$(npm root -g) node scripts/render_reel.cjs --audio /tmp/reel-mix.wav
 //
 // Options: --fps 30, --out path.mp4, --audio track.wav (silent track if omitted).
 // Needs Node with the `playwright` package, a Chromium build and ffmpeg.
@@ -60,7 +61,7 @@ const SRC = "file://" + path.join(ROOT, "assets/brand/reel/vecforge-reel.html") 
   ff.stdin.end();
   await done;
 
-  await page.evaluate(() => window.render(40.0));
+  await page.evaluate(() => window.render(57.5));
   await page.screenshot({ path: POSTER, type: "png" });
   await browser.close();
   console.log(`\nwrote ${OUT} (${frames} frames @ ${FPS} fps) and ${POSTER}`);

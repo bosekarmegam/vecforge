@@ -5,20 +5,22 @@
 """
 Synthesize the original soundtrack for the VecForge brand reel.
 
-45 s at 96 BPM (18 bars of 2.5 s), A minor, laid out to match
+60 s at 96 BPM (24 bars of 2.5 s), A minor, laid out to match
 assets/brand/reel/vecforge-reel.html:
 
   0–5 s    pad intro and rising swell; impact + bell on the 5 s downbeat
   5–10 s   bass and half-time kick under the wordmark
-  10–35 s  full groove (four-on-the-floor, claps, hats, echoing arpeggio)
+  10–55 s  full groove (four-on-the-floor, claps, hats, echoing arpeggio)
            with a chord change on every bar and a swell into each scene
-  35–45 s  end card: bell, drums thin out, final Am9 rings and fades
+  55–60 s  end card: bell, drums thin out, final Am9 rings and fades
 
 Everything is generated here, so the track carries no licensing terms.
+With --voice, the music ducks about 8 dB under the narration and the two
+are mixed into one stereo file.
 
 Usage::
 
-    python scripts/make_reel_music.py out.wav
+    python scripts/make_reel_music.py out.wav [--voice voice.wav]
 """
 
 from __future__ import annotations
@@ -33,7 +35,7 @@ SR = 44_100
 BPM = 96.0
 BEAT = 60.0 / BPM  # 0.625 s
 BAR = 4 * BEAT  # 2.5 s
-DUR = 45.0
+DUR = 60.0
 N = int(SR * DUR)
 RNG = np.random.default_rng(20261017)
 
@@ -43,7 +45,7 @@ FMAJ7 = (41, [53, 57, 60, 64, 69])
 CMAJ7 = (48, [55, 59, 60, 64, 67])
 G6 = (43, [55, 59, 62, 64, 67])
 AM9 = (45, [57, 60, 64, 67, 71, 76])
-PROG = [AM7, AM7] + [AM7, FMAJ7, CMAJ7, G6] * 3 + [FMAJ7, G6, AM9, AM9]
+PROG = [AM7, AM7] + [AM7, FMAJ7, CMAJ7, G6] * 5 + [AM9, AM9]
 
 
 def hz(m: float) -> float:
@@ -118,7 +120,7 @@ def pad(left: np.ndarray, right: np.ndarray) -> None:
         n = at(length)
         tt = np.arange(n) / SR
         env = np.clip(tt / 0.45, 0, 1) * np.clip((length - tt) / 1.0, 0, 1)
-        if bar >= 16:  # final chord rings out
+        if bar >= 22:  # final chord rings out
             n = at(DUR - t0)
             tt = np.arange(n) / SR
             env = np.clip(tt / 0.6, 0, 1) * np.exp(-tt / 6.0)
@@ -218,14 +220,14 @@ def build() -> np.ndarray:
     place(send, b, 5.0)
     place(mono, b * 0.8, 5.0)
 
-    bass(mono, 5.0, 40.0)
+    bass(mono, 5.0, 55.0)
 
     k = kick()
     for i in range(int(DUR / BEAT)):
         t = i * BEAT
         beat_in_bar = i % 4
-        full = 10.0 <= t < 35.0
-        half = (5.0 <= t < 10.0 or 35.0 <= t < 40.0) and beat_in_bar in (0, 2)
+        full = 10.0 <= t < 55.0
+        half = (5.0 <= t < 10.0 or 55.0 <= t < 57.5) and beat_in_bar in (0, 2)
         on_impact = 4.99 <= t < 5.01  # the impact already carries a kick
         if (full or half) and not on_impact:
             place(drums, k, t)
@@ -233,15 +235,15 @@ def build() -> np.ndarray:
         if full and beat_in_bar in (1, 3):
             place(drums, clap(), t)
             place(send, clap() * 0.5, t)
-        if 7.5 <= t < 37.5:
+        if 7.5 <= t < 57.5:
             place(drums, hat(), t + BEAT / 2)
             if full:
                 place(drums, hat() * 0.45, t + BEAT * 0.75)
 
-    # arpeggio with dotted-eighth echo, 10–35 s
+    # arpeggio with dotted-eighth echo, 10–55 s
     pattern = [0, 2, 3, 4, 3, 2, 1, 2]
     echo = np.zeros(N)
-    for bar in range(4, 14):
+    for bar in range(4, 22):
         _, notes = PROG[bar]
         for s_ in range(8):
             t = bar * BAR + s_ * BEAT / 2
@@ -255,11 +257,11 @@ def build() -> np.ndarray:
     send += echo * 0.6
 
     # scene swells and the end-card bell
-    for t in (15.0, 20.0, 25.0, 30.0, 35.0):
+    for t in (17.5, 25.0, 32.5, 40.0, 47.5, 55.0):
         place(mono, swell(1.0, 0.06), t - 1.0)
     eb = bell(hz(76), 4.0) + 0.5 * bell(hz(83), 4.0)
-    place(send, eb, 35.0)
-    place(mono, eb * 0.7, 35.0)
+    place(send, eb, 55.0)
+    place(mono, eb * 0.7, 55.0)
 
     # sidechain: duck pad and bass under the kick
     duck = 1.0 - 0.45 * np.clip(kick_env, 0, 1)
@@ -291,7 +293,47 @@ def write_wav(path: str, data: np.ndarray) -> None:
         w.writeframes(pcm.tobytes())
 
 
+def read_mono(path: str) -> np.ndarray:
+    with wave.open(path, "rb") as w:
+        if w.getframerate() != SR or w.getsampwidth() != 2:
+            raise SystemExit(f"{path}: expected 16-bit {SR} Hz audio")
+        data = np.frombuffer(w.readframes(w.getnframes()), dtype="<i2")
+        x = data.reshape(-1, w.getnchannels()).mean(axis=1) / 32768.0
+    out = np.zeros(N)
+    out[: min(N, len(x))] = x[:N]
+    return out
+
+
+def mix_voice(music: np.ndarray, voice: np.ndarray) -> np.ndarray:
+    """Duck the music under the narration and mix both, voice centred."""
+    win = int(0.03 * SR)
+    rms = np.sqrt(np.convolve(voice**2, np.ones(win) / win, mode="same"))
+    active = rms > 0.02
+    # attack 40 ms, release 350 ms on the ducking envelope
+    env = lfilter(
+        [1 - np.exp(-1 / (0.04 * SR))], [1, -np.exp(-1 / (0.04 * SR))], active * 1.0
+    )
+    env = np.maximum(
+        env,
+        lfilter(
+            [1 - np.exp(-1 / (0.35 * SR))], [1, -np.exp(-1 / (0.35 * SR))], active * 1.0
+        ),
+    )
+    v_rms = float(np.sqrt(np.mean(voice[active] ** 2))) if active.any() else 0.1
+    m_rms = float(np.sqrt(np.mean(music**2)))
+    # why: music sits 4 dB under the voice, and another ~8 dB lower while it speaks
+    music = music * (v_rms / m_rms) * 10 ** (-4 / 20)
+    music = music * (1 - 0.6 * np.clip(env, 0, 1))[:, None]
+    out = music + voice[:, None]
+    return out * 10 ** (-1 / 20) / float(np.max(np.abs(out)))
+
+
 if __name__ == "__main__":
-    out = sys.argv[1] if len(sys.argv) > 1 else "vecforge-reel-music.wav"
-    write_wav(out, build())
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    out = args[0] if args else "vecforge-reel-music.wav"
+    track = build()
+    if "--voice" in sys.argv:
+        track = mix_voice(track, read_mono(sys.argv[sys.argv.index("--voice") + 1]))
+        args = [a for a in args if a != sys.argv[sys.argv.index("--voice") + 1]]
+    write_wav(out, track)
     print(f"wrote {out} ({DUR:.0f} s, {BPM:.0f} BPM)")
