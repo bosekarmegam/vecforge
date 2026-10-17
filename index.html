@@ -754,6 +754,82 @@
             gap: 14px;
         }
 
+        /* ─── GUIDE (PDF) ─── */
+        .hero-guide {
+            margin: 18px 0 22px;
+        }
+
+        .hero-guide a {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--accent);
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            border-bottom: 1.5px solid transparent;
+        }
+
+        .hero-guide a:hover {
+            border-bottom-color: var(--accent-light);
+        }
+
+        .guide-card {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+            padding: 28px 32px;
+            margin: 0 auto 28px;
+            border-radius: var(--radius);
+            background: linear-gradient(135deg, #2A1F7A, #4B3BD1 60%, #6C5CE7);
+            color: #fff;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .guide-card img {
+            width: 64px;
+            height: 64px;
+            flex: none;
+        }
+
+        .guide-card h3 {
+            font-size: 1.25rem;
+            margin: 0 0 6px;
+        }
+
+        .guide-card p {
+            margin: 0;
+            font-size: 0.92rem;
+            opacity: 0.88;
+            line-height: 1.6;
+        }
+
+        .guide-actions {
+            margin-left: auto;
+            display: flex;
+            gap: 10px;
+            flex: none;
+        }
+
+        .guide-actions a {
+            padding: 12px 22px;
+            border-radius: var(--radius-pill);
+            font-weight: 700;
+            font-size: 0.9rem;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .guide-actions .primary {
+            background: #fff;
+            color: #2A1F7A;
+        }
+
+        .guide-actions .secondary {
+            color: #fff;
+            border: 1.5px solid rgba(255, 255, 255, 0.55);
+        }
+
         .doc-link {
             background: var(--bg-card);
             border: 1px solid var(--border);
@@ -963,6 +1039,19 @@
                 grid-template-columns: 1fr 1fr;
             }
 
+            .guide-card {
+                flex-direction: column;
+                text-align: center;
+                padding: 26px 22px;
+            }
+
+            .guide-actions {
+                margin-left: 0;
+                width: 100%;
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
             .cta-card {
                 padding: 40px 24px;
             }
@@ -1081,6 +1170,7 @@
                 <li><a href="#compare">Compare</a></li>
                 <li><a href="#examples">Examples</a></li>
                 <li><a href="#docs">Docs</a></li>
+                <li><a href="docs/VecForge-Instructions.pdf">Guide (PDF)</a></li>
                 <li><a href="https://github.com/bosekarmegam/vecforge" class="nav-cta">GitHub</a></li>
             </ul>
         </div>
@@ -1108,6 +1198,7 @@
                 ☆ Star on GitHub
             </a>
         </div>
+        <p class="hero-guide"><a href="docs/VecForge-Instructions.pdf">📕 Read the complete guide (PDF, 26 pages)</a></p>
         <div class="install-bar"
             onclick="navigator.clipboard.writeText('pip install vecforge');this.querySelector('.copy-icon').textContent='✓ Copied!';setTimeout(()=>this.querySelector('.copy-icon').textContent='📋',2000)">
             <span class="dollar">$</span>
@@ -1432,6 +1523,19 @@ mem.<span class="f">end_session</span>(<span class="s">"Reviewed the deployment 
             <p>Guides from the first install to advanced configuration.</p>
         </div>
 
+        <div class="guide-card scroll-reveal">
+            <img src="assets/brand/vecforge-mark.svg" alt="">
+            <div>
+                <h3>VecForge 2.0 Complete Instructions</h3>
+                <p>One 26-page PDF: installation, search, AI memory, connecting Claude over MCP, REST API,
+                    command line, security, upgrading from 1.x and troubleshooting.</p>
+            </div>
+            <div class="guide-actions">
+                <a href="docs/VecForge-Instructions.pdf" class="primary" download>Download PDF</a>
+                <a href="docs/VecForge-Instructions.pdf" class="secondary" target="_blank" rel="noopener">Open</a>
+            </div>
+        </div>
+
         <div class="docs-grid scroll-reveal">
             <a href="https://github.com/bosekarmegam/vecforge/blob/main/docs/quickstart.md" class="doc-link">
                 <span class="icon">⚡</span> Quickstart
@@ -1505,6 +1609,7 @@ mem.<span class="f">end_session</span>(<span class="s">"Reviewed the deployment 
                 <a href="https://github.com/bosekarmegam/vecforge">GitHub</a>
                 <a href="https://pypi.org/project/vecforge/">PyPI</a>
                 <a href="#docs">Documentation</a>
+                <a href="docs/VecForge-Instructions.pdf">Guide (PDF)</a>
                 <a href="#examples">Examples</a>
                 <a href="mailto:suneelbose@arcgx.in">Contact</a>
             </div>
