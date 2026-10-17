@@ -1,0 +1,75 @@
+<!doctype html>
+<!--
+  VecForge link-preview card (Open Graph / Twitter), 1200x630.
+  Rendered to assets/brand/vecforge-social-card.jpg with headless Chromium.
+  Copyright (c) 2026 Suneel Bose K · ArcGX TechLabs Private Limited
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>VecForge Social Card</title>
+<style>
+  html, body { margin:0; padding:0; }
+  #card {
+    position:relative; width:1200px; height:630px; overflow:hidden; color:#fff;
+    font-family:"Inter", system-ui, sans-serif;
+    background:
+      radial-gradient(520px 520px at 250px 300px, rgba(108,92,231,.42), rgba(108,92,231,0) 70%),
+      radial-gradient(700px 500px at 1000px 120px, rgba(103,232,249,.10), rgba(103,232,249,0) 70%),
+      radial-gradient(1400px 900px at 40% 40%, #1d1558 0%, #110b36 52%, #07051a 100%);
+  }
+  svg.field { position:absolute; inset:0; }
+  .mark { position:absolute; left:70px; top:125px; width:330px; height:330px;
+    filter:drop-shadow(0 30px 60px rgba(75,59,209,.55)); }
+  .right { position:absolute; left:450px; right:60px; top:92px; }
+  .word { font-weight:800; font-size:112px; letter-spacing:-4px; line-height:1; display:flex; align-items:center; gap:22px; }
+  .forge { background:linear-gradient(90deg,#67E8F9,#C4B5FD 55%,#FFB86B); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  .ver { font-size:26px; font-weight:700; letter-spacing:3px; padding:8px 18px; border-radius:999px; color:#E9E4FF;
+    border:2px solid rgba(196,181,253,.5); background:rgba(108,92,231,.22); }
+  .tag { margin-top:26px; font-size:44px; font-weight:700; letter-spacing:-1px; line-height:1.15; }
+  .tag em { font-style:normal; color:#FFB86B; }
+  .sub { margin-top:16px; font-size:26px; line-height:1.4; color:rgba(233,228,255,.82); }
+  .pills { margin-top:28px; display:flex; flex-wrap:wrap; gap:12px; }
+  .pills span { font-size:21px; font-weight:600; padding:9px 18px; border-radius:999px;
+    background:rgba(255,255,255,.07); border:1.5px solid rgba(196,181,253,.3); color:#EDEBFF; }
+  .pills span.code { font-family:"DejaVu Sans Mono", monospace; font-weight:400; color:#E6FBFF;
+    border-color:rgba(103,232,249,.45); background:rgba(7,5,26,.6); }
+  .foot { position:absolute; left:60px; right:60px; bottom:34px; display:flex; justify-content:space-between; align-items:center;
+    font-size:22px; color:rgba(233,228,255,.7); }
+  .foot b { color:#fff; font-weight:800; }
+  .foot b span { color:#FFB86B; }
+  .rule { position:absolute; left:0; right:0; bottom:0; height:8px; background:linear-gradient(90deg,#67E8F9,#C4B5FD,#FFB86B); }
+</style>
+</head>
+<body>
+<div id="card">
+  <svg class="field" viewBox="0 0 1200 630" id="field"></svg>
+  <img class="mark" src="../vecforge-mark.svg" alt="">
+  <div class="right">
+    <div class="word"><span>Vec<span class="forge">Forge</span></span><span class="ver">2.0</span></div>
+    <div class="tag">Forge your vector database.<br><em>Own it forever.</em></div>
+    <div class="sub">Local-first Python vector database with long-term<br>AI memory for Claude over MCP.</div>
+    <div class="pills">
+      <span>AES-256 encrypted</span><span>Hybrid search</span><span>MCP server</span><span class="code">pip install vecforge</span>
+    </div>
+  </div>
+  <div class="foot"><span>Powered by <b>ArcGX <span>TechLabs</span></b></span><span>bosekarmegam.github.io/vecforge</span></div>
+  <div class="rule"></div>
+</div>
+<script>
+  // deterministic constellation in the background
+  let a = 20261017;
+  const rnd = () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  const pts = Array.from({ length: 70 }, () => [rnd() * 1200, rnd() * 630, 1 + rnd() * 2.2, rnd()]);
+  const cols = ["103,232,249", "196,181,253", "255,184,107"];
+  let svg = "";
+  for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+    const d = Math.hypot(pts[i][0] - pts[j][0], pts[i][1] - pts[j][1]);
+    if (d < 120) svg += `<line x1="${pts[i][0]}" y1="${pts[i][1]}" x2="${pts[j][0]}" y2="${pts[j][1]}" stroke="rgba(196,181,253,${(0.16 * (1 - d / 120)).toFixed(3)})" stroke-width="1"/>`;
+  }
+  for (const p of pts) svg += `<circle cx="${p[0]}" cy="${p[1]}" r="${p[2]}" fill="rgba(${cols[Math.floor(p[3] * 3)]},.55)"/>`;
+  document.getElementById("field").innerHTML = svg;
+</script>
+</body>
+</html>
