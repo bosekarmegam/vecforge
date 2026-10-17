@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  VecForge 2.0 brand reel (1080x1920, 14 s).
+  VecForge 2.0 brand reel (1080x1920, 45 s, 96 BPM: one scene per 2 bars).
   Every frame is a pure function of time: render(t) sets all styles,
   so scripts/render_reel.cjs can step through frames deterministically.
   Open in a browser to preview in real time.
@@ -11,12 +11,12 @@
 <meta charset="utf-8">
 <title>VecForge Reel</title>
 <style>
-  :root { --cyan:#67E8F9; --violet:#C4B5FD; --amber:#FFB86B; }
+  :root { --cyan:#67E8F9; --violet:#C4B5FD; --amber:#FFB86B; --ink:#0D0A28; }
   html, body { margin:0; padding:0; background:#07051a; }
   #stage {
     position:relative; width:1080px; height:1920px; overflow:hidden;
     background:
-      radial-gradient(900px 900px at 50% 44%, rgba(108,92,231,.35), rgba(108,92,231,0) 70%),
+      radial-gradient(900px 900px at 50% 40%, rgba(108,92,231,.33), rgba(108,92,231,0) 70%),
       radial-gradient(1400px 1600px at 50% 40%, #1d1558 0%, #110b36 48%, #07051a 100%);
     font-family:"Inter", system-ui, sans-serif; color:#fff;
   }
@@ -26,15 +26,77 @@
   #mark svg { width:100%; height:100%; overflow:visible; }
   #mark .fb { transform-box:fill-box; transform-origin:center; }
   #flash { inset:0; background:radial-gradient(520px 520px at 50% 41%, rgba(255,214,150,.75), rgba(255,140,40,.25) 40%, rgba(255,120,0,0) 70%); opacity:0; }
-  #word { left:0; right:0; top:980px; text-align:center; font-weight:800; font-size:156px; letter-spacing:-5px; line-height:1; }
-  #word .forge { background:linear-gradient(90deg, var(--cyan), var(--violet) 55%, var(--amber)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  #word { left:0; right:0; top:980px; text-align:center; font-weight:800; font-size:156px; letter-spacing:-5px; line-height:1; transform-origin:50% 50%; }
+  #word .wm { display:inline-block; }
+  .forge { background:linear-gradient(90deg, var(--cyan), var(--violet) 55%, var(--amber)); -webkit-background-clip:text; background-clip:text; color:transparent; }
   #pill { left:0; right:0; top:1168px; text-align:center; }
   #pill span { display:inline-block; padding:12px 30px; border-radius:999px; border:2px solid rgba(196,181,253,.45);
     background:rgba(108,92,231,.18); font-size:30px; font-weight:600; letter-spacing:6px; color:#E9E4FF; }
-  .tag { left:50px; right:50px; top:1300px; text-align:center; opacity:0; }
-  .tag .eyebrow { font-size:28px; font-weight:700; letter-spacing:7px; color:var(--cyan); margin-bottom:22px; }
-  .tag .main { white-space:nowrap; font-size:66px; font-weight:700; line-height:1.14; letter-spacing:-1.5px; }
-  .tag .main em { font-style:normal; color:var(--amber); }
+  .eyebrow { font-size:28px; font-weight:700; letter-spacing:7px; color:var(--cyan); margin-bottom:22px; }
+  .headline { white-space:nowrap; font-size:64px; font-weight:700; line-height:1.14; letter-spacing:-1.5px; }
+  .headline em { font-style:normal; color:var(--amber); }
+  #tagHero { left:40px; right:40px; top:1300px; text-align:center; opacity:0; }
+
+  .scene { left:0; right:0; top:0; height:1920px; opacity:0; }
+  .scene .head { position:absolute; left:40px; right:40px; top:370px; text-align:center; }
+  .card { position:absolute; left:80px; right:80px; top:680px; padding:44px 46px; border-radius:40px;
+    background:rgba(13,10,40,.74); border:2px solid rgba(196,181,253,.22);
+    box-shadow:0 40px 120px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06); }
+  .muted { color:rgba(233,228,255,.55); }
+  .mono { font-family:"DejaVu Sans Mono", monospace; }
+
+  /* scene A: chat */
+  .chat .label { font-size:24px; letter-spacing:4px; font-weight:700; color:rgba(233,228,255,.5); margin-bottom:22px; }
+  .row { display:flex; margin:14px 0; }
+  .row.me { justify-content:flex-end; }
+  .bubble { max-width:78%; padding:22px 30px; border-radius:30px; font-size:34px; line-height:1.3; font-weight:500; }
+  .me .bubble { background:linear-gradient(135deg,#6C5CE7,#4B3BD1); border-bottom-right-radius:10px; }
+  .ai .bubble { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.08); border-bottom-left-radius:10px; }
+  .ai .who { font-size:22px; font-weight:700; letter-spacing:3px; color:var(--amber); margin-bottom:8px; }
+  .divider { display:flex; align-items:center; gap:22px; margin:26px 0 18px; font-size:24px; letter-spacing:4px; font-weight:700; color:rgba(103,232,249,.85); }
+  .divider:before, .divider:after { content:""; flex:1; height:2px; background:rgba(103,232,249,.3); }
+
+  /* scene B: tools */
+  .tools { display:grid; grid-template-columns:repeat(3, 1fr); gap:18px; }
+  .chip { font-family:"DejaVu Sans Mono", monospace; font-size:27px; text-align:center; padding:22px 6px; border-radius:20px;
+    background:rgba(103,232,249,.08); border:2px solid rgba(103,232,249,.3); color:#E6FBFF; transform-origin:50% 50%; }
+  .chip.hot { background:rgba(255,184,107,.12); border-color:rgba(255,184,107,.5); color:#FFE8CC; }
+  .term { margin-top:30px; padding:24px 28px; border-radius:20px; background:rgba(0,0,0,.4); font-size:32px; color:#E6FBFF; }
+  .term b { color:var(--cyan); font-weight:400; }
+  .caret { display:inline-block; width:16px; height:34px; background:var(--cyan); vertical-align:-6px; margin-left:4px; }
+
+  /* scene C: search */
+  .query { display:flex; align-items:center; gap:20px; padding:22px 28px; border-radius:22px; background:rgba(0,0,0,.4);
+    border:2px solid rgba(196,181,253,.35); font-size:34px; margin-bottom:26px; }
+  .query .lens { width:30px; height:30px; border:4px solid var(--violet); border-radius:50%; position:relative; flex:none; }
+  .query .lens:after { content:""; position:absolute; width:4px; height:16px; background:var(--violet); right:-9px; bottom:-14px; transform:rotate(-45deg); border-radius:2px; }
+  .results { position:relative; height:520px; }
+  .res { position:absolute; left:0; right:0; height:88px; border-radius:20px; background:rgba(255,255,255,.05);
+    display:flex; align-items:center; padding:0 26px; gap:20px; font-size:31px; }
+  .res .rank { width:40px; font-weight:800; color:rgba(233,228,255,.45); }
+  .res .t { flex:1; white-space:nowrap; }
+  .tag { font-family:"DejaVu Sans Mono", monospace; font-size:21px; padding:6px 12px; border-radius:10px; }
+  .tag.d { background:rgba(103,232,249,.14); color:var(--cyan); }
+  .tag.s { background:rgba(196,181,253,.16); color:var(--violet); }
+  .res.both { border:2px solid rgba(255,184,107,0); }
+  .rerank { margin-top:8px; text-align:center; }
+  .rerank span { display:inline-block; padding:12px 26px; border-radius:999px; font-size:26px; font-weight:700; letter-spacing:3px;
+    color:#1a1033; background:linear-gradient(90deg,var(--cyan),var(--violet),var(--amber)); }
+
+  /* scene D: snapshots */
+  .lines .ln { font-family:"DejaVu Sans Mono", monospace; font-size:31px; line-height:1.25; margin:16px 0; white-space:pre; }
+  .ok { color:#7CF2B0; }
+  .gen { display:flex; gap:16px; margin-top:34px; }
+  .gen div { flex:1; padding:22px 10px; border-radius:20px; text-align:center; background:rgba(255,255,255,.05); }
+  .gen b { display:block; font-size:44px; font-weight:800; }
+  .gen span { font-size:22px; letter-spacing:3px; color:rgba(233,228,255,.6); font-weight:700; }
+
+  /* scene E: security */
+  .lockwrap { text-align:center; height:250px; }
+  .check { display:flex; align-items:center; gap:24px; font-size:36px; font-weight:600; margin:22px 0; }
+  .check i { flex:none; width:52px; height:52px; border-radius:16px; display:flex; align-items:center; justify-content:center;
+    background:rgba(124,242,176,.15); color:#7CF2B0; font-style:normal; font-size:32px; font-weight:800; }
+
   #install { left:0; right:0; top:1150px; text-align:center; opacity:0; }
   #install code { display:inline-block; font-family:"DejaVu Sans Mono", monospace; font-size:42px; padding:26px 44px;
     border-radius:22px; background:rgba(7,5,26,.75); border:2px solid rgba(103,232,249,.35); color:#E6FBFF; }
@@ -46,6 +108,7 @@
   #powered .name span { color:var(--amber); }
   #powered .rule { margin:16px auto 0; width:220px; height:4px; border-radius:4px;
     background:linear-gradient(90deg, var(--cyan), var(--violet), var(--amber)); }
+  #fade { inset:0; background:#000; opacity:0; }
 </style>
 </head>
 <body>
@@ -92,13 +155,75 @@
     </svg>
   </div>
 
-  <div id="word" class="abs">Vec<span class="forge">Forge</span></div>
+  <div id="word" class="abs"><span class="wm">Vec<span class="forge">Forge</span></span></div>
   <div id="pill" class="abs"><span>VERSION 2.0</span></div>
+  <div id="tagHero" class="abs"><div class="eyebrow">LOCAL-FIRST</div><div class="headline">The vector database that<br>lives on <em>your</em> machine</div></div>
 
-  <div class="tag abs" id="tag0"><div class="eyebrow">LOCAL-FIRST</div><div class="main">The vector database that<br>lives on <em>your</em> machine</div></div>
-  <div class="tag abs" id="tag1"><div class="eyebrow">AI MEMORY · MCP</div><div class="main">Claude remembers everything.<br><em>Next session too.</em></div></div>
-  <div class="tag abs" id="tag2"><div class="eyebrow">SEARCH</div><div class="main">Hybrid search with a<br><em>quantum-inspired</em> rerank</div></div>
-  <div class="tag abs" id="tag3"><div class="eyebrow">SECURE</div><div class="main">AES-256 encrypted vaults.<br><em>Zero cloud.</em></div></div>
+  <!-- A: AI memory -->
+  <div class="scene abs" id="sA">
+    <div class="head"><div class="eyebrow">AI MEMORY</div><div class="headline">Claude remembers everything.<br><em>Next session too.</em></div></div>
+    <div class="card chat">
+      <div class="label" id="a0">SESSION 1 · MONDAY</div>
+      <div class="row me" id="a1"><div class="bubble">Remember: I prefer short answers.</div></div>
+      <div class="row ai" id="a2"><div class="bubble"><div class="who">CLAUDE</div>Saved to VecForge memory ✓</div></div>
+      <div class="divider" id="a3">NEW SESSION · FRIDAY</div>
+      <div class="row me" id="a4"><div class="bubble">How do I like my answers?</div></div>
+      <div class="row ai" id="a5"><div class="bubble"><div class="who">CLAUDE</div>Short. You told me on Monday.</div></div>
+    </div>
+  </div>
+
+  <!-- B: MCP tools -->
+  <div class="scene abs" id="sB">
+    <div class="head"><div class="eyebrow">MCP SERVER</div><div class="headline">Works with <em>Claude Desktop</em><br>and <em>Claude Code</em></div></div>
+    <div class="card">
+      <div class="tools" id="tools"></div>
+      <div class="term mono"><b>$</b> <span id="bType"></span><span class="caret" id="bCaret"></span></div>
+    </div>
+  </div>
+
+  <!-- C: hybrid search + quantum rerank -->
+  <div class="scene abs" id="sC">
+    <div class="head"><div class="eyebrow">HYBRID SEARCH</div><div class="headline">Meaning + keywords, then a<br><em>quantum-inspired</em> rerank</div></div>
+    <div class="card">
+      <div class="query"><div class="lens"></div><span id="cType"></span><span class="caret" id="cCaret" style="background:var(--violet)"></span></div>
+      <div class="results" id="results"></div>
+      <div class="rerank" id="rerank"><span>QUANTUM-INSPIRED RERANK</span></div>
+    </div>
+  </div>
+
+  <!-- D: snapshots -->
+  <div class="scene abs" id="sD">
+    <div class="head"><div class="eyebrow">FAST SESSIONS</div><div class="headline">Index snapshots.<br><em>Reopen without a rebuild.</em></div></div>
+    <div class="card lines">
+      <div class="ln" id="d0"><span style="color:var(--cyan)">&gt;&gt;&gt;</span> db = VecForge("vault.db")</div>
+      <div class="ln ok" id="d1">✓ snapshot is current</div>
+      <div class="ln ok" id="d2">✓ indexes restored, no re-embedding</div>
+      <div class="ln" id="d3"><span style="color:var(--cyan)">&gt;&gt;&gt;</span> db.search("quarterly revenue")</div>
+      <div class="ln muted" id="d4">  5 results, ready</div>
+      <div class="gen" id="d5">
+        <div><b>FAISS</b><span>VECTORS</span></div><div><b>BM25</b><span>KEYWORDS</span></div><div><b>1 file</b><span>SQLITE</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- E: security -->
+  <div class="scene abs" id="sE">
+    <div class="head"><div class="eyebrow">SECURE</div><div class="headline">AES-256 encrypted vaults.<br><em>Zero cloud.</em></div></div>
+    <div class="card">
+      <div class="lockwrap">
+        <svg width="210" height="250" viewBox="0 0 210 250">
+          <defs><linearGradient id="lk" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#67E8F9"/><stop offset=".6" stop-color="#C4B5FD"/><stop offset="1" stop-color="#FFB86B"/></linearGradient></defs>
+          <path id="shackle" d="M55 120 V75 a50 50 0 0 1 100 0 V120" fill="none" stroke="url(#lk)" stroke-width="22" stroke-linecap="round"/>
+          <rect x="20" y="110" width="170" height="130" rx="34" fill="url(#lk)"/>
+          <circle cx="105" cy="165" r="17" fill="#1a1033"/><rect x="97" y="170" width="16" height="38" rx="8" fill="#1a1033"/>
+        </svg>
+      </div>
+      <div class="check" id="e0"><i>✓</i>AES-256 encryption with SQLCipher</div>
+      <div class="check" id="e1"><i>✓</i>Roles and API keys</div>
+      <div class="check" id="e2"><i>✓</i>Audit log of every action</div>
+      <div class="check" id="e3"><i>✓</i>Runs fully offline</div>
+    </div>
+  </div>
 
   <div id="install" class="abs"><code><b>$</b> pip install vecforge</code></div>
   <div id="url" class="abs">github.com/bosekarmegam/vecforge</div>
@@ -108,10 +233,11 @@
     <div class="name">ArcGX <span>TechLabs</span></div>
     <div class="rule"></div>
   </div>
+  <div id="fade" class="abs"></div>
 </div>
 
 <script>
-const DURATION = 14.0;
+const DURATION = 45.0;            // 18 bars at 96 BPM
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const prog = (t, a, b) => clamp((t - a) / (b - a));
 const lerp = (a, b, p) => a + (b - a) * p;
@@ -119,7 +245,9 @@ const outCubic = p => 1 - Math.pow(1 - p, 3);
 const inOutCubic = p => (p < .5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
 const outExpo = p => (p >= 1 ? 1 : 1 - Math.pow(2, -10 * p));
 const outBack = p => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(p - 1, 3) + c1 * Math.pow(p - 1, 2); };
+const $ = id => document.getElementById(id);
 
+// ── particle field ─────────────────────────────────────────────
 function mulberry32(a) {
   return function () {
     a |= 0; a = (a + 0x6D2B79F5) | 0;
@@ -129,6 +257,7 @@ function mulberry32(a) {
   };
 }
 const rnd = mulberry32(20261017);
+const IMPACT = 4.9;               // spark lands on the bar-3 downbeat (5.0 s)
 const SPARK = { x: 540, y: 785 };
 const N = 170;
 const P = Array.from({ length: N }, () => {
@@ -136,111 +265,176 @@ const P = Array.from({ length: N }, () => {
   return {
     sx: SPARK.x + Math.cos(ang) * rad, sy: SPARK.y + Math.sin(ang) * rad * 1.3,
     hx: 40 + rnd() * 1000, hy: 60 + rnd() * 1800,
-    delay: rnd() * 0.5, r: 1.6 + rnd() * 2.4, hue: rnd(),
+    delay: rnd() * 1.2, r: 1.6 + rnd() * 2.4, hue: rnd(),
     wob: rnd() * Math.PI * 2, speed: 0.25 + rnd() * 0.5,
   };
 });
-const ctx = document.getElementById("field").getContext("2d");
+const ctx = $("field").getContext("2d");
 const COLORS = ["103,232,249", "196,181,253", "255,184,107"];
-
 function particle(p, t) {
-  // converge into the spark (0.0–2.0 s), burst out to the field, then drift
-  if (t < 2.0) {
-    const k = inOutCubic(prog(t, p.delay, 2.0));
+  if (t < IMPACT) {
+    const k = inOutCubic(prog(t, p.delay, IMPACT));
     return { x: lerp(p.sx, SPARK.x, k), y: lerp(p.sy, SPARK.y, k), a: 0.25 + 0.75 * k };
   }
-  const k = outExpo(prog(t, 2.0, 3.6));
-  const dx = Math.sin(t * p.speed + p.wob) * 14, dy = Math.cos(t * p.speed * 0.8 + p.wob) * 18 - (t - 2) * 6 * p.speed;
-  return { x: lerp(SPARK.x, p.hx, k) + dx * k, y: lerp(SPARK.y, p.hy, k) + dy * k, a: 1 };
+  const k = outExpo(prog(t, IMPACT, IMPACT + 1.8));
+  const dx = Math.sin(t * p.speed + p.wob) * 16, dy = Math.cos(t * p.speed * 0.8 + p.wob) * 20 - (t - IMPACT) * 4 * p.speed;
+  let y = lerp(SPARK.y, p.hy, k) + dy * k;
+  y = ((y % 1920) + 1920) % 1920;
+  return { x: lerp(SPARK.x, p.hx, k) + dx * k, y, a: 1 };
 }
-
-function drawField(t) {
+function drawField(t, dim) {
   ctx.clearRect(0, 0, 1080, 1920);
   const pts = P.map(p => ({ ...particle(p, t), p }));
-  const dim = t > 2.0 ? lerp(1, 0.55, prog(t, 3.0, 5.0)) : 1;
   ctx.lineWidth = 1.2;
-  for (let i = 0; i < N; i++) {
-    for (let j = i + 1; j < N; j++) {
-      const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y, d2 = dx * dx + dy * dy;
-      if (d2 < 130 * 130) {
-        const a = (1 - Math.sqrt(d2) / 130) * 0.22 * dim * Math.min(pts[i].a, pts[j].a);
-        ctx.strokeStyle = `rgba(196,181,253,${a.toFixed(3)})`;
-        ctx.beginPath(); ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[j].x, pts[j].y); ctx.stroke();
-      }
+  for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) {
+    const dx = pts[i].x - pts[j].x, dy = pts[i].y - pts[j].y, d2 = dx * dx + dy * dy;
+    if (d2 < 130 * 130) {
+      const a = (1 - Math.sqrt(d2) / 130) * 0.22 * dim * Math.min(pts[i].a, pts[j].a);
+      ctx.strokeStyle = `rgba(196,181,253,${a.toFixed(3)})`;
+      ctx.beginPath(); ctx.moveTo(pts[i].x, pts[i].y); ctx.lineTo(pts[j].x, pts[j].y); ctx.stroke();
     }
   }
   for (const q of pts) {
-    const c = COLORS[Math.floor(q.p.hue * 3)];
-    ctx.fillStyle = `rgba(${c},${(0.85 * q.a * dim).toFixed(3)})`;
+    ctx.fillStyle = `rgba(${COLORS[Math.floor(q.p.hue * 3)]},${(0.85 * q.a * dim).toFixed(3)})`;
     ctx.beginPath(); ctx.arc(q.x, q.y, q.p.r, 0, Math.PI * 2); ctx.fill();
   }
 }
 
-const $ = id => document.getElementById(id);
+// ── scene content ──────────────────────────────────────────────
+const TOOLS = ["context_pack", "remember", "recall", "forget", "reinforce", "list_memories",
+  "start_session", "end_session", "recent_sessions", "search_vault", "add_document", "vault_stats"];
+$("tools").innerHTML = TOOLS.map((n, i) => `<div class="chip${i < 3 ? " hot" : ""}" id="tool${i}">${n}</div>`).join("");
+const RESULTS = [   // fused order; rows found by both retrievers move up, order inside groups kept
+  { t: "Refunds on annual plans", d: 1, s: 1, w: 0.94 },
+  { t: "Billing cycle FAQ", d: 1, s: 0, w: 0.81 },
+  { t: "Annual plan refund steps", d: 1, s: 1, w: 0.78 },
+  { t: "Cancel a subscription", d: 0, s: 1, w: 0.66 },
+  { t: "Refund times by region", d: 1, s: 1, w: 0.61 },
+];
+const AFTER = [0, 2, 4, 1, 3];
+$("results").innerHTML = RESULTS.map((r, i) => `<div class="res${r.d && r.s ? " both" : ""}" id="res${i}">
+  <div class="rank" id="rk${i}">${i + 1}</div><div class="t">${r.t}</div>
+  ${r.d ? '<span class="tag d">dense</span>' : ""}${r.s ? '<span class="tag s">sparse</span>' : ""}</div>`).join("");
+const typeInto = (id, text, t, a, cps) => { $(id).textContent = text.slice(0, Math.max(0, Math.floor((t - a) * cps))); };
+const pop = (id, t, a, dy = 30) => {
+  const p = outCubic(prog(t, a, a + 0.35));
+  $(id).style.opacity = p; $(id).style.transform = `translateY(${lerp(dy, 0, p)}px)`;
+};
+
+// layout for the compact header used during the feature scenes
 const ARM = Math.hypot(128, 252);
 for (const id of ["armL", "armR"]) $(id).style.strokeDasharray = `${ARM} ${ARM}`;
+let HEADER = null;
+function header() {
+  if (HEADER) return HEADER;
+  const ww = document.querySelector("#word .wm").getBoundingClientRect().width;
+  const markW = 500 * 0.28, gap = 30, wordW = ww * 0.5, total = markW + gap + wordW, x0 = 540 - total / 2;
+  HEADER = { mark: { dx: x0 + markW / 2 - 540, dy: 200 - 660, s: 0.28 }, word: { dx: x0 + markW + gap + wordW / 2 - 540, dy: 200 - 1058, s: 0.5 } };
+  return HEADER;
+}
+const mix3 = (h, d, e, p1, p2) => lerp(lerp(h, d, p1), e, p2);
+
+const SCENES = ["sA", "sB", "sC", "sD", "sE"];
 
 function render(t) {
-  drawField(t);
-
-  // ── end-card move (10.6–11.4 s)
-  const e = inOutCubic(prog(t, 10.6, 11.4));
+  const e1 = inOutCubic(prog(t, 10.0, 10.8));   // hero -> header
+  const e2 = inOutCubic(prog(t, 35.0, 35.9));   // header -> end card
+  const H = header();
+  drawField(t, t < IMPACT ? 1 : lerp(lerp(1, 0.4, prog(t, 7, 10.8)), 0.75, e2));
 
   // ── mark
-  const tileIn = prog(t, 0.15, 0.9);
-  const markScale = lerp(0.55 + 0.45 * outBack(tileIn), 0.8, e) * (1 + 0.035 * Math.sin(Math.max(0, t - 2.4) * 2.2) * prog(t, 2.4, 3.2) * (1 - e));
+  const tileIn = prog(t, 0.4, 1.6);
+  const intro = 0.55 + 0.45 * outBack(tileIn);
+  const breathe = 1 + 0.03 * Math.sin(Math.max(0, t - 5.4) * 2.2) * prog(t, 5.4, 6.2) * (1 - e1);
+  const ms = mix3(intro, H.mark.s, 0.8, e1, e2) * breathe;
+  const mdx = mix3(0, H.mark.dx, 0, e1, e2), mdy = mix3(0, H.mark.dy, -110, e1, e2);
   $("mark").style.opacity = outCubic(tileIn);
-  $("mark").style.transform = `translateY(${lerp(0, -110, e)}px) scale(${markScale})`;
-  for (const [id, a, b] of [["armL", 0.8, 1.75], ["armR", 0.95, 1.9]]) {
+  $("mark").style.transform = `translate(${mdx}px, ${mdy}px) scale(${ms})`;
+  for (const [id, a, b] of [["armL", 2.6, 4.2], ["armR", 2.8, 4.4]]) {
     const p = outCubic(prog(t, a, b));
     $(id).style.strokeDashoffset = ARM * (1 - p);
     $(id).style.opacity = p > 0 ? 1 : 0;
   }
-  for (const [id, a] of [["nodeL", 0.7], ["nodeR", 0.85]]) {
+  for (const [id, a] of [["nodeL", 1.8], ["nodeR", 2.1]]) {
     const p = prog(t, a, a + 0.45);
     $(id).style.transform = `scale(${p > 0 ? outBack(p) : 0})`;
   }
-  $("mids").style.opacity = prog(t, 1.4, 1.8);
-  const sp = prog(t, 1.85, 2.5);
+  $("mids").style.opacity = prog(t, 4.0, 4.5);
+  const sp = prog(t, IMPACT - 0.05, IMPACT + 0.6);
   const sparkScale = sp <= 0 ? 0 : sp < 0.35 ? lerp(0, 1.7, outCubic(sp / 0.35)) : lerp(1.7, 1, outCubic((sp - 0.35) / 0.65));
-  const pulse = 1 + 0.08 * Math.sin(Math.max(0, t - 2.5) * 4) * prog(t, 2.5, 3);
+  const pulse = 1 + 0.08 * Math.sin(Math.max(0, t - 5.5) * 4) * prog(t, 5.5, 6);
   $("spark").style.transform = `scale(${sparkScale * pulse})`;
   $("star").style.transform = `rotate(${lerp(-90, 0, outCubic(sp))}deg) scale(${sparkScale > 0 ? Math.min(sparkScale, 1.25) : 0})`;
-  $("halo").setAttribute("opacity", (0.55 * prog(t, 1.9, 2.6)).toFixed(3));
-  const fl = prog(t, 1.9, 2.9);
+  $("halo").setAttribute("opacity", (0.55 * prog(t, IMPACT, IMPACT + 0.7)).toFixed(3));
+  const fl = prog(t, IMPACT, IMPACT + 1.0);
   $("flash").style.opacity = fl <= 0 ? 0 : fl < 0.15 ? fl / 0.15 : 1 - outCubic((fl - 0.15) / 0.85);
-  $("flash").style.transform = `translateY(${lerp(0, -110, e)}px)`;
 
-  // ── wordmark + version pill
-  const w = outCubic(prog(t, 2.35, 3.1));
+  // ── wordmark, pill, hero tagline
+  const w = outCubic(prog(t, 5.3, 6.0));
   $("word").style.opacity = w;
-  $("word").style.transform = `translateY(${lerp(50, 0, w) + lerp(0, -140, e)}px) scale(${lerp(1, 0.92, e)})`;
-  const pl = outCubic(prog(t, 2.8, 3.4));
+  $("word").style.transform = `translate(${mix3(0, H.word.dx, 0, e1, e2)}px, ${lerp(50, 0, w) + mix3(0, H.word.dy, -140, e1, e2)}px) scale(${mix3(1, H.word.s, 0.92, e1, e2)})`;
+  const pl = outCubic(prog(t, 5.8, 6.4)) * (1 - prog(t, 9.6, 10.0)) + outCubic(prog(t, 35.5, 36.1));
   $("pill").style.opacity = pl;
-  $("pill").style.transform = `translateY(${lerp(30, 0, pl) + lerp(0, -145, e)}px)`;
+  $("pill").style.transform = `translateY(${t < 20 ? lerp(30, 0, outCubic(prog(t, 5.8, 6.4))) : -145}px)`;
+  const th = outCubic(prog(t, 6.6, 7.1)) * (1 - prog(t, 9.4, 9.8));
+  $("tagHero").style.opacity = th;
+  $("tagHero").style.transform = `translateY(${lerp(60, 0, outCubic(prog(t, 6.6, 7.1))) - 40 * prog(t, 9.4, 9.8)}px)`;
 
-  // ── taglines: 1.8 s each from 3.4 s
-  for (let i = 0; i < 4; i++) {
-    const a = 3.4 + i * 1.8, b = a + 1.8;
-    const pin = outCubic(prog(t, a, a + 0.4));
-    const pout = i === 3 ? prog(t, 10.4, 10.8) : prog(t, b - 0.3, b);
-    const el = $("tag" + i);
-    el.style.opacity = (pin * (1 - pout)).toFixed(3);
-    el.style.transform = `translateY(${lerp(60, 0, pin) - 40 * pout}px)`;
-  }
+  // ── feature scenes: 10–35 s, one per 2 bars
+  SCENES.forEach((id, k) => {
+    const a = 10 + 5 * k, b = a + 5;
+    const start = k === 0 ? a + 0.8 : a + 0.35;   // scene A waits for the header move
+    const pin = outCubic(prog(t, start, start + 0.5)), pout = prog(t, b - 0.4, b);
+    $(id).style.opacity = (pin * (1 - pout)).toFixed(3);
+    $(id).style.transform = `translateY(${lerp(70, 0, pin) - 50 * pout}px)`;
+    $(id).style.visibility = pin * (1 - pout) > 0 ? "visible" : "hidden";
+  });
+  // A: chat (10–15)
+  let u = t - 10;
+  ["a0", "a1", "a2", "a3", "a4", "a5"].forEach((id, i) => pop(id, u, [1.1, 1.3, 1.9, 2.6, 3.1, 3.7][i]));
+  // B: tools (15–20)
+  u = t - 15;
+  TOOLS.forEach((_, i) => {
+    const p = prog(u, 0.7 + i * 0.1, 1.05 + i * 0.1);
+    $("tool" + i).style.opacity = p; $("tool" + i).style.transform = `scale(${p > 0 ? outBack(p) : 0.6})`;
+  });
+  typeInto("bType", 'pip install "vecforge[mcp]"', u, 2.3, 22);
+  $("bCaret").style.opacity = Math.floor(u * 3) % 2 ? 0.2 : 1;
+  // C: search (20–25)
+  u = t - 20;
+  typeInto("cType", "refund policy for annual plans", u, 0.7, 30);
+  $("cCaret").style.opacity = u < 1.8 ? (Math.floor(u * 3) % 2 ? 0.2 : 1) : 0;
+  const rr = inOutCubic(prog(u, 2.9, 3.6));
+  RESULTS.forEach((r, i) => {
+    const el = $("res" + i), y0 = i * 104, y1 = AFTER.indexOf(i) * 104;
+    const p = outCubic(prog(u, 1.7 + i * 0.1, 2.05 + i * 0.1));
+    el.style.opacity = p;
+    el.style.transform = `translate(${lerp(40, 0, p)}px, ${lerp(y0, y1, rr)}px)`;
+    const hot = r.d && r.s ? prog(u, 2.7, 3.0) * (1 - 0.5 * prog(u, 4.0, 4.6)) : 0;
+    el.style.borderColor = `rgba(255,184,107,${(0.7 * hot).toFixed(3)})`;
+    el.style.background = `rgba(255,255,255,${(0.05 + 0.05 * hot).toFixed(3)})`;
+    $("rk" + i).textContent = String((rr > 0.5 ? AFTER.indexOf(i) : i) + 1);
+  });
+  const rk = outCubic(prog(u, 2.6, 3.0));
+  $("rerank").style.opacity = rk; $("rerank").style.transform = `scale(${lerp(0.85, 1, rk)})`;
+  // D: snapshots (25–30)
+  u = t - 25;
+  ["d0", "d1", "d2", "d3", "d4", "d5"].forEach((id, i) => pop(id, u, [0.7, 1.3, 1.8, 2.5, 3.1, 3.5][i], 20));
+  // E: security (30–35)
+  u = t - 30;
+  const lockP = outBack(prog(u, 0.9, 1.4));
+  $("shackle").setAttribute("transform", `translate(0 ${lerp(-34, 0, prog(u, 0.9, 1.4) > 0 ? lockP : 0).toFixed(2)})`);
+  ["e0", "e1", "e2", "e3"].forEach((id, i) => pop(id, u, 1.6 + i * 0.35, 20));
 
   // ── end card
-  const ins = outCubic(prog(t, 11.1, 11.7));
-  $("install").style.opacity = ins;
-  $("install").style.transform = `translateY(${lerp(40, 0, ins)}px)`;
-  const u = outCubic(prog(t, 11.4, 12.0));
-  $("url").style.opacity = u;
-  $("url").style.transform = `translateY(${lerp(30, 0, u)}px)`;
-
-  // ── powered by ArcGX: footer from 3 s, hero line on the end card
-  const pw = outCubic(prog(t, 3.0, 3.6));
+  const ins = outCubic(prog(t, 36.2, 36.8));
+  $("install").style.opacity = ins; $("install").style.transform = `translateY(${lerp(40, 0, ins)}px)`;
+  const ur = outCubic(prog(t, 36.6, 37.2));
+  $("url").style.opacity = ur; $("url").style.transform = `translateY(${lerp(30, 0, ur)}px)`;
+  const pw = outCubic(prog(t, 6.0, 6.6));
   $("powered").style.opacity = pw;
-  $("powered").style.transform = `translateY(${lerp(20, 0, pw) + lerp(0, -180, e)}px) scale(${lerp(1, 1.45, e)})`;
+  $("powered").style.transform = `translateY(${lerp(20, 0, pw) + lerp(0, -180, e2)}px) scale(${lerp(1, 1.45, e2)})`;
+  $("fade").style.opacity = prog(t, 0, 0.5) < 1 ? 1 - prog(t, 0, 0.5) : prog(t, 44.0, 45.0);
 }
 
 window.render = render;
@@ -250,7 +444,7 @@ if (!/[?&]static/.test(location.search)) {
   const loop = now => { render(((now - t0) / 1000) % DURATION); requestAnimationFrame(loop); };
   requestAnimationFrame(loop);
 } else {
-  render(Number(new URLSearchParams(location.search).get("t") || 12));
+  render(Number(new URLSearchParams(location.search).get("t") || 40));
 }
 </script>
 </body>

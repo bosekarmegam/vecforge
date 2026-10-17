@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VecForge — Forge your vector database. Own it forever.</title>
+    <title>VecForge: Forge your vector database. Own it forever.</title>
     <meta name="description"
         content="VecForge 2.0 is a local-first Python vector database with hybrid search, AES-256 encryption, and persistent AI memory for Claude and other agents over MCP. Built by Suneel Bose K · ArcGX TechLabs.">
     <meta name="keywords"
@@ -15,8 +15,8 @@
     <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png">
     <meta name="author" content="Suneel Bose K · ArcGX TechLabs Private Limited">
 
-    <meta property="og:title" content="VecForge — Forge your vector database. Own it forever.">
-    <meta property="og:description" content="Local-first · Encrypted · Hybrid Search · AI Memory over MCP · Zero Cloud Dependency">
+    <meta property="og:title" content="VecForge: Forge your vector database. Own it forever.">
+    <meta property="og:description" content="Local-first · Encrypted · Hybrid search · AI memory over MCP · Runs offline">
     <meta property="og:type" content="website">
     <meta property="og:image" content="assets/brand/vecforge-logo-horizontal.png">
 
@@ -274,6 +274,8 @@
             padding: 140px 24px 80px;
             text-align: center;
             position: relative;
+            /* why: the 800px glow behind the hero widened the page on phones */
+            overflow: hidden;
         }
 
         .hero::before {
@@ -282,7 +284,7 @@
             top: 0;
             left: 50%;
             transform: translateX(-50%);
-            width: 800px;
+            width: min(800px, 100%);
             height: 800px;
             background: radial-gradient(circle, rgba(108, 92, 231, 0.06) 0%, transparent 70%);
             pointer-events: none;
@@ -970,9 +972,83 @@
             }
         }
 
+        @media (max-width: 768px) {
+            .memory-grid > *, .features-grid > *, .examples-grid > * {
+                min-width: 0;
+            }
+
+            .code-block {
+                padding: 22px 18px 18px;
+            }
+
+            /* why: long code lines scroll sideways instead of wrapping mid-token */
+            .code-block code {
+                white-space: pre;
+                overflow-x: auto;
+                font-size: 0.78rem;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .memory-code {
+                font-size: 0.74rem;
+                padding: 18px;
+            }
+
+            /* why: keep all four columns on screen so the VecForge column is visible */
+            .comparison-table {
+                min-width: 0;
+                table-layout: fixed;
+            }
+
+            .comparison-table th,
+            .comparison-table td {
+                padding: 10px 8px;
+                font-size: 0.76rem;
+                overflow-wrap: break-word;
+            }
+
+            .comparison-table th {
+                font-size: 0.68rem;
+                letter-spacing: 0.02em;
+            }
+
+            .comparison-table th:first-child,
+            .comparison-table td:first-child {
+                width: 30%;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .comparison-table th,
+            .comparison-table td {
+                padding: 8px 5px;
+                font-size: 0.68rem;
+            }
+
+            .comparison-table th {
+                font-size: 0.56rem;
+                letter-spacing: 0;
+            }
+
+            .comparison-table th:first-child,
+            .comparison-table td:first-child {
+                width: 28%;
+            }
+        }
+
         @media (max-width: 480px) {
             .docs-grid {
                 grid-template-columns: 1fr;
+            }
+
+            .hero h1 {
+                font-size: 2.3rem;
+            }
+
+            .hero-actions .btn {
+                width: 100%;
+                max-width: 320px;
+                justify-content: center;
             }
 
             .hero-actions {
@@ -1005,7 +1081,7 @@
                 <li><a href="#compare">Compare</a></li>
                 <li><a href="#examples">Examples</a></li>
                 <li><a href="#docs">Docs</a></li>
-                <li><a href="https://github.com/bosekarmegam/vecforge" class="nav-cta">GitHub →</a></li>
+                <li><a href="https://github.com/bosekarmegam/vecforge" class="nav-cta">GitHub</a></li>
             </ul>
         </div>
     </nav>
@@ -1015,19 +1091,19 @@
         <img src="assets/brand/vecforge-mark.svg" alt="VecForge logo" class="hero-logo">
         <div class="hero-badge">
             <span class="dot"></span>
-            v2.0.0 — AI Memory + MCP
+            v2.0.0 · AI Memory + MCP
         </div>
         <h1>
             <span class="gradient-text">Forge</span> your vector<br>
             database. <span class="gradient-text">Own</span> it forever.
         </h1>
         <p class="hero-sub">
-            A universal, local-first Python vector database with AES-256 encryption,
-            hybrid search, and persistent AI memory for Claude and other agents over MCP.
-            Your data never leaves your machine.
+            A local-first Python vector database with AES-256 encryption,
+            hybrid search, and long-term memory for Claude and other AI agents over MCP.
+            Your data stays on your machine.
         </p>
         <div class="hero-actions">
-            <a href="#quickstart" class="btn btn-primary">Get Started →</a>
+            <a href="#quickstart" class="btn btn-primary">Get Started</a>
             <a href="https://github.com/bosekarmegam/vecforge" class="btn btn-outline">
                 ☆ Star on GitHub
             </a>
@@ -1052,7 +1128,7 @@
                 <div class="code-split">
                     <div class="code-input">
                         <code>
-<span class="cmt"># Multi-domain hybrid search & precise scoring</span>
+<span class="cmt"># Hybrid search across unrelated topics</span>
 <span class="kw">from</span> vecforge <span class="kw">import</span> VecForge
 
 db = <span class="fn">VecForge</span>(<span class="str">":memory:"</span>)
@@ -1062,7 +1138,7 @@ db.<span class="fn">add</span>(<span class="str">"Authentic Italian pizza requir
 
 results = db.<span class="fn">search</span>(<span class="str">"space exploration"</span>)
 <span class="kw">for</span> r <span class="kw">in</span> results:
-    <span class="fn">print</span>(<span class="str">f"{</span><span class="var">r</span>.<span class="var">score</span><span class="str">:.3f}  →  {</span><span class="var">r</span>.<span class="var">text</span><span class="str">}"</span>)
+    <span class="fn">print</span>(<span class="str">f"{</span><span class="var">r</span>.<span class="var">score</span><span class="str">:.3f}  {</span><span class="var">r</span>.<span class="var">text</span><span class="str">}"</span>)
 </code>
                     </div>
 
@@ -1071,14 +1147,14 @@ results = db.<span class="fn">search</span>(<span class="str">"space exploration
                     <div class="code-output">
                         <div class="output-label">Terminal Output</div>
                         <code>
-<span class="num">1.000</span>  →  NASA's Artemis aims to return humans to the Moon
-<span class="num">0.134</span>  →  Authentic Italian pizza requires a wood-fired oven
-<span class="num">0.000</span>  →  The quick brown fox jumps over the lazy dog
+<span class="num">1.000</span>  NASA's Artemis aims to return humans to the Moon
+<span class="num">0.134</span>  Authentic Italian pizza requires a wood-fired oven
+<span class="num">0.000</span>  The quick brown fox jumps over the lazy dog
 </code>
                     </div>
                 </div>
             </div>
-            <p class="code-label">Perfect [0, 1] Min-Max Normalization across any domain</p>
+            <p class="code-label">Scores are normalised to the range 0 to 1</p>
         </div>
     </header>
 
@@ -1086,64 +1162,64 @@ results = db.<span class="fn">search</span>(<span class="str">"space exploration
     <section id="features">
         <div class="section-header scroll-reveal">
             <span class="section-tag">Features</span>
-            <h2>Everything you need. Nothing you don't.</h2>
-            <p>Enterprise-grade capabilities without cloud lock-in, hidden fees, or egress charges.</p>
+            <h2>What you get</h2>
+            <p>Everything runs inside your own Python process. No cloud account and no usage fees.</p>
         </div>
 
         <div class="features-grid">
             <div class="feature-card scroll-reveal">
                 <div class="feature-icon">🔐</div>
                 <h3>AES-256 Encryption</h3>
-                <p>SQLCipher-powered encryption at rest. Your data is unreadable without the key. Always use environment
-                    variables — never hardcode.</p>
+                <p>SQLCipher encrypts the whole file at rest, so the data is unreadable without the key. Keep the key
+                    in an environment variable, not in your code.</p>
             </div>
             <div class="feature-card scroll-reveal">
                 <div class="feature-icon">🔍</div>
                 <h3>Hybrid Search</h3>
-                <p>FAISS dense + incremental BM25 keyword retrieval, fused with explainable signals, adaptive
-                    metadata filters, and optional cross-encoder reranking.</p>
+                <p>FAISS vectors and an incremental BM25 keyword index, fused into one score that shows which
+                    retriever found each result. Metadata filters and an optional cross-encoder rerank.</p>
             </div>
             <div class="feature-card scroll-reveal">
                 <div class="feature-icon">🛡️</div>
                 <h3>Namespace Isolation</h3>
-                <p>Hard multi-tenant boundaries enforced in SQL and inside the vector index itself — small tenants
-                    get full recall, and never see each other's data.</p>
+                <p>Tenants are separated in SQL and inside the vector index itself, so small tenants still get full
+                    recall and never see each other's data.</p>
             </div>
             <div class="feature-card scroll-reveal">
                 <div class="feature-icon">🔑</div>
                 <h3>Role-Based Access</h3>
-                <p>Admin, read-write and read-only roles. Keys are stored as SHA-256 digests; unregistered keys get
-                    no access. No key = local admin for zero-friction development.</p>
+                <p>Admin, read-write and read-only roles. Keys are stored as SHA-256 digests and unregistered keys
+                    get no access. Without a key you are the local admin, which keeps development simple.</p>
             </div>
             <div class="feature-card scroll-reveal">
                 <div class="feature-icon">📄</div>
                 <h3>Auto-Ingestion</h3>
-                <p>Drop in PDFs, DOCX, HTML, TXT, Markdown. Smart chunking with configurable overlap. Recursive
-                    directory support.</p>
+                <p>Add PDF, DOCX, HTML, TXT and Markdown files, or whole folders. Text is split into overlapping
+                    chunks you can size yourself.</p>
             </div>
             <div class="feature-card scroll-reveal">
                 <div class="feature-icon">📋</div>
                 <h3>Audit Logging</h3>
-                <p>Append-only JSONL logs for compliance. Track every add, search, and delete with actor, timestamp, and
-                    metadata.</p>
+                <p>An append-only JSONL log of every add, search and delete, with the actor, the time and the
+                    details.</p>
             </div>
             <div class="feature-card scroll-reveal">
                 <div class="feature-icon">🧠</div>
                 <h3>AI Memory + MCP</h3>
-                <p>Remember facts, preferences and decisions across sessions. Serve them to Claude Desktop, Claude
-                    Code, or any MCP client — all on your machine.</p>
+                <p>Remember facts, preferences and decisions across sessions, and serve them to Claude Desktop,
+                    Claude Code or any MCP client from your own machine.</p>
             </div>
             <div class="feature-card scroll-reveal">
                 <div class="feature-icon">🌀</div>
                 <h3>Quantum-Inspired Rerank</h3>
-                <p>Grover amplitude amplification in closed form: boosts results both retrievers agree on, keeps the
-                    best first. 1.7 ms at a million candidates.</p>
+                <p>Grover amplitude amplification computed in closed form. Results both retrievers agree on move
+                    up and the best result stays first. About 2 ms for a million candidates.</p>
             </div>
             <div class="feature-card scroll-reveal">
                 <div class="feature-icon">⚡</div>
-                <h3>Instant Reopen</h3>
-                <p>Index snapshots inside the vault, O(1) deletes, batched ingest, and a no-download hash embedder for
-                    CI and offline machines.</p>
+                <h3>Fast Reopen</h3>
+                <p>Index snapshots stored in the vault, O(1) deletes, batched ingest, and a hash embedder that needs
+                    no download for CI and offline machines.</p>
             </div>
         </div>
     </section>
@@ -1153,7 +1229,7 @@ results = db.<span class="fn">search</span>(<span class="str">"space exploration
         <div class="section-header scroll-reveal">
             <span class="section-tag">New in 2.0</span>
             <h2>Memory that survives the session</h2>
-            <p>Give Claude — or any agent — a long-term memory that lives in your own encrypted vault.</p>
+            <p>Give Claude, or any agent, a long-term memory stored in your own encrypted vault.</p>
         </div>
 
         <div class="memory-grid scroll-reveal">
@@ -1176,7 +1252,7 @@ mem.<span class="f">end_session</span>(<span class="s">"Reviewed the deployment 
                 <div class="memory-point">
                     <h4>🧠 Remember what matters</h4>
                     <p>Facts, preferences, decisions, tasks and session summaries, ranked by relevance, importance and
-                        recency. Near-duplicates reinforce instead of piling up.</p>
+                        recency. Near-duplicates strengthen the existing memory instead of piling up.</p>
                 </div>
                 <div class="memory-point">
                     <h4>🔁 Pick up where you left off</h4>
@@ -1194,9 +1270,9 @@ mem.<span class="f">end_session</span>(<span class="s">"Reviewed the deployment 
                     </div>
                 </div>
                 <div class="memory-point">
-                    <h4>⚡ Opens instantly</h4>
+                    <h4>⚡ Fast to reopen</h4>
                     <p>Index snapshots, background model warm-up and an embedding cache mean the next session starts
-                        in milliseconds.</p>
+                        without rebuilding anything.</p>
                 </div>
             </div>
         </div>
@@ -1207,7 +1283,7 @@ mem.<span class="f">end_session</span>(<span class="s">"Reviewed the deployment 
         <div class="section-header scroll-reveal">
             <span class="section-tag">Compare</span>
             <h2>VecForge vs. the rest</h2>
-            <p>See how VecForge stacks up against popular vector databases.</p>
+            <p>How VecForge compares with two popular vector databases.</p>
         </div>
 
         <div class="table-wrapper scroll-reveal">
@@ -1237,7 +1313,7 @@ mem.<span class="f">end_session</span>(<span class="s">"Reviewed the deployment 
                         <td>Hybrid search</td>
                         <td><span class="check">✅</span></td>
                         <td><span class="cross">❌</span></td>
-                        <td><span class="check">✅ Dense + BM25, explainable</span></td>
+                        <td><span class="check">✅ Dense + BM25</span></td>
                     </tr>
                     <tr>
                         <td>AI memory + MCP server</td>
@@ -1285,7 +1361,7 @@ mem.<span class="f">end_session</span>(<span class="s">"Reviewed the deployment 
         <div class="section-header scroll-reveal">
             <span class="section-tag">Examples</span>
             <h2>Ready-to-run demos</h2>
-            <p>Real-world use cases to get you started immediately.</p>
+            <p>Runnable scripts from the examples folder.</p>
         </div>
 
         <div class="examples-grid">
@@ -1353,7 +1429,7 @@ mem.<span class="f">end_session</span>(<span class="s">"Reviewed the deployment 
         <div class="section-header scroll-reveal">
             <span class="section-tag">Documentation</span>
             <h2>Learn VecForge</h2>
-            <p>Comprehensive guides from quickstart to advanced configuration.</p>
+            <p>Guides from the first install to advanced configuration.</p>
         </div>
 
         <div class="docs-grid scroll-reveal">
@@ -1409,10 +1485,10 @@ mem.<span class="f">end_session</span>(<span class="s">"Reviewed the deployment 
     <section class="cta-section" id="quickstart">
         <div class="cta-card scroll-reveal">
             <h2>Ready to forge your vault?</h2>
-            <p>Install VecForge and start searching in under 60 seconds. No cloud account, no API key, no credit card.
+            <p>Install VecForge and run your first search in a few minutes. No cloud account, no API key, no credit card.
             </p>
             <div class="cta-actions">
-                <a href="https://pypi.org/project/vecforge/" class="btn btn-primary">Install from PyPI →</a>
+                <a href="https://pypi.org/project/vecforge/" class="btn btn-primary">Install from PyPI</a>
                 <a href="https://github.com/bosekarmegam/vecforge" class="btn btn-outline">View Source</a>
             </div>
         </div>
