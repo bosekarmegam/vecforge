@@ -8,6 +8,7 @@ Suneel Bose K, ArcGX TechLabs Private Limited
 | `VecForge-2.0-Paper.pdf` | Final paper, A4, ready to upload |
 | `VecForge-2.0-Paper.docx` | The same paper in Word, for editing or for venues that want .docx |
 | `VecForge-2.0-arXiv-source.tar.gz` | LaTeX source package for arXiv (`main.tex` plus figures), built by `build_arxiv.py` |
+| `VecForge-2.0-IJCSE.docx` | The paper in the IJCSE journal template (two-column, US Letter), built by `build_ijcse.py`; `VecForge-2.0-IJCSE.pdf` is a LibreOffice preview |
 | `PUBLISHING.md` | Step-by-step guide: arXiv endorsement, licence, upload, then ORCID, Google Scholar and ResearchGate |
 | `vecforge-paper.md` | Source text (Markdown with LaTeX math and citation keys) |
 | `references.bib` | Bibliography (BibTeX) |
@@ -33,6 +34,7 @@ node paper/figures/src/render_diagrams.cjs              # needs MERMAID_JS point
 node paper/figures/src/render_svg_figs.cjs
 python paper/build_paper.py                             # PDF + DOCX
 python paper/build_arxiv.py                             # arXiv LaTeX source package (needs pdflatex)
+python paper/build_ijcse.py                             # IJCSE journal version in the journal's Word template
 ```
 
 `build_paper.py` needs pandoc 3, Node with `playwright`, KaTeX (set `KATEX_DIR`), pypdf and reportlab.
