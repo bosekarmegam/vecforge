@@ -2,19 +2,19 @@ flowchart TB
     %% node roles, colours from palette.json (diagram section)
     classDef data fill:#DDF2EA,stroke:#009E73,color:#1B1E2E
     classDef process fill:#E3EEF7,stroke:#0072B2,color:#1B1E2E
-    classDef memory fill:#F5E6EF,stroke:#CC79A7,color:#1B1E2E
-    classDef measure fill:#FBEDCF,stroke:#E69F00,color:#1B1E2E
+    classDef baseline fill:#F9E3D5,stroke:#D55E00,color:#1B1E2E
+    classDef neutral fill:#F1F2F6,stroke:#4A4D5C,color:#1B1E2E
     subgraph W [Step 1, workloads]
         direction LR
         W1[Zipf corpus<br/>10k to 100k docs] ~~~ W2[Gaussian mixture<br/>100k x 384] ~~~ W3[SciFact<br/>5,183 abstracts] ~~~ W4[Memory set<br/>160 statements]
     end
     subgraph S [Step 2, systems]
         direction LR
-        S1[VecForge 1.1.0<br/>commit a0d25ab] ~~~ S2[VecForge 2.0.0]
+        S1[VecForge 1.1.0<br/>commit a0d25ab] ~~~ S2[VecForge 2.0.0<br/>this paper]
     end
     subgraph M [Step 3, measurements]
         direction LR
-        M1[Latency<br/>p50 and p95] ~~~ M2[Recall at 10] ~~~ M3[nDCG at 10<br/>Recall at 100] ~~~ M4[Merge precision<br/>and recall]
+        M1[Latency<br/>p50 and p95] ~~~ M2[Recall at 10<br/>under constraints] ~~~ M3[nDCG at 10<br/>Recall at 100] ~~~ M4[Merge precision<br/>and recall]
     end
     subgraph T [Step 4, statistics]
         direction LR
@@ -22,6 +22,6 @@ flowchart TB
     end
     W --> S --> M --> T
     class W1,W2,W3,W4 data
-    class S1,S2 process
-    class M1,M2,M3,M4 measure
-    class T1,T2,T3 memory
+    class S1 baseline
+    class S2 process
+    class M1,M2,M3,M4,T1,T2,T3 neutral

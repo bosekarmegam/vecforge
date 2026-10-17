@@ -85,7 +85,7 @@ $-- off the bottom. Restore the value when the table ends on the page it started
 \renewcommand{\floatpagefraction}{0.75}
 \setcounter{topnumber}{3}
 \setcounter{totalnumber}{4}
-\usepackage[labelfont=bf,labelsep=period,font=small,justification=justified]{caption}
+\usepackage[labelfont=bf,labelsep=period,font=small,justification=justified,singlelinecheck=false]{caption}
 \captionsetup[table]{position=above,skip=5pt}
 \captionsetup[figure]{skip=6pt}
 $if(svg)$
@@ -213,6 +213,10 @@ $endif$
 $if(email)$
 \vspace{2pt}
 {\texttt{$email$}\par}
+$endif$
+$if(orcid)$
+\vspace{2pt}
+{\small ORCID iD: \href{https://orcid.org/$orcid$}{https://orcid.org/$orcid$}\par}
 $endif$
 $if(date)$
 \vspace{6pt}

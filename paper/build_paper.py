@@ -22,8 +22,14 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from docx import Document
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.opc.constants import RELATIONSHIP_TYPE as RT
 from pypdf import PdfReader, PdfWriter
 from reportlab.lib.colors import HexColor
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfgen import canvas
 
 HERE = Path(__file__).resolve().parent
@@ -41,6 +47,10 @@ COMMON = [
     str(HERE),
 ]
 KATEX = os.environ.get("KATEX_DIR", "https://cdn.jsdelivr.net/npm/katex@0.16.11/dist")
+# why: the page-number stamp must use an embedded font, or the PDF carries a non-embedded Times
+ORCID_URL = "https://orcid.org/0009-0000-9282-2287"
+FOOTER_FONT = "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf"
+pdfmetrics.registerFont(TTFont("LiberationSerif", FOOTER_FONT))
 
 
 def build_html(out: Path) -> None:
@@ -67,9 +77,9 @@ def build_html(out: Path) -> None:
 
 def footer(width: float, height: float, n: int, total: int) -> PdfReader:
     buf = io.BytesIO()
-    c = canvas.Canvas(buf, pagesize=(width, height))
+    c = canvas.Canvas(buf, pagesize=(width, height), initialFontName="LiberationSerif")
     c.setFillColor(HexColor("#666666"))
-    c.setFont("Times-Roman", 8.5)
+    c.setFont("LiberationSerif", 8.5)
     c.drawCentredString(width / 2, 30, f"{n}")
     c.save()
     buf.seek(0)
@@ -122,12 +132,46 @@ def build_docx() -> None:
             str(DOCX),
             "--reference-doc",
             str(ref),
+            "--lua-filter",
+            str(HERE / "docx-keywords.lua"),
             *COMMON,
             "-M",
-            "date=ArcGX TechLabs Private Limited, Tiruchirappalli, Tamil Nadu, India. suneelbose@arcgx.in. ORCID iD https://orcid.org/0009-0000-9282-2287. October 2026",
+            f"date=ArcGX TechLabs Private Limited, Tiruchirappalli, Tamil Nadu, India. suneelbose@arcgx.in. ORCID iD {ORCID_URL}. October 2026",
         ],
         check=True,
     )
+    finish_docx(DOCX)
+
+
+def finish_docx(path: Path) -> None:
+    """Stop Word from splitting a table row across pages, and link the ORCID iD on the title page."""
+    doc = Document(str(path))
+    for table in doc.tables:
+        for row in table.rows:
+            trpr = row._tr.get_or_add_trPr()
+            if trpr.find(qn("w:cantSplit")) is None:
+                trpr.append(OxmlElement("w:cantSplit"))
+    for para in doc.paragraphs:
+        if ORCID_URL in para.text and len(para.runs) == 1:
+            before, after = para.runs[0].text.split(ORCID_URL, 1)
+            para.runs[0].text = before
+            rid = para.part.relate_to(ORCID_URL, RT.HYPERLINK, is_external=True)
+            link = OxmlElement("w:hyperlink")
+            link.set(qn("r:id"), rid)
+            run = OxmlElement("w:r")
+            rpr = OxmlElement("w:rPr")
+            style = OxmlElement("w:rStyle")
+            style.set(qn("w:val"), "Hyperlink")
+            rpr.append(style)
+            run.append(rpr)
+            text = OxmlElement("w:t")
+            text.text = ORCID_URL
+            run.append(text)
+            link.append(run)
+            para._p.append(link)
+            para.add_run(after)
+            break
+    doc.save(str(path))
 
 
 if __name__ == "__main__":

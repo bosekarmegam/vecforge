@@ -1,10 +1,11 @@
+%%{init: {"flowchart": {"rankSpacing": 80}}}%%
 flowchart LR
     %% node roles, colours from palette.json (diagram section)
     classDef terminal fill:#F1F2F6,stroke:#4A4D5C,color:#1B1E2E
     classDef decision fill:#FBEDCF,stroke:#E69F00,color:#1B1E2E
     classDef data fill:#DDF2EA,stroke:#009E73,color:#1B1E2E
     O([Open vault]) --> G[Read generation G<br/>and snapshot S]
-    G --> C{S = G?}
+    G --> C{S equals G?}
     C -- yes --> L[Load indexes<br/>from chunks]
     C -- no --> R[Rebuild from<br/>stored vectors]
     L --> Y([Ready])

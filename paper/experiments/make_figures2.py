@@ -26,6 +26,7 @@ R1 = json.loads((HERE / "results.json").read_text())
 R2 = json.loads((HERE / "results2.json").read_text()) if (HERE / "results2.json").exists() else {}
 
 NEUTRAL = ROLE["neutral"]["base"]  # axes, reference vectors and the unit circle in the geometry figure
+NAMES = {"hybrid": "hybrid", "hybrid + Grover": "hybrid with Grover"}  # result keys as they should read in a figure
 plt.rcParams.update(RC)
 
 
@@ -52,13 +53,17 @@ def fig_grover_geometry() -> None:
 
     def vec(angle: float, color: str, label: str, style: str = "-", lw: float = 1.8, off=(0.04, 0.0), text: str | None = None) -> None:
         x, y = math.cos(angle), math.sin(angle)
-        ax.add_patch(FancyArrowPatch((0, 0), (x, y), arrowstyle="-|>", mutation_scale=11, color=color, lw=lw, linestyle=style))
+        if style == "-":
+            ax.add_patch(FancyArrowPatch((0, 0), (x, y), arrowstyle="-|>", mutation_scale=11, color=color, lw=lw))
+        else:  # a dashed or dotted shaft with a solid head, so the arrowhead is not stroked dotted
+            ax.plot([0, 0.97 * x], [0, 0.97 * y], linestyle=style, color=color, lw=lw)
+            ax.add_patch(FancyArrowPatch((0.96 * x, 0.96 * y), (x, y), arrowstyle="-|>", mutation_scale=11, color=color, lw=lw))
         ax.text(x + off[0], y + off[1], label, color=text or color, fontsize=9)
 
     # label text uses the shade of a light hue so it stays readable on white
     vec(theta, NEUTRAL, r"$s$ (uniform)", "--", 1.1, (0.05, -0.06), text=ROLE["neutral"]["shade"])
-    vec(phi0, S["dense"], r"$a$ (encoded scores)", "-", 1.8, (0.05, 0.0))
-    vec(-phi0, S["threshold"], r"$O_M a$ (oracle flips sign)", ":", 1.4, (0.05, -0.06))
+    vec(phi0, S["dense"], r"$a$ (encoded scores)", "-", 1.8, (0.05, 0.0), text=ROLE["dense"]["shade"])
+    vec(-phi0, S["threshold"], r"$O_M a$ (oracle flips sign)", ":", 1.4, (0.05, -0.06), text=ROLE["baseline"]["shade"])
     iterates = {1: (ROLE["accent"]["base"], ROLE["accent"]["shade"]), 2: (S["v2"], S["v2"]), 3: (S["v2_grover"], S["v2_grover"])}
     for k in (1, 2, 3):
         vec(phi0 + 2 * k * theta, iterates[k][0], "" if k == 3 else rf"$G^{k} a$", "-", 1.8 if k == 3 else 1.2, (0.03, 0.03), text=iterates[k][1])
@@ -68,9 +73,9 @@ def fig_grover_geometry() -> None:
     mid = phi0 + theta
     ax.text(0.36 * math.cos(mid) + 0.02, 0.36 * math.sin(mid), r"$2\theta$", color=S["v2"], fontsize=9)
     ax.add_patch(Arc((0, 0), 0.8, 0.8, theta1=0, theta2=math.degrees(theta), color=NEUTRAL, lw=1))
-    ax.text(0.43, 0.037, r"$\theta$", color=NEUTRAL, fontsize=8, va="center")  # sits between the axis and s, clear of both
+    ax.text(0.43, 0.037, r"$\theta$", color=ROLE["neutral"]["shade"], fontsize=8, va="center")  # between the axis and s, clear of both
     ax.set_xlim(-0.55, 1.75)
-    ax.set_ylim(-0.48, 1.3)
+    ax.set_ylim(-0.56, 1.3)
     save(fig, "fig-grover-geometry")
 
 
@@ -109,10 +114,10 @@ def fig_alpha() -> None:
     ax.plot(a, train, "o-", color=S["train"], ms=3.5, label="train claims (tuning)")
     ax.plot(a, dev, "s-", color=S["dev"], ms=3.5, label="dev claims (reported)")
     ax.axhline(rrf, color=S["rrf"], ls="--", lw=1.2, label="RRF, dev")
-    ax.axvline(e["best_alpha"], color=MUTED, ls=":", lw=1)
-    ax.set_xlabel(r"fusion weight $\alpha$ (0 = BM25, 1 = dense)")
+    ax.axvline(e["best_alpha"], color=MUTED, ls=":", lw=1, zorder=0, label="selected weight")
+    ax.set_xlabel(r"fusion weight $\alpha$ (0 is BM25 only, 1 is dense only)")
     ax.set_ylabel("nDCG@10")
-    ax.legend(loc="lower center", facecolor="white", edgecolor="none", framealpha=1)  # hides the dotted line behind the text
+    ax.legend(loc="lower center", frameon=False)
     save(fig, "fig-alpha-sweep")
 
 
@@ -124,7 +129,7 @@ def fig_methods() -> None:
         m.pop(tuned)  # the tuned weight equals the default, so one bar is enough
     pretty = {"BM25 only": "BM25 only", "Dense only (MiniLM)": "Dense only (MiniLM)",
               "Hybrid, alpha = 0.5": r"Hybrid, $\alpha$ = 0.5 (default)", tuned: rf"Hybrid, $\alpha$ = {best} (tuned)",
-              "RRF (k = 60)": "RRF, k = 60", f"Hybrid {best} + Grover consensus": "Hybrid + Grover consensus"}
+              "RRF (k = 60)": "RRF, k = 60", f"Hybrid {best} + Grover consensus": "Hybrid with Grover consensus"}
     names = list(m)
     vals = [m[n]["ndcg10"] for n in names]
     lo = [m[n]["ndcg10"] - m[n]["ndcg10_ci"][0] for n in names]
@@ -134,19 +139,22 @@ def fig_methods() -> None:
     y = np.arange(len(names))[::-1]
     cmap = {"BM25 only": S["bm25"], "Dense only (MiniLM)": S["dense"], "RRF (k = 60)": S["rrf"]}
     colors = [cmap.get(n, S["v2_grover"] if "Grover" in n else S["hybrid"]) for n in names]
-    axes[0].barh(y, vals, xerr=[lo, hi], color=colors, height=0.6, error_kw=dict(lw=0.9, capsize=2.5, ecolor=INK))
-    for yi, v, h in zip(y, vals, hi, strict=True):
+    # dot and whisker marks: a bar would need a zero baseline, which hides the differences that matter here
+    for yi, v, l_, h, c in zip(y, vals, lo, hi, colors, strict=True):
+        axes[0].errorbar(v, yi, xerr=[[l_], [h]], fmt="o", color=c, ms=6, capsize=3, elinewidth=1.1, ecolor=INK)
         axes[0].text(v + h + 0.008, yi, f"{v:.3f}", va="center", fontsize=8)
     axes[0].set_yticks(y, [pretty.get(n, n) for n in names])
     axes[0].set_xlabel("nDCG@10 with 95% bootstrap CI")
-    axes[0].set_xlim(0.4, 0.82)
-    axes[1].barh(y, rec, color=colors, height=0.6)
-    for yi, v in zip(y, rec, strict=True):
-        axes[1].text(v + 0.005, yi, f"{v:.3f}", va="center", fontsize=8)
+    axes[0].set_xlim(0.55, 0.8)
+    for yi, v, c in zip(y, rec, colors, strict=True):
+        axes[1].plot(v, yi, "o", color=c, ms=6)
+        axes[1].text(v + 0.006, yi, f"{v:.3f}", va="center", fontsize=8)
     axes[1].set_xlabel("Recall@100")
-    axes[1].set_xlim(0.8, 1.0)
+    axes[1].set_xlim(0.85, 1.0)
     for ax in axes:
-        ax.grid(axis="y", visible=False)
+        ax.grid(axis="x", visible=True)
+        ax.grid(axis="y", visible=True, lw=0.5)
+        ax.set_ylim(-0.6, len(names) - 0.4)
     save(fig, "fig-scifact-methods")
 
 
@@ -160,11 +168,12 @@ def fig_stages() -> None:
     left = np.zeros(len(labels))
     for st in order:
         w = np.array([b[lab].get(st, 0.0) for lab in labels])
-        ax.barh(y, w, left=left, color=stage_color[st], height=0.55, label=st)
+        ax.barh(y, w, left=left, color=stage_color[st], height=0.55, label=st, edgecolor="white", lw=0.5,
+                hatch="////" if st == "other" else None)
         left += w
     for yi, tot in zip(y, left, strict=True):
         ax.text(tot + 0.1, yi, f"{tot:.1f} ms", va="center", fontsize=8.5)
-    ax.set_yticks(y, labels)
+    ax.set_yticks(y, [NAMES.get(lab, lab) for lab in labels])
     ax.set_xlabel("mean time per query (ms)")
     ax.grid(axis="y", visible=False)
     ax.legend(frameon=False, ncol=4, loc="upper center", bbox_to_anchor=(0.5, -0.38), fontsize=8)
@@ -177,10 +186,10 @@ def fig_latency_cdf() -> None:
     for (name, d), c in zip(lat.items(), (S["hybrid"], S["v2_grover"]), strict=False):
         x = np.sort(np.array(d["all_ms"]))
         ax.plot(x, np.arange(1, len(x) + 1) / len(x), color=c, lw=1.6, ls="--" if "Grover" in name else "-",
-                label=f"{name} (p50 {d['p50_ms']:.1f} ms)")
+                label=f"{NAMES.get(name, name)} (p50 {d['p50_ms']:.1f} ms)")
     ax.set_xlabel("end-to-end search latency (ms)")
     ax.set_ylabel("fraction of queries")
-    ax.set_xlim(left=0)
+    ax.set_xlim(0, 25)  # one query in the Grover series took 47 ms; the caption says the axis is cut
     ax.legend(frameon=False, loc="lower right")
     save(fig, "fig-latency-cdf")
 
@@ -201,6 +210,8 @@ def fig_encryption() -> None:
             ax.text(b_.get_x() + b_.get_width() / 2, val + top * 0.02, f"{val:,.0f}" if val >= 100 else f"{val:.2f}", ha="center", fontsize=7.8)
         ax.set_ylim(0, top * 1.2)
         ax.tick_params(axis="y", labelsize=7.5)
+        if top >= 1000:
+            ax.yaxis.set_major_formatter(matplotlib.ticker.StrMethodFormatter("{x:,.0f}"))
     fig.tight_layout(w_pad=1.2)
     save(fig, "fig-encryption")
 
@@ -228,7 +239,7 @@ def fig_filters() -> None:
     ax.bar(x + 0.18, [r["results_mean"] for r in rows], 0.36, color=S["v2"], label="adaptive widening")
     ax.set_xticks(x, lab)
     ax.set_xlabel("share of documents passing the filter")
-    ax.set_ylabel("results returned (of k = 10)")
+    ax.set_ylabel("results returned (of 10 requested)")
     ax.set_ylim(0, 11.5)
     ax.grid(axis="x", visible=False)
     ax2 = ax.twinx()
@@ -263,15 +274,15 @@ def fig_dedup() -> None:
     e = R2["E13"]
     fig, axes = plt.subplots(1, 2, figsize=(6.6, 2.5))
     bins = np.linspace(0.4, 1.0, 25)
-    axes[0].hist(e["pos_sim"], bins=bins, color=S["paraphrase"], alpha=0.75, label="paraphrase (should merge)")
-    axes[0].hist(e["neg_sim"], bins=bins, color=S["near_miss"], alpha=0.65, label="near miss (must not merge)")
+    axes[0].hist(e["neg_sim"], bins=bins, color=S["near_miss"], label="near miss (must not merge)")
+    axes[0].hist(e["pos_sim"], bins=bins, histtype="step", lw=1.5, color=S["paraphrase"], label="paraphrase (should merge)")
     axes[0].axvline(e["default_threshold"], color=INK, ls="--", lw=1)
     axes[0].text(e["default_threshold"] + 0.01, axes[0].get_ylim()[1] * 1.0, "default\n0.92", ha="left", fontsize=7.8, va="top")
     axes[0].set_xlabel("cosine similarity to the stored fact (MiniLM)")
     axes[0].set_ylabel("statements")
     axes[0].legend(frameon=False, fontsize=7.8, loc="upper left")
     axes[0].set_xlim(0.4, 1.06)
-    for curve, c, lab in ((e["curve"], S["v2"], "cosine only"), (e["curve_guard"], S["guard"], "cosine + value guard")):
+    for curve, c, lab in ((e["curve"], S["v2"], "cosine only"), (e["curve_guard"], S["guard"], "cosine with value guard")):
         axes[1].plot([p["recall"] for p in curve], [p["precision"] for p in curve], "o-", ms=3, color=c, label=lab)
     place = {0.92: dict(xytext=(4, 9), ha="center", va="bottom"), 0.7: dict(xytext=(-8, 7))}  # 0.92 sits above its point, clear of the zig-zag
     for p in e["curve"]:
@@ -293,7 +304,7 @@ def fig_mcp_rest() -> None:
     fig, axes = plt.subplots(1, 2, figsize=(6.6, 2.3))
     keys = list(m)
     v = [m[k]["cold_start_first_result_s"] for k in keys]
-    bars = axes[0].bar([f"{int(k):,} memories" for k in keys], v, color=[ROLE["accent"]["base"], S["mcp"]], width=0.55)
+    bars = axes[0].bar([f"{int(k):,} memories" for k in keys], v, color=S["mcp"], width=0.55)
     for b_, val in zip(bars, v, strict=True):
         axes[0].text(b_.get_x() + b_.get_width() / 2, val + max(v) * 0.02, f"{val:.2f} s", ha="center", fontsize=8)
     axes[0].set_ylabel("start to first tool result (s)")
@@ -304,7 +315,8 @@ def fig_mcp_rest() -> None:
     big = keys[-1]
     axes[1].bar(x - 0.2, [m[big]["tool_p50_ms"][t] for t in tools], 0.4, color=S["mcp"], label="MCP over stdio")
     rest = {"remember": r["p50_ms"]["add"], "recall": r["p50_ms"]["search"], "context_pack": None}
-    axes[1].bar(x + 0.2, [rest[t] or 0 for t in tools], 0.4, color=S["rest"], label="REST over HTTP (add, search)")
+    axes[1].bar(x + 0.2, [rest[t] or 0 for t in tools], 0.4, color=S["rest"], hatch="//", edgecolor="white", lw=0.5,
+                label="REST over HTTP (add, search)")
     axes[1].set_xticks(x, tools)
     axes[1].set_ylabel("latency p50 (ms)")
     axes[1].grid(axis="x", visible=False)
@@ -337,13 +349,18 @@ def fig_reopen() -> None:
     rows = R1["E5"]["rows"]
     x = np.arange(len(rows))
     fig, ax = plt.subplots(figsize=(3.2, 2.4))
-    ax.bar(x - 0.18, [r["open_rebuild_s"] for r in rows], 0.36, color=S["v1"], label="rebuild from vectors")
-    ax.bar(x + 0.18, [r["open_snapshot_s"] for r in rows], 0.36, color=S["v2"], label="load snapshot")
+    ax.plot(x, [r["open_rebuild_s"] for r in rows], "o-", color=S["v1"], ms=4, lw=1.6, label="rebuild from vectors")
+    ax.plot(x, [r["open_snapshot_s"] for r in rows], "s-", color=S["v2"], ms=4, lw=1.6, label="load snapshot")
+    halo = dict(facecolor="white", edgecolor="none", pad=0.8)  # keeps the value labels legible where they touch a line
+    for xi, r in zip(x, rows, strict=True):
+        ax.text(xi, r["open_rebuild_s"] * 1.6, f"{r['open_rebuild_s']:.1f} s", ha="center", va="bottom", fontsize=7.5, bbox=halo)
+        ax.text(xi, r["open_snapshot_s"] / 1.6, f"{r['open_snapshot_s']:.2f} s", ha="center", va="top", fontsize=7.5, bbox=halo)
     ax.set_yscale("log")
+    ax.set_ylim(0.05, 300)
     ax.set_xticks(x, [f"{r['n'] // 1000}k docs" for r in rows])
+    ax.set_xlim(-0.4, len(rows) - 0.6)
     ax.set_ylabel("time to open (s, log scale)")
-    ax.grid(axis="x", visible=False)
-    ax.legend(frameon=False, fontsize=7.8)
+    ax.legend(frameon=False, fontsize=7.8, loc="upper left")
     save(fig, "fig-reopen-times")
 
 
@@ -353,14 +370,19 @@ def compose(left: str, right: str, out: str) -> None:
 
     a, b = Image.open(FIG / f"{left}.png").convert("RGB"), Image.open(FIG / f"{right}.png").convert("RGB")
     h = max(a.height, b.height)
-    a = a.resize((round(a.width * h / a.height), h), Image.LANCZOS)
-    b = b.resize((round(b.width * h / b.height), h), Image.LANCZOS)
-    gap, top = 90, 110
+
+    def pad(im):  # why: resizing would change the text size of one panel relative to the other
+        out = Image.new("RGB", (im.width, h), "white")
+        out.paste(im, (0, h - im.height))
+        return out
+
+    a, b = pad(a), pad(b)
+    gap, top = 90, 70
     canvas = Image.new("RGB", (a.width + b.width + gap, h + top), "white")
     canvas.paste(a, (0, top))
     canvas.paste(b, (a.width + gap, top))
     draw = ImageDraw.Draw(canvas)
-    font = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf", 64)
+    font = ImageFont.truetype("/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf", 44)  # 10.5 pt at 300 dpi
     draw.text((10, 10), "(a)", fill=INK, font=font)
     draw.text((a.width + gap + 10, 10), "(b)", fill=INK, font=font)
     canvas.save(FIG / f"{out}.png", dpi=(300, 300))

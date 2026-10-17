@@ -1,7 +1,8 @@
+%%{init: {"themeVariables": {"mainBkg": "#DDF2EA", "nodeBorder": "#009E73", "tertiaryColor": "#FFFFFF"}}}%%
 erDiagram
     NAMESPACES ||--o{ DOCUMENTS : contains
     INDEX_STATE ||--|{ INDEX_CHUNKS : "stored as"
-    SESSIONS ||--o{ DOCUMENTS : groups
+    SESSIONS ||--o{ DOCUMENTS : "groups via metadata"
     DOCUMENTS {
         text doc_id PK
         text namespace FK
@@ -10,6 +11,7 @@ erDiagram
         text metadata_json
         text content_hash
         real created_at
+        real updated_at
     }
     NAMESPACES {
         text name PK

@@ -34,5 +34,8 @@ RC: dict[str, object] = {
     "axes.spines.top": False, "axes.spines.right": False, "axes.grid": True,
     "axes.edgecolor": INK, "axes.labelcolor": INK, "xtick.color": INK, "ytick.color": INK, "text.color": INK,
     "grid.color": GRID, "grid.linewidth": 0.7, "savefig.dpi": 300, "savefig.bbox": "tight",
-    "mathtext.fontset": "dejavuserif", "axes.prop_cycle": __import__("cycler").cycler(color=CATEGORICAL),
+    "axes.axisbelow": True, "hatch.linewidth": 0.6,
+    "mathtext.fontset": "custom", "mathtext.rm": "Liberation Serif", "mathtext.it": "Liberation Serif:italic",
+    "mathtext.bf": "Liberation Serif:bold", "mathtext.cal": "Liberation Serif:italic", "mathtext.sf": "Liberation Sans",
+    "mathtext.tt": "DejaVu Sans Mono", "axes.prop_cycle": __import__("cycler").cycler(color=CATEGORICAL),
 }

@@ -1,11 +1,13 @@
 stateDiagram-v2
     direction LR
+    classDef mem fill:#F5E6EF,stroke:#CC79A7,color:#1B1E2E
     [*] --> Candidate: remember()
     Candidate --> Reinforced: duplicate
     Candidate --> Stored: new
-    Reinforced --> Stored: importance + 0.05
+    Reinforced --> Stored: importance up by 0.05
     Stored --> Recalled: recall()
-    Recalled --> Stored: access + 1
+    Recalled --> Stored: access count up by 1
     Stored --> Updated: update()
     Updated --> Stored
     Stored --> [*]: forget()
+    class Candidate,Reinforced,Stored,Recalled,Updated mem

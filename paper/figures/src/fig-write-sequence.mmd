@@ -2,8 +2,10 @@ sequenceDiagram
     autonumber
     participant A as Application
     participant V as Vault core
-    participant S as SQLite vault
-    participant I as FAISS + BM25
+    box rgb(221,242,234) stored data
+        participant S as SQLite vault
+        participant I as FAISS and BM25
+    end
     A->>V: add_batch(texts)
     Note over V: check role, embed texts,<br/>check vector dimension
     V->>S: BEGIN, insert rows

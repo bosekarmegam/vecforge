@@ -14,6 +14,8 @@ const ROLE = PALETTE.roles;
 const FONT = "Inter, DejaVu Sans, sans-serif";
 const THEME = {
   theme: "base",
+  // why: message text has no background, so a white halo keeps it legible where it crosses a lifeline
+  themeCSS: ".messageText{paint-order:stroke;stroke:#FFFFFF;stroke-width:6px;stroke-linejoin:round} .edgeLabel p{padding:0 6px}",
   themeVariables: {
     fontFamily: FONT, fontSize: "16px",
     primaryColor: D.process_fill, primaryBorderColor: D.process_stroke, primaryTextColor: PALETTE.ink,
@@ -21,7 +23,7 @@ const THEME = {
     tertiaryColor: D.decision_fill, tertiaryBorderColor: D.decision_stroke,
     lineColor: D.arrow, textColor: PALETTE.ink,
     clusterBkg: D.cluster_fill, clusterBorder: D.cluster_stroke, edgeLabelBackground: PALETTE.paper,
-    actorBkg: D.process_fill, actorBorder: D.process_stroke, actorTextColor: PALETTE.ink,
+    actorBkg: D.terminal_fill, actorBorder: D.terminal_stroke, actorTextColor: PALETTE.ink,
     signalColor: D.arrow, signalTextColor: PALETTE.ink,
     noteBkgColor: D.note_fill, noteBorderColor: D.note_stroke, noteTextColor: PALETTE.ink,
     activationBkgColor: ROLE.accent.tint, activationBorderColor: ROLE.accent.base,

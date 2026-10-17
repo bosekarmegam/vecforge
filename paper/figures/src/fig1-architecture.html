@@ -8,13 +8,16 @@
   .soft { fill:#E3EEF7; stroke:#0072B2; stroke-width:1.6; }
   .store { fill:#DDF2EA; stroke:#009E73; stroke-width:1.6; }
   .warm { fill:#F5E6EF; stroke:#CC79A7; stroke-width:1.6; }
+  .embed { fill:#F5E6EF; stroke:#CC79A7; stroke-width:1.6; }
+  .dense { fill:#DDF2EA; stroke:#009E73; stroke-width:1.6; }
+  .sparse { fill:#FBEDCF; stroke:#E69F00; stroke-width:1.6; }
   .t { font-size:15px; fill:#1B1E2E; font-weight:600; }
-  .s { font-size:12.5px; fill:#5A5F73; }
+  .s { font-size:12.5px; fill:#4A4D5C; }
   .h { font-size:13px; fill:#0072B2; font-weight:700; letter-spacing:1.5px; }
   .arrow { stroke:#2B2F45; stroke-width:1.5; fill:none; marker-end:url(#a); }
   .dash { stroke-dasharray:5 4; }
 </style></head><body>
-<svg width="1000" height="580" viewBox="0 0 1000 580" xmlns="http://www.w3.org/2000/svg">
+<svg width="1000" height="598" viewBox="0 0 1000 598" xmlns="http://www.w3.org/2000/svg">
   <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#2B2F45"/></marker></defs>
 
   <text class="h" x="20" y="28">CLIENTS</text>
@@ -30,34 +33,34 @@
 
   <rect class="warm" x="745" y="40" width="235" height="144" rx="12"/>
   <text class="t" x="761" y="64">Agent memory</text>
-  <text class="s" x="761" y="86">per-agent namespaces</text>
+  <text class="s" x="761" y="86">namespaces per agent</text>
   <text class="s" x="761" y="106">dedup and reinforcement</text>
   <text class="s" x="761" y="126">relevance, importance, recency</text>
   <text class="s" x="761" y="146">sessions, context_pack()</text>
   <text class="s" x="761" y="166">JSON export and import</text>
   <path class="arrow" d="M745,154 H727"/>
 
-  <text class="h" x="60" y="222">READ PATH</text>
-  <rect class="box" x="60" y="234" width="130" height="64" rx="10"/><text class="t" x="74" y="258">Embedder</text><text class="s" x="74" y="278">MiniLM, hash, any</text>
-  <rect class="box" x="214" y="234" width="180" height="64" rx="10"/><text class="t" x="228" y="258">FAISS dense</text><text class="s" x="228" y="278">flat or HNSW, ID selectors</text>
-  <rect class="box" x="214" y="312" width="180" height="64" rx="10"/><text class="t" x="228" y="336">Incremental BM25</text><text class="s" x="228" y="356">inverted index, tombstones</text>
+  <text class="h" x="150" y="222">READ PATH</text>
+  <rect class="embed" x="60" y="234" width="130" height="64" rx="10"/><text class="t" x="74" y="258">Embedder</text><text class="s" x="74" y="278">MiniLM, hash, any</text>
+  <rect class="dense" x="214" y="234" width="180" height="64" rx="10"/><text class="t" x="228" y="258">FAISS dense</text><text class="s" x="228" y="278">flat or HNSW, ID selectors</text>
+  <rect class="sparse" x="214" y="312" width="180" height="64" rx="10"/><text class="t" x="228" y="336">Incremental BM25</text><text class="s" x="228" y="356">inverted index, tombstones</text>
   <rect class="box" x="418" y="270" width="162" height="70" rx="10"/><text class="t" x="432" y="296">Fusion</text><text class="s" x="432" y="316">weighted score sum</text><text class="s" x="432" y="332">signals per result</text>
-  <rect class="soft" x="604" y="262" width="172" height="86" rx="10"/><text class="t" x="618" y="288">Grover rerank</text><text class="s" x="618" y="308">consensus oracle</text><text class="s" x="618" y="326">closed form, O(N)</text><text class="s" x="618" y="342">order-preserving</text>
+  <rect class="soft" x="604" y="258" width="172" height="96" rx="10"/><text class="t" x="618" y="288">Grover rerank</text><text class="s" x="618" y="308">consensus oracle</text><text class="s" x="618" y="326">closed form, O(N)</text><text class="s" x="618" y="342">order preserving</text>
   <rect class="box" x="800" y="270" width="180" height="70" rx="10"/><text class="t" x="814" y="296">Cross-encoder</text><text class="s" x="814" y="316">optional, survivors only</text>
   <path class="arrow" d="M190,266 H212"/><path class="arrow" d="M190,282 C202,282 202,344 212,344"/>
   <path class="arrow" d="M394,266 C406,266 406,295 416,295"/><path class="arrow" d="M394,344 C406,344 406,318 416,318"/>
   <path class="arrow" d="M580,305 H602"/><path class="arrow dash" d="M776,305 H798"/>
-  <path class="arrow" d="M304,186 V232"/><text class="s" x="312" y="214">search</text>
+  <path class="arrow" d="M125,186 V232"/><text class="s" x="117" y="214" text-anchor="end">search</text>
   <text class="s" x="418" y="398">Namespace and tombstone constraints apply inside both indexes.</text>
 
   <path class="arrow" d="M34,186 V456"/><text class="s" x="44" y="430">write: one transaction, then indexes</text>
   <path class="arrow dash" d="M304,378 V456"/><text class="s" x="312" y="430">snapshot on save, close and every 25 MCP writes</text>
 
-  <text class="h" x="330" y="452">ENCRYPTED VAULT: ONE SQLITE FILE, SQLCIPHER AES-256</text>
-  <rect class="store" x="20" y="460" width="960" height="110" rx="12"/>
+  <rect class="store" x="20" y="460" width="960" height="118" rx="12"/>
+  <text class="h" x="40" y="486">ENCRYPTED VAULT: ONE SQLITE FILE, SQLCIPHER AES-256</text>
   <g class="s">
-    <text x="60" y="494">documents, embeddings (float32)</text><text x="60" y="516">metadata (JSON), namespaces</text><text x="60" y="538">content hash, timestamps</text>
-    <text x="370" y="494">index_state + index_chunks</text><text x="370" y="516">FAISS + BM25 + position map</text><text x="370" y="538">64 MB chunks, generation-checked</text>
-    <text x="680" y="494">sessions, kv store</text><text x="680" y="516">API-key SHA-256 digests</text><text x="680" y="538">online backups</text>
+    <text x="60" y="514">documents, embeddings (float32)</text><text x="60" y="536">metadata (JSON), namespaces</text><text x="60" y="558">content hash, timestamps</text>
+    <text x="370" y="514">index_state and index_chunks</text><text x="370" y="536">FAISS, BM25, position map</text><text x="370" y="558">64 MB chunks, generation-checked</text>
+    <text x="680" y="514">sessions, kv store</text><text x="680" y="536">API-key SHA-256 digests</text><text x="680" y="558">online backups</text>
   </g>
 </svg></body></html>

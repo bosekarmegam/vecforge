@@ -34,15 +34,15 @@ def fig_rank() -> None:
         s=6,
         color=S["v1"],
         label="1.x (diffusion only)",
-        zorder=3,
+        zorder=5,
     )
     ax.plot(
         n,
         e["series"]["2.0"]["tau_linear"],
         color=S["v2"],
-        lw=1.6,
-        label="2.0 (oracle + diffusion)",
-        zorder=4,
+        lw=1.2,
+        label="2.0 (oracle and diffusion)",
+        zorder=3,
     )
     ax.set_xlabel("number of candidates N")
     ax.set_ylabel("Kendall τ vs. input order")
@@ -88,7 +88,7 @@ def fig_bm25() -> None:
 def fig_namespace() -> None:
     rows = R["E4"]["rows"]
     x = [r["fraction"] * 100 for r in rows]
-    fig, ax = plt.subplots(figsize=(3.1, 2.4))
+    fig, ax = plt.subplots(figsize=(3.2, 2.5))
     ax.plot(
         x,
         [r["recall_postfilter_v1"] for r in rows],

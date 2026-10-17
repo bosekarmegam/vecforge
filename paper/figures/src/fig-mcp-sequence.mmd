@@ -1,8 +1,12 @@
 sequenceDiagram
     participant U as Person
     participant C as Assistant
-    participant M as vecforge mcp
-    participant V as Vault
+    box rgb(245,230,239) memory layer
+        participant M as vecforge mcp
+    end
+    box rgb(221,242,234) stored data
+        participant V as Vault
+    end
     C->>M: start (stdio)
     M->>V: open, load snapshot
     C->>M: initialize, list tools
@@ -13,6 +17,6 @@ sequenceDiagram
     Note over C,V: session ends, snapshot saved
     U->>C: New chat, days later
     C->>M: context_pack(query)
-    M->>V: summary + top memories
+    V-->>M: summary and top memories
     M-->>C: briefing
     C-->>U: Short answer

@@ -40,6 +40,7 @@ The experiments need `onnxruntime` and `tokenizers` for the MiniLM encoder and t
 
 ## What is in the paper
 
+- One colour system for every figure (`figures/src/palette.json`): the Okabe-Ito colour-blind-safe hues, each with one meaning across the paper, checked under simulated protanopia, deuteranopia and tritanopia.
 - 21 figures in several forms: block diagram, flowcharts, sequence diagrams, an entity-relationship
   diagram, a state diagram, a geometric diagram, a permission matrix, a methodology diagram, and bar,
   line, scatter, histogram, cumulative-distribution, stacked and precision-recall charts.

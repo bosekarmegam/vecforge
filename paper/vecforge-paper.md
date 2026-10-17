@@ -7,6 +7,7 @@ email: "suneelbose@arcgx.in"
 orcid: "0009-0000-9282-2287"
 date: "October 2026"
 version: "Version 2, VecForge 2.0.0"
+subject: "Preprint, VecForge 2.0.0"
 abstract: |
   Retrieval-augmented applications and AI assistants need a vector store that runs inside the user's own process, keeps data encrypted on disk, combines semantic and keyword retrieval, and remembers information across conversations. This paper presents VecForge 2.0, an embedded Python vector database built for these needs, and evaluates each of its features. One SQLite file, optionally encrypted with SQLCipher, holds documents, vectors, metadata, access keys, agent sessions and index snapshots. Queries fuse FAISS dense search with an incremental BM25 index, and namespace and deletion constraints apply inside both indexes rather than after them. A memory layer, served to assistants over the Model Context Protocol (MCP), ranks memories by relevance, importance and recency. We also prove that the previous release's Grover-inspired reranker applied only the diffusion half of Grover's algorithm, so it could only keep or reverse a ranking, and replace it with an O(N) closed form of the full algorithm that preserves order inside the marked and unmarked sets. On SciFact with the all-MiniLM-L6-v2 encoder, hybrid fusion reaches nDCG@10 of 0.707 against 0.645 for dense search, 0.665 for BM25 and 0.681 for reciprocal rank fusion; all differences are significant (p < 0.001). Against the 1.x code, in-index constraints raise recall in small namespaces from 0.5% to 100%, incremental indexing makes insertion 183 times faster, and snapshots make reopening 9 to 17 times faster. Encryption, audit logging and access control add little measurable cost. We also report negative results: the Grover consensus oracle does not change nDCG on SciFact, filters that pass 0.1% of documents are slow, cosine-based memory deduplication cannot separate paraphrases from statements that differ in a single value, and query throughput stops growing beyond two threads. The system, experiments and data generators are released.
 keywords: "vector database, hybrid retrieval, BM25, FAISS, agent memory, Model Context Protocol, Grover search, amplitude amplification, local-first software, encryption"
@@ -46,7 +47,7 @@ Table 1 places VecForge among these classes of systems.
 Table: **Table 1.** Capabilities by class of system. "Library" means the capability is provided by the system itself rather than left to the application.
 
 | Capability | ANN library | Client-server vector database | Embedded vector store | Agent memory framework | VecForge 2.0 |
-|:-----------------------------------|:-----------:|:-------------:|:-------------:|:-------------:|:-----------:|
+|:---------------------------|:------------:|:--------------:|:--------------:|:--------------:|:------------:|
 | Runs inside the application process | yes | no | yes | varies | yes |
 | Durable storage of text and metadata | no | yes | yes | yes | yes |
 | Dense and keyword retrieval with fusion | no | often | varies | rarely | yes |
@@ -279,12 +280,12 @@ Figure 10 summarises the method. Each experiment fixes a workload, runs one or b
 
 **Fusion beats either retriever alone.** Figure 11 and Table 4 compare six configurations on the 300 SciFact test claims. Hybrid fusion with the default $\alpha = 0.5$ reaches nDCG@10 of 0.707, against 0.645 for dense retrieval alone and 0.665 for BM25 alone, a relative gain of 9.6% over dense retrieval. It also has the highest Recall@100 of the single configurations, 0.962, so fusion helps both the head of the ranking and the candidate pool that a later reranker would see. All three differences are significant (p < 0.001). Fusion also beats RRF with $k = 60$ by 0.026 nDCG@10 (p < 0.001), in line with the finding of Bruch et al. [@bruch2023fusion] that a convex combination is a strong default.
 
-![**Figure 11.** SciFact results on the 300 test claims (bar chart). Error bars are 95% bootstrap confidence intervals. The tuned weight equals the default, so it is shown once.](figures/fig-scifact-methods.png){width=100%}
+![**Figure 11.** SciFact results on the 300 test claims (dot and whisker chart). Whiskers are 95% bootstrap confidence intervals. The tuned weight equals the default, so it is shown once.](figures/fig-scifact-methods.png){width=100%}
 
 Table: **Table 4.** Retrieval quality on SciFact (300 test claims, all-MiniLM-L6-v2). The p-value compares each method with hybrid fusion at $\alpha = 0.5$.
 
 | Method | nDCG@10 | 95% CI | Recall@100 | MRR@10 | p |
-|:-----------------------------|--------:|:--------------:|--------:|--------:|--------:|
+|:---------------------|-----------:|:---------------:|-------------:|-----------:|----------:|
 | BM25 only | 0.665 | 0.618 to 0.710 | 0.886 | 0.634 | < 0.001 |
 | Dense only | 0.645 | 0.598 to 0.690 | 0.925 | 0.605 | < 0.001 |
 | RRF, k = 60 | 0.681 | 0.637 to 0.724 | 0.954 | 0.639 | < 0.001 |
@@ -295,7 +296,7 @@ Table: **Table 4.** Retrieval quality on SciFact (300 test claims, all-MiniLM-L6
 
 **The Grover consensus oracle does not help here.** Adding the consensus reranker changes nDCG@10 by less than 0.0001 (p = 0.97) and raises Recall@100 slightly, from 0.962 to 0.965. On SciFact the documents found by both retrievers are already at the top of the fused list, so lifting them changes little. We report this as a negative result: the reranker is correct and cheap, but on this benchmark it does not improve retrieval quality.
 
-![**Figure 12.** (a) nDCG@10 as a function of the fusion weight (line chart); the dotted line marks the weight chosen on training claims. (b) Distribution of end-to-end query latency on SciFact (cumulative distribution).](figures/fig-pair-alpha-cdf.png){width=100%}
+![**Figure 12.** (a) nDCG@10 as a function of the fusion weight (line chart); the dotted line marks the weight chosen on training claims. (b) Distribution of end-to-end query latency on SciFact (cumulative distribution); the axis is cut at 25 ms, and one query in the Grover series took 47 ms.](figures/fig-pair-alpha-cdf.png){width=100%}
 
 **Most query time is spent embedding the query.** Figure 13 breaks a SciFact query into stages, with both configurations measured on separate vault handles, interleaved query by query. Embedding the query with MiniLM takes 3.0 of the 4.8 ms of a mean hybrid query, or 62%. Hydration from SQLite takes 0.80 ms, dense search 0.46 ms, BM25 0.35 ms and fusion 0.11 ms, so all the database work together takes about 1.8 ms. Grover reranking adds 0.25 ms. End to end, the median query took 4.3 ms without reranking and 4.6 ms with it, and the 95th percentile was about 8.1 ms in both cases (Figure 12b). For a local store with a small encoder, the encoder is the main cost.
 
@@ -303,7 +304,7 @@ Table: **Table 4.** Retrieval quality on SciFact (300 test claims, all-MiniLM-L6
 
 ## RQ2: Reranker correctness and cost
 
-**The 1.x reranker keeps or reverses; the 2.0 reranker keeps.** We feed both rerankers strictly decreasing scores for every list size $N = 2, \dots, 256$ and measure Kendall's $\tau$ [@kendall1938] between input and output order (Figure 14). The 1.x reranker returns the input order for 127 of the 255 sizes ($\tau = 1$) and the exact reverse for the other 128 ($\tau = -1$), with no other outcome, as Proposition 1 predicts. With random scores (20 trials per size) the best candidate stayed first in only 49.8% of cases and the mean $\tau$ was $-0.004$. VecForge 2.0 kept the best candidate first and returned $\tau = 1$ for every size and every trial. When a random 10% of candidates is marked, for $N$ from 20 to 1,000, all marked candidates move to the top in their original relative order.
+**The 1.x reranker keeps or reverses; the 2.0 reranker keeps.** We feed both rerankers strictly decreasing scores for every list size $N = 2, \dots, 256$ and measure Kendall's $\tau$ [@kendall1938] between input and output order (Figure 14). The 1.x reranker returns the input order for 127 of the 255 sizes $(\tau = 1)$ and the exact reverse for the other 128 $(\tau = -1)$, with no other outcome, as Proposition 1 predicts. With random scores (20 trials per size) the best candidate stayed first in only 49.8% of cases and the mean $\tau$ was $-0.004$. VecForge 2.0 kept the best candidate first and returned $\tau = 1$ for every size and every trial. When a random 10% of candidates is marked, for $N$ from 20 to 1,000, all marked candidates move to the top in their original relative order.
 
 ![**Figure 14.** Kendall's $\tau$ between input and output order for every list size from 2 to 256 (scatter plot). The 1.x reranker alternates between keeping and reversing the ranking; VecForge 2.0 always keeps it.](figures/fig2-rank-preservation.png){width=92%}
 
@@ -347,7 +348,7 @@ Table: **Table 6.** Metadata filters on 50,000 documents, top 10, 100 queries.
 
 **Snapshots.** Figure 16b and Table 7 compare opening a vault from its snapshot with rebuilding its indexes from the stored vectors. The snapshot makes reopening 9 to 17 times faster, which matters most for MCP sessions, where the assistant waits for the server to start. The cost is disk space: the snapshot stores a second copy of the vectors and the keyword index, and at 100,000 documents the file was 447 MB, about 2.9 times the 154 MB of raw embeddings.
 
-![**Figure 16.** (a) Total time to insert documents one at a time into the keyword index (log-log line chart). (b) Time to open a vault from its snapshot and by rebuilding the indexes (bar chart, log scale).](figures/fig-pair-bm25-reopen.png){width=100%}
+![**Figure 16.** (a) Total time to insert documents one at a time into the keyword index (log-log line chart). (b) Time to open a vault from its snapshot and by rebuilding the indexes (line chart, log scale).](figures/fig-pair-bm25-reopen.png){width=100%}
 
 Table: **Table 7.** Ingest throughput and time to open a vault (median of three opens), hash embedder.
 
@@ -414,7 +415,7 @@ Table: **Table 10.** End-to-end search latency on the synthetic corpus (ms, p50 
 | 100,000 | flat | 12.5 and 22.8 | 21.3 and 33.4 | 13.1 and 25.9 |
 | 100,000 | HNSW | 12.1 and 43.9 | 22.6 and 76.7 | 12.4 and 48.6 |
 
-**Threads.** We run 400 unique searches over a 50,000-document vault from 1, 2, 4 and 8 threads that share one vault object, three times in rotating order (Figure 20b). Throughput rose from a median of 112 queries per second with one thread to 153 with two and stayed between 141 and 153 with four and eight. The spread between runs was large, up to 50 queries per second, so only the plateau is clear. The vault's lock serialises the core of each search, so extra threads mainly overlap the work done outside it. Concurrency did not change results: for 200 queries, eight threads returned exactly the same top-10 lists as one thread. Read-heavy services can run one vault handle per worker process, at the cost of one copy of the indexes per process; parallel search inside one vault is future work.
+**Threads.** We run 400 unique searches over a 50,000-document vault from 1, 2, 4 and 8 threads that share one vault object, three times in rotating order (Figure 21b). Throughput rose from a median of 112 queries per second with one thread to 153 with two and stayed between 141 and 153 with four and eight. The spread between runs was large, up to 50 queries per second, so only the plateau is clear. The vault's lock serialises the core of each search, so extra threads mainly overlap the work done outside it. Concurrency did not change results: for 200 queries, eight threads returned exactly the same top-10 lists as one thread. Read-heavy services can run one vault handle per worker process, at the cost of one copy of the indexes per process; parallel search inside one vault is future work.
 
 ![**Figure 21.** (a) Median search latency while documents are deleted from a 50,000-document vault (line chart); compaction runs when tombstones pass 20%. (b) Search throughput with 1 to 8 client threads sharing one vault (line chart).](figures/fig-pair-deletes-threads.png){width=100%}
 
