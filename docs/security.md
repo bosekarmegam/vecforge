@@ -1,6 +1,7 @@
 # 🔐 Security Guide
 
-VecForge enterprise security: encryption, RBAC, audit logging, and namespace isolation.
+VecForge enterprise security: encryption, RBAC, audit logging, namespace
+isolation, backups.
 
 Built by Suneel Bose K · ArcGX TechLabs Private Limited.
 
@@ -8,178 +9,134 @@ Built by Suneel Bose K · ArcGX TechLabs Private Limited.
 
 ## Design Philosophy
 
-Security is **never optional** in VecForge. Every storage decision considers encryption. Every multi-user design considers RBAC. Every log is audit-capable.
+Local-first means your data never leaves the machine unless you ship it.
+Every storage decision considers encryption; every multi-user path checks a
+role; every mutation can be audited.
 
 ---
 
 ## AES-256 Encryption at Rest
 
-Encrypt your vault with SQLCipher AES-256:
-
 ```python
 import os
 from vecforge import VecForge
 
-# Always use environment variables — never hardcode keys
-db = VecForge(
-    "secure_vault.db",
-    encryption_key=os.environ["VECFORGE_KEY"],
-)
-
+db = VecForge("secure_vault.db", encryption_key=os.environ["VECFORGE_KEY"])
 db.add("Top secret patient data")
 db.close()
-
-# The .db file is unreadable without the key
-raw = open("secure_vault.db", "rb").read()
-assert b"Top secret" not in raw  # Encrypted!
 ```
 
-### Requirements
-- Install `sqlcipher3`: `pip install sqlcipher3`
-- SQLCipher C library must be available on the system
-- Without SQLCipher, VecForge falls back to standard SQLite with a warning
+Requirements: `pip install "vecforge[encryption]"` (or `sqlcipher3` with the
+system library). Without SQLCipher, VecForge falls back to plain SQLite and
+warns. Keys are escaped before being passed to SQLCipher, so any string is a
+valid key; a wrong key fails at open time.
 
-### Key Management Best Practices
-- Store keys in environment variables: `VECFORGE_KEY`
-- Use a key length of at least 8 characters
-- Rotate keys by creating a new vault and migrating data
-- Lost keys = lost data — there is no recovery
+Index snapshots (FAISS vectors and the BM25 inverted index) are stored inside
+the same encrypted database, in chunks, so nothing sensitive is written to a
+sidecar file.
+
+**Key management:** keep keys in environment variables, rotate by creating a
+new vault and migrating, and remember that a lost key means lost data.
 
 ---
 
 ## Role-Based Access Control (RBAC)
-
-VecForge supports three roles:
 
 | Role | Read | Write | Delete | Namespace | Manage Keys | Backup |
 |---|---|---|---|---|---|---|
 | `admin` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | `read-write` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ |
 | `read-only` | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `none` (unregistered key) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 
-### Usage
+Keys are registered by an admin and persisted in the vault as SHA-256
+digests — raw keys are never stored:
 
 ```python
-# No API key = local admin (full access)
-db = VecForge("vault")
+admin = VecForge("vault.db")                       # no key = local admin
+admin.register_api_key(os.environ["TEAM_KEY"], "read-only")
+admin.close()
 
-# API key with read-only access
-db = VecForge("vault", api_key="read-only-key-abc")
-db.search("query")     # ✅ Works
-db.add("new doc")      # ❌ Raises VecForgePermissionError
+reader = VecForge("vault.db", api_key=os.environ["TEAM_KEY"])
+reader.search("query")      # ✅
+reader.add("new doc")       # ❌ VecForgePermissionError
 
-# Permission check in your code
-from vecforge.security.rbac import RBACManager
-
-rbac = RBACManager(api_key="key123", key_roles={"key123": "read-only"})
-rbac.require("read")   # ✅ OK
-rbac.require("write")  # ❌ Raises VecForgePermissionError
+stranger = VecForge("vault.db", api_key="guess")
+stranger.search("query")    # ❌ unregistered keys get nothing (1.x gave read-only)
 ```
+
+`admin.revoke_api_key(key)` and `admin.list_api_keys()` complete the set.
+
+### REST server
+
+`vecforge serve --api-key …` (or `$VECFORGE_API_KEY`) requires the
+`X-API-Key` header on every request and binds `127.0.0.1` by default.
 
 ---
 
 ## Audit Logging
 
-Track every mutating operation with append-only JSONL logs:
-
 ```python
-db = VecForge(
-    "vault",
-    audit_log="audit.jsonl",
-)
-
+db = VecForge("vault", audit_log="audit.jsonl")
 db.add("sensitive document")
 db.search("query")
 db.delete(doc_id)
 ```
 
-### Audit Log Format
-
 Each line in `audit.jsonl`:
+
 ```json
-{
-    "timestamp": 1709654400.0,
-    "actor": "local-admin",
-    "operation": "add",
-    "doc_id": "a1b2c3d4-...",
-    "namespace": "default",
-    "metadata": {"chars": 1500}
-}
+{"timestamp": 1709654400.0, "actor": "local-admin", "operation": "add",
+ "doc_id": "a1b2c3d4-...", "namespace": "default", "metadata": {"chars": 1500}}
 ```
 
-### Reading Audit Logs
-
-```python
-from vecforge.security.audit import AuditLogger
-
-audit = AuditLogger("audit.jsonl")
-
-# Read all events
-events = audit.read_log()
-
-# Filter by time range
-events = audit.read_log(since=1709654000.0, until=1709655000.0)
-
-# Filter by actor or operation
-events = audit.read_log(actor="local-admin", operation="delete")
-```
+Search events record the query text; store the log with the same care as
+the vault. Read it back with `AuditLogger("audit.jsonl").read_log(since=…,
+actor=…, operation=…)`.
 
 ---
 
 ## Namespace Isolation
 
-Namespaces provide hard multi-tenant boundaries:
-
 ```python
-db = VecForge("multi_tenant.db")
-
 db.create_namespace("tenant_a")
 db.create_namespace("tenant_b")
-
-# Data is isolated
 db.add("Tenant A secret", namespace="tenant_a")
 db.add("Tenant B secret", namespace="tenant_b")
 
-# Tenant A search never returns Tenant B data
 results = db.search("secret", namespace="tenant_a")
 assert all(r.namespace == "tenant_a" for r in results)
 ```
 
-### SQL-Level Isolation
-Every SQL query in VecForge includes `WHERE namespace = ?` — this is enforced at the storage layer, not the application layer.
+Isolation is enforced at three levels: SQL (`WHERE namespace = ?`), the
+FAISS/BM25 retrievers (ID selectors restrict the search to the namespace's
+positions), and a final check during hydration. The AI memory layer uses
+one namespace per agent.
 
 ---
 
 ## Backup & Restore
 
 ```python
+db.backup("backups/vault-2026-10-17.db")     # consistent copy while open
+
 from vecforge.security.snapshots import SnapshotManager
-
 snap = SnapshotManager("my_vault.db")
-
-# Create timestamped backup
-backup_path = snap.create_snapshot("backups/")
-# → "backups/my_vault_20260305_112500.db"
-
-# List available backups
-snapshots = snap.list_snapshots("backups/")
-
-# Restore from backup
-snap.restore_snapshot(backup_path)
+path = snap.create_snapshot("backups/")      # SQLite online backup, WAL-safe
+snap.list_snapshots("backups/")
+snap.restore_snapshot(path)                  # removes stale -wal/-shm journals
 ```
 
-### Encryption Preserved
-Snapshots preserve the encryption state — encrypted vaults remain encrypted in backups.
+Encrypted vaults stay encrypted in backups. For off-site copies see
+`CloudSync` in the [Multimodal Guide](multimodal.md#opt-in-cloud-backup) —
+it only accepts files that are already encrypted.
 
 ---
 
 ## Deletion Protection
 
-Prevent accidental data loss:
-
 ```python
 db = VecForge("vault", deletion_protection=True)
-
-db.add("important doc")
-db.delete(doc_id)  # ❌ Raises DeletionProtectedError
+db.delete(doc_id)            # ❌ DeletionProtectedError
+db.upsert("v2", doc_id=doc_id)   # ❌ also blocked (it would replace data)
 ```

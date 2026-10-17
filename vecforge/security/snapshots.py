@@ -10,8 +10,12 @@
 """
 Backup and restore snapshots for VecForge vaults.
 
-Creates complete vault snapshots preserving encryption state and
-all data. Supports point-in-time recovery.
+Creates complete vault snapshots preserving encryption state and all
+data. Snapshots of SQLite vaults use the SQLite online-backup API, so a
+consistent single-file copy is produced even while the vault is open in
+WAL mode (a plain file copy would miss everything still in the ``-wal``
+file). Restoring removes stale ``-wal`` / ``-shm`` journals so the
+restored file is what SQLite reads next.
 
 Built by Suneel Bose K · ArcGX TechLabs Private Limited.
 """
@@ -20,17 +24,25 @@ from __future__ import annotations
 
 import logging
 import shutil
+import sqlite3
 import time
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
+_SQLITE_MAGIC = b"SQLite format 3\x00"
+
+
+def _is_sqlite_file(path: Path) -> bool:
+    try:
+        with open(path, "rb") as f:
+            return f.read(16) == _SQLITE_MAGIC
+    except OSError:
+        return False
+
 
 class SnapshotManager:
     """Vault backup and restore manager.
-
-    Creates full snapshots of the vault database file. Encryption
-    state is preserved — encrypted vaults remain encrypted in snapshots.
 
     Built by Suneel Bose K · ArcGX TechLabs Private Limited.
 
@@ -38,7 +50,7 @@ class SnapshotManager:
         vault_path: Path to the vault database file.
 
     Performance:
-        Snapshot: O(file_size) — full file copy
+        Snapshot: O(file_size) — SQLite online backup or file copy
         Restore: O(file_size) — full file copy
 
     Example:
@@ -50,6 +62,9 @@ class SnapshotManager:
 
     def __init__(self, vault_path: str) -> None:
         self._vault_path = Path(vault_path)
+
+    def _journal_files(self, base: Path) -> list[Path]:
+        return [base.with_name(base.name + "-wal"), base.with_name(base.name + "-shm")]
 
     def create_snapshot(self, backup_dir: str) -> str:
         """Create a timestamped snapshot of the vault.
@@ -78,16 +93,41 @@ class SnapshotManager:
         timestamp = time.strftime("%Y%m%d_%H%M%S")
         stem = self._vault_path.stem
         suffix = self._vault_path.suffix
-        snapshot_name = f"{stem}_{timestamp}{suffix}"
-        snapshot_path = backup_path / snapshot_name
+        snapshot_path = backup_path / f"{stem}_{timestamp}{suffix}"
+        # why: avoid clobbering when two snapshots land in the same second
+        counter = 1
+        while snapshot_path.exists():
+            snapshot_path = backup_path / f"{stem}_{timestamp}_{counter}{suffix}"
+            counter += 1
 
-        shutil.copy2(str(self._vault_path), str(snapshot_path))
+        if _is_sqlite_file(self._vault_path):
+            # security/why: online backup copies committed WAL content too
+            src = sqlite3.connect(f"file:{self._vault_path}?mode=ro", uri=True)
+            dest = sqlite3.connect(str(snapshot_path))
+            try:
+                src.backup(dest)
+            finally:
+                dest.close()
+                src.close()
+        else:
+            # Encrypted (SQLCipher) or foreign file: byte copy + journals
+            shutil.copy2(str(self._vault_path), str(snapshot_path))
+            for journal in self._journal_files(self._vault_path):
+                if journal.exists():
+                    shutil.copy2(
+                        str(journal),
+                        str(
+                            snapshot_path.with_name(snapshot_path.name + journal.suffix)
+                        ),
+                    )
+
         logger.info("Snapshot created: %s", snapshot_path)
-
         return str(snapshot_path)
 
     def restore_snapshot(self, snapshot_path: str) -> None:
         """Restore vault from a snapshot.
+
+        The vault must not be open in another process while restoring.
 
         Args:
             snapshot_path: Path to the snapshot file to restore.
@@ -105,7 +145,22 @@ class SnapshotManager:
                 f"VecForge by Suneel Bose K · ArcGX TechLabs"
             )
 
+        # why: stale journals would override the restored main file
+        for journal in self._journal_files(self._vault_path):
+            if journal.exists():
+                journal.unlink()
+
         shutil.copy2(str(source), str(self._vault_path))
+        for journal in self._journal_files(source):
+            if journal.exists():
+                shutil.copy2(
+                    str(journal),
+                    str(
+                        self._vault_path.with_name(
+                            self._vault_path.name + journal.suffix
+                        )
+                    ),
+                )
         logger.info("Vault restored from: %s", snapshot_path)
 
     def list_snapshots(self, backup_dir: str) -> list[str]:

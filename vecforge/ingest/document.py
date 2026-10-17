@@ -102,6 +102,7 @@ class DocumentParser:
             if chunk_text:
                 meta = {
                     "source": source,
+                    "filename": Path(source).name,
                     "chunk_index": chunk_index,
                     "char_start": start,
                     "char_end": end,

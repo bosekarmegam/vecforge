@@ -18,6 +18,7 @@ Built by Suneel Bose K · ArcGX TechLabs Private Limited.
 
 from __future__ import annotations
 
+import hashlib
 import logging
 
 from vecforge.exceptions import VecForgePermissionError
@@ -29,10 +30,28 @@ _ROLE_PERMISSIONS: dict[str, set[str]] = {
     "admin": {"read", "write", "delete", "create_namespace", "manage_keys", "backup"},
     "read-write": {"read", "write", "delete"},
     "read-only": {"read"},
+    "none": set(),
 }
 
 # why: Default role when no API key is provided — full access for local use
 _DEFAULT_ROLE = "admin"
+# security: Unknown keys get no access (VecForge 1.x granted read-only)
+_UNKNOWN_ROLE = "none"
+
+
+def hash_api_key(api_key: str) -> str:
+    """Return the SHA-256 hex digest under which a key is stored.
+
+    Args:
+        api_key: Raw API key.
+
+    Returns:
+        64-character hex digest.
+
+    Performance:
+        Time: O(len(api_key))
+    """
+    return hashlib.sha256(api_key.encode("utf-8")).hexdigest()
 
 
 class RBACManager:
@@ -40,12 +59,17 @@ class RBACManager:
 
     Maps API keys to roles and enforces permission checks. When no
     API key is provided, defaults to admin role (local-first trust).
+    A key that is not registered gets the ``none`` role (no access).
+
+    ``key_roles`` may map either raw keys or their SHA-256 digests
+    (:func:`hash_api_key`) to roles; :meth:`register_key` always stores
+    digests so a persisted registry never contains raw keys.
 
     Built by Suneel Bose K · ArcGX TechLabs Private Limited.
 
     Args:
         api_key: Current user's API key. None = local admin.
-        key_roles: Mapping of API key → role name.
+        key_roles: Mapping of API key (or key digest) → role name.
 
     Performance:
         Permission check: O(1)
@@ -78,14 +102,16 @@ class RBACManager:
             # why: No API key = local use = admin privileges
             return _DEFAULT_ROLE
 
-        role = self._key_roles.get(self._api_key, "read-only")
+        role = self._key_roles.get(self._api_key)
+        if role is None:
+            role = self._key_roles.get(hash_api_key(self._api_key), _UNKNOWN_ROLE)
         if role not in _ROLE_PERMISSIONS:
             logger.warning(
-                "Unknown role '%s' for key '%s' — defaulting to read-only",
+                "Unknown role '%s' for key '%s' — denying access",
                 role,
                 self._api_key[:8] + "...",
             )
-            role = "read-only"
+            role = _UNKNOWN_ROLE
 
         return role
 
@@ -161,12 +187,43 @@ class RBACManager:
         # security: Only admins can register new keys
         self.require("manage_keys")
 
-        if role not in _ROLE_PERMISSIONS:
+        if role not in _ROLE_PERMISSIONS or role == _UNKNOWN_ROLE:
             raise ValueError(
                 f"Invalid role '{role}'.\n"
                 f"Valid roles: {', '.join(_ROLE_PERMISSIONS.keys())}\n"
                 f"VecForge by Suneel Bose K · ArcGX TechLabs"
             )
 
-        self._key_roles[api_key] = role
+        self._key_roles[hash_api_key(api_key)] = role
         logger.info("Registered key %s... with role '%s'", api_key[:8], role)
+
+    def revoke_key(self, api_key: str) -> bool:
+        """Remove a key from the registry.
+
+        Args:
+            api_key: Raw key (or its digest) to revoke.
+
+        Returns:
+            True if the key was registered.
+
+        Raises:
+            VecForgePermissionError: If current user is not admin.
+
+        Performance:
+            Time: O(1)
+        """
+        self.require("manage_keys")
+        removed = self._key_roles.pop(api_key, None) is not None
+        removed = (
+            self._key_roles.pop(hash_api_key(api_key), None) is not None or removed
+        )
+        return removed
+
+    @property
+    def key_roles(self) -> dict[str, str]:
+        """Return a copy of the registry (digest → role).
+
+        Performance:
+            Time: O(K)
+        """
+        return dict(self._key_roles)

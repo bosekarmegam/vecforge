@@ -56,7 +56,6 @@ VecForge_INSTRUCTIONS.md
 *.db
 *.db-journal
 *.jsonl
-!examples/*.py
 
 # ─── OS ───
 .DS_Store

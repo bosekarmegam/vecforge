@@ -3,15 +3,16 @@
 # Licensed under the Business Source License 1.1 (BSL 1.1)
 
 """
-Phase 3 Quantum-Inspired Acceleration Benchmark.
+Quantum-inspired reranking benchmark (VecForge 2.0).
 
-Benchmarks three scenarios:
-  1. Component micro-benchmarks (AmplitudeEncoder, GroverAmplifier)
-  2. QuantumReranker *without* windowing (raw Grover on full N)
-  3. QuantumReranker *with* windowing (max_candidates=1000, the default)
-
-The windowed version is the production-default and achieves <5ms even at
-1M docs by bounding the Grover stage to 1000 candidates via O(N) pre-filter.
+Measures:
+  1. AmplitudeEncoder.encode at several sizes
+  2. GroverAmplifier — closed form (O(N), production) vs iterative reference
+  3. QuantumReranker end to end with the default 1000-candidate window,
+     including the O(N) pre-filter at 1M candidates
+  4. Ranking quality: the amplifier must keep the best candidate first and
+     move oracle-marked candidates to the top (the 1.x reranker reversed
+     rankings for roughly half of all candidate-set sizes)
 
 Usage::
 
@@ -32,104 +33,76 @@ SIZES = [1_000, 10_000, 100_000, 1_000_000]
 RUNS = 20
 
 
+def _p50(fn, *args, runs: int = RUNS) -> float:
+    fn(*args)  # warmup
+    latencies = []
+    for _ in range(runs):
+        t0 = time.perf_counter()
+        fn(*args)
+        latencies.append((time.perf_counter() - t0) * 1000)
+    return float(np.percentile(latencies, 50))
+
+
 def bench_amplitude_encode(n: int) -> float:
-    """Benchmark AmplitudeEncoder.encode at size N (ms p50)."""
     encoder = AmplitudeEncoder()
     scores = np.random.rand(n).astype(np.float32)
-    encoder.encode(scores)  # warmup
-
-    latencies = []
-    for _ in range(RUNS):
-        t0 = time.perf_counter()
-        encoder.encode(scores)
-        latencies.append((time.perf_counter() - t0) * 1000)
-    return float(np.percentile(latencies, 50))
+    return _p50(encoder.encode, scores)
 
 
-def bench_grover_amplify(n: int) -> float:
-    """Benchmark GroverAmplifier.amplify at size N (ms p50)."""
-    amplifier = GroverAmplifier()
-    scores = np.random.rand(n).astype(np.float32)
-    amplifier.amplify(scores)  # warmup
-
-    latencies = []
-    for _ in range(RUNS):
-        t0 = time.perf_counter()
-        amplifier.amplify(scores)
-        latencies.append((time.perf_counter() - t0) * 1000)
-    return float(np.percentile(latencies, 50))
+def bench_grover(n: int, method: str) -> float:
+    amp = GroverAmplifier(method=method)  # type: ignore[arg-type]
+    a = np.random.rand(n).astype(np.float32)
+    a /= np.linalg.norm(a)
+    mask = GroverAmplifier.default_marked(a)
+    return _p50(
+        lambda: amp.amplify(a, marked=mask), runs=5 if method == "iterative" else RUNS
+    )
 
 
-def bench_quantum_reranker_windowed(n: int, top_k: int = 10) -> float:
-    """Benchmark QuantumReranker with max_candidates=1000 window (ms p50).
-
-    This is the production default. Grover always runs on ≤1000 items.
-    """
+def bench_reranker(n: int, top_k: int = 10) -> float:
     qr = QuantumReranker(max_candidates=1000)
-    scores = list(np.random.rand(n).astype(float))
-    texts = [f"doc_{i}" for i in range(n)]
-    qr.rerank("query", texts, scores, top_k=top_k)  # warmup
-
-    latencies = []
-    for _ in range(RUNS):
-        t0 = time.perf_counter()
-        qr.rerank("query", texts, scores, top_k=top_k)
-        latencies.append((time.perf_counter() - t0) * 1000)
-    return float(np.percentile(latencies, 50))
+    scores = np.random.rand(n).astype(np.float32)
+    return _p50(lambda: qr.amplify_scores(scores, top_k=top_k))
 
 
-def bench_quantum_reranker_unwindowed(n: int, top_k: int = 10) -> float:
-    """Benchmark QuantumReranker without windowing — Grover on all N (ms p50).
-
-    Used only for comparison to illustrate the pre-filter improvement.
-    """
-    # Use a very large max_candidates so no windowing occurs
-    qr = QuantumReranker(max_candidates=n)
-    scores = list(np.random.rand(n).astype(float))
-    texts = [f"doc_{i}" for i in range(n)]
-    qr.rerank("query", texts, scores, top_k=top_k)  # warmup
-
-    latencies = []
-    for _ in range(RUNS):
-        t0 = time.perf_counter()
-        qr.rerank("query", texts, scores, top_k=top_k)
-        latencies.append((time.perf_counter() - t0) * 1000)
-    return float(np.percentile(latencies, 50))
+def quality_check() -> None:
+    qr = QuantumReranker()
+    reversed_in_1x = [2, 3, 4, 5, 6, 15, 20, 26, 41, 58]
+    ok = True
+    for n in reversed_in_1x:
+        scores = list(np.linspace(1.0, 0.05, n))
+        res = qr.rerank("q", [str(i) for i in range(n)], scores, top_k=3)
+        ok &= res[0][0] == 0
+    scores = list(np.linspace(1.0, 0.05, 20))
+    res = qr.rerank("q", [str(i) for i in range(20)], scores, top_k=5, marked=[3, 7])
+    ok &= [i for i, _ in res][:2] == [3, 7]
+    status = "✅" if ok else "❌"
+    print(f"\n🧪 Ranking quality: best-first for N∈{reversed_in_1x} → {status}")
+    print(f"   consensus oracle [3, 7] → top-2 = {[i for i, _ in res][:2]}")
+    print(f"   {qr.last_explanation}")
 
 
 def main() -> None:
-    target_ms = 20.0
-
-    print("VecForge — Phase 3 Quantum-Inspired Acceleration Benchmark")
+    print("VecForge 2.0 — Quantum-Inspired Reranking Benchmark")
     print("=" * 72)
-    print("\n📊 Component micro-benchmarks:")
-    print(f"{'N':>10}  {'Encode (ms)':>12}  {'Grover (ms)':>12}")
-    print("-" * 40)
-    for n in SIZES[:3]:  # Grover unwindowed is very slow at 1M — skip
+    print("\n📊 Component micro-benchmarks (ms p50):")
+    header = f"{'N':>10}  {'Encode':>8}  {'Grover closed-form':>18}  "
+    print(header + f"{'Grover iterative':>16}")
+    print("-" * 60)
+    for n in SIZES[:3]:
         enc = bench_amplitude_encode(n)
-        grv = bench_grover_amplify(n)
-        print(f"{n:>10,}  {enc:>12.3f}  {grv:>12.3f}")
+        closed = bench_grover(n, "closed_form")
+        iterative = bench_grover(n, "iterative")
+        print(f"{n:>10,}  {enc:>8.3f}  {closed:>18.3f}  {iterative:>16.3f}")
 
-    print("\n⚡ QuantumReranker — with windowing (max_candidates=1000) [DEFAULT]:")
-    header = f"{'N':>10}  {'QRerank':>10}  {'Status':>8}"
-    print(header)
-    print("-" * 35)
+    print("\n⚡ QuantumReranker (window=1000, O(N) pre-filter + O(K) closed form):")
+    print(f"{'N':>10}  {'ms p50':>8}  Status")
+    print("-" * 32)
     for n in SIZES:
-        ms = bench_quantum_reranker_windowed(n)
-        status = "✅" if ms <= target_ms else "⚠️"
-        print(f"{n:>10,}  {ms:>10.3f}  {status}")
+        ms = bench_reranker(n)
+        print(f"{n:>10,}  {ms:>8.3f}  {'✅' if ms <= 20.0 else '⚠️'}")
 
-    print(f"\n🎯 Target: ≤{target_ms}ms p50 quantum rerank at any N (windowed)")
-
-    print("\n🐢 QuantumReranker — WITHOUT windowing (for comparison only):")
-    print(f"{'N':>10}  {'No-window (ms)':>15}  {'Windowed (ms)':>14}  Speedup")
-    print("-" * 58)
-    for n in [1_000, 10_000, 100_000]:
-        slow = bench_quantum_reranker_unwindowed(n)
-        fast = bench_quantum_reranker_windowed(n)
-        speedup = slow / fast if fast > 0 else float("inf")
-        print(f"{n:>10,}  {slow:>15.3f}  {fast:>14.3f}  {speedup:.1f}x")
-
+    quality_check()
     print("\nBuilt by Suneel Bose K · ArcGX TechLabs Private Limited")
 
 

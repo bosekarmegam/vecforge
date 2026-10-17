@@ -1,40 +1,25 @@
 # 🖥️ CLI Reference
 
-VecForge command-line interface.
+VecForge 2.0 command-line interface.
 
 Built by Suneel Bose K · ArcGX TechLabs Private Limited.
 
 ---
 
-## Commands
+Every command that opens a vault accepts `--model <name>` (or the
+`VECFORGE_MODEL` environment variable). Use `--model hash` for the
+dependency-free embedder.
+
+## Vault commands
 
 ### `vecforge ingest`
 
-Ingest documents from files or directories.
-
 ```bash
-vecforge ingest <path> --vault <vault.db> [options]
+vecforge ingest <path> --vault <vault.db> [--namespace NS] [--chunk-size 1000] [--chunk-overlap 200]
 ```
-
-| Option | Default | Description |
-|---|---|---|
-| `--vault` | required | Path to vault database |
-| `--namespace` | `default` | Target namespace |
-| `--chunk-size` | `1000` | Chunk size in characters |
-| `--chunk-overlap` | `200` | Overlap between chunks |
-
-**Examples:**
-```bash
-vecforge ingest reports/ --vault my.db
-vecforge ingest data.pdf --vault my.db --namespace legal
-vecforge ingest docs/ --vault my.db --chunk-size 500
-```
-
----
+Ingests `.txt`, `.md`, `.pdf`, `.docx`, `.html` files or directories in batches.
 
 ### `vecforge search`
-
-Search the vault with a natural language query.
 
 ```bash
 vecforge search "<query>" --vault <vault.db> [options]
@@ -42,92 +27,79 @@ vecforge search "<query>" --vault <vault.db> [options]
 
 | Option | Default | Description |
 |---|---|---|
-| `--vault` | required | Path to vault database |
 | `--top-k` | `5` | Number of results |
-| `--namespace` | `None` | Restrict to namespace |
+| `--namespace` | — | Restrict to a namespace |
 | `--alpha` | `0.5` | Semantic weight (0.0–1.0) |
-| `--rerank` | `False` | Enable cross-encoder reranking |
-
-**Examples:**
-```bash
-vecforge search "diabetes treatment" --vault my.db
-vecforge search "contract clause" --vault my.db --top-k 10 --rerank
-vecforge search "patient" --vault my.db --namespace ward_7
-```
-
----
-
-### `vecforge stats`
-
-Show vault statistics.
+| `--rerank` | off | Cross-encoder reranking |
+| `--quantum` | off | Grover-inspired reranking |
+| `--filters` | — | Metadata filters as JSON, e.g. `'{"year": {"gte": 2024}}'` |
+| `--recency` | `0.0` | Recency weight |
+| `--json` | off | Print results as JSON |
 
 ```bash
-vecforge stats <vault.db>
+vecforge search "diabetes treatment" --vault my.db --quantum --json
+vecforge search "contract clause" --vault my.db --top-k 10 --rerank --filters '{"type": "NDA"}'
 ```
 
-**Example:**
-```
-═══════════════════════════════════════════════
-VecForge Vault Statistics
-═══════════════════════════════════════════════
-Path:           my.db
-Documents:      1500
-Encrypted:      True
-Quantum:        False
-Protection:     False
-Namespaces:     default, ward_7, ICU
-Index vectors:  1500
-BM25 docs:      1500
-```
+### `vecforge stats <vault.db>`
 
----
+Shows documents, namespaces, index type, tombstones, embedder and version.
 
-### `vecforge export`
+### `vecforge export <vault.db> [-o file.json] [--namespace NS]`
 
-Export vault data to JSON.
+### `vecforge compact <vault.db>`
 
-```bash
-vecforge export <vault.db> [options]
-```
+Rebuilds the indexes without tombstones and refreshes the snapshot.
 
-| Option | Default | Description |
-|---|---|---|
-| `--format` | `json` | Export format |
-| `-o, --output` | stdout | Output file path |
-| `--namespace` | `None` | Export specific namespace |
+### `vecforge backup <vault.db> <destination>`
 
-**Examples:**
-```bash
-vecforge export my.db -o data.json
-vecforge export my.db --namespace ward_7 -o ward7.json
-```
-
----
+Writes a consistent copy with the SQLite online-backup API — safe while the
+vault is in use.
 
 ### `vecforge serve`
 
-Start the VecForge REST API server.
-
 ```bash
-vecforge serve --vault <vault.db> [options]
+vecforge serve --vault <vault.db> [--port 8080] [--host 127.0.0.1] [--api-key KEY]
 ```
 
-| Option | Default | Description |
-|---|---|---|
-| `--vault` | required | Path to vault database |
-| `--port` | `8080` | Server port |
-| `--host` | `0.0.0.0` | Server host |
+The server binds `127.0.0.1` by default. Pass `--host 0.0.0.0` to expose it
+and `--api-key` (or `$VECFORGE_API_KEY`) to require `X-API-Key`.
 
-**Example:**
+---
+
+## MCP server
+
 ```bash
-vecforge serve --vault my.db --port 8080
+vecforge mcp [--vault ~/.vecforge/memory.db] [--agent claude] [--transport stdio|http]
+             [--host 127.0.0.1] [--port 8765] [--print-config claude-desktop|claude-code]
+```
+
+`--print-config` prints the JSON snippet for Claude Desktop or Claude Code
+instead of starting the server. See the [MCP Guide](mcp.md).
+
+---
+
+## Memory commands
+
+All take `--vault` (default `~/.vecforge/memory.db`), `--agent` (default
+`claude`) and `--model`.
+
+```bash
+vecforge memory remember "User prefers tea" --kind preference --importance 0.8 --tags drinks
+vecforge memory recall "beverage preference" --top-k 5 [--kinds fact,preference] [--json]
+vecforge memory list [--limit 20] [--kinds task]
+vecforge memory forget <memory_id>
+vecforge memory sessions [--limit 10]
+vecforge memory context [--query topic] [--max-chars 4000]
+vecforge memory export memories.json
+vecforge memory import memories.json
 ```
 
 ---
 
-## Global Options
+## Global options
 
 ```bash
-vecforge --version    # Show version
-vecforge --help       # Show help
+vecforge --version    # prints the package version
+vecforge --help
 ```

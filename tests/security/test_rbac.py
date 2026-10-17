@@ -69,12 +69,29 @@ class TestRBAC:
         with pytest.raises(VecForgePermissionError):
             rbac.require("manage_keys")
 
-    def test_unknown_key_defaults_to_readonly(self) -> None:
-        """Unknown API key defaults to read-only role."""
+    def test_unknown_key_gets_no_access(self) -> None:
+        """VecForge 2.0: an unregistered API key is denied everything."""
         rbac = RBACManager(api_key="unknown-key")
-        rbac.require("read")  # OK
+        assert rbac.current_role == "none"
+        with pytest.raises(VecForgePermissionError):
+            rbac.require("read")
         with pytest.raises(VecForgePermissionError):
             rbac.require("write")
+
+    def test_hashed_registry_and_revoke(self) -> None:
+        """Keys are stored as digests and resolve on the next manager."""
+        from vecforge.security.rbac import hash_api_key
+
+        admin = RBACManager()
+        admin.register_key("team-key", "read-write")
+        registry = admin.key_roles
+        assert "team-key" not in registry
+        assert registry[hash_api_key("team-key")] == "read-write"
+        member = RBACManager(api_key="team-key", key_roles=registry)
+        member.require("write")
+        assert admin.revoke_key("team-key") and not admin.revoke_key("team-key")
+        with pytest.raises(ValueError):
+            admin.register_key("k", "none")
 
     def test_has_permission(self) -> None:
         """has_permission returns bool without raising."""

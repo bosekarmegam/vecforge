@@ -18,6 +18,8 @@ Built by Suneel Bose K · ArcGX TechLabs Private Limited.
 
 from __future__ import annotations
 
+_FOOTER = "VecForge by Suneel Bose K · ArcGX TechLabs — docs: vecforge.arcgx.in"
+
 
 class VecForgeError(Exception):
     """Base exception for all VecForge errors.
@@ -42,7 +44,23 @@ class VaultEmptyError(VecForgeError):
         super().__init__(
             f"Vault '{vault_name}' contains no documents.\n"
             f'Add documents with: db.add("your text") or db.ingest("path/")\n'
-            f"VecForge by Suneel Bose K · ArcGX TechLabs — docs: vecforge.arcgx.in"
+            f"{_FOOTER}"
+        )
+
+
+class VaultClosedError(VecForgeError):
+    """Raised when using a vault after ``close()``.
+
+    Example:
+        >>> raise VaultClosedError("my_vault")
+        VaultClosedError: Vault 'my_vault' is closed. ...
+    """
+
+    def __init__(self, vault_name: str) -> None:
+        super().__init__(
+            f"Vault '{vault_name}' is closed.\n"
+            f"Re-open it with: VecForge('{vault_name}')\n"
+            f"{_FOOTER}"
         )
 
 
@@ -60,7 +78,39 @@ class NamespaceNotFoundError(VecForgeError):
             f"Namespace '{namespace}' does not exist in this vault.\n"
             f"Available namespaces: [{available_str}]\n"
             f"Create it with: db.create_namespace('{namespace}')\n"
-            f"VecForge by Suneel Bose K · ArcGX TechLabs — docs: vecforge.arcgx.in"
+            f"{_FOOTER}"
+        )
+
+
+class DocumentNotFoundError(VecForgeError):
+    """Raised when a document ID does not exist.
+
+    Example:
+        >>> raise DocumentNotFoundError("abc")
+        DocumentNotFoundError: Document 'abc' does not exist ...
+    """
+
+    def __init__(self, doc_id: str) -> None:
+        super().__init__(
+            f"Document '{doc_id}' does not exist in this vault.\n"
+            f"Check the ID with: db.exists('{doc_id}')\n"
+            f"{_FOOTER}"
+        )
+
+
+class DuplicateDocumentError(VecForgeError):
+    """Raised when adding a document whose ID already exists.
+
+    Example:
+        >>> raise DuplicateDocumentError("abc")
+        DuplicateDocumentError: Document 'abc' already exists ...
+    """
+
+    def __init__(self, doc_id: str) -> None:
+        super().__init__(
+            f"Document '{doc_id}' already exists in this vault.\n"
+            f"Use db.upsert(...) to replace it, or omit doc_id for a new one.\n"
+            f"{_FOOTER}"
         )
 
 
@@ -77,7 +127,7 @@ class VecForgePermissionError(VecForgeError):
             f"Permission denied: '{operation}' requires a higher role.\n"
             f"Current role: '{current_role}'.\n"
             f"Request an upgraded key from your vault administrator.\n"
-            f"VecForge by Suneel Bose K · ArcGX TechLabs — docs: vecforge.arcgx.in"
+            f"{_FOOTER}"
         )
 
 
@@ -94,7 +144,7 @@ class InvalidAlphaError(VecForgeError):
             f"alpha must be between 0.0 and 1.0, got {alpha}.\n"
             f"Use alpha=0.0 for keyword-only, alpha=1.0 for semantic-only, "
             f"alpha=0.5 for balanced hybrid search.\n"
-            f"VecForge by Suneel Bose K · ArcGX TechLabs — docs: vecforge.arcgx.in"
+            f"{_FOOTER}"
         )
 
 
@@ -126,10 +176,7 @@ class EncryptionKeyError(VecForgeError):
             ),
         }
         msg = messages.get(reason, f"Encryption error: {reason}")
-        super().__init__(
-            f"{msg}\n"
-            f"VecForge by Suneel Bose K · ArcGX TechLabs — docs: vecforge.arcgx.in"
-        )
+        super().__init__(f"{msg}\n{_FOOTER}")
 
 
 class DeletionProtectedError(VecForgeError):
@@ -144,7 +191,7 @@ class DeletionProtectedError(VecForgeError):
         super().__init__(
             f"Cannot delete doc '{doc_id}': vault has deletion_protection=True.\n"
             f"Disable with: VecForge('vault', deletion_protection=False)\n"
-            f"VecForge by Suneel Bose K · ArcGX TechLabs — docs: vecforge.arcgx.in"
+            f"{_FOOTER}"
         )
 
 
@@ -160,5 +207,5 @@ class IngestError(VecForgeError):
         super().__init__(
             f"Failed to ingest '{path}': {reason}.\n"
             f"Supported formats: .txt, .md, .pdf, .docx, .html\n"
-            f"VecForge by Suneel Bose K · ArcGX TechLabs — docs: vecforge.arcgx.in"
+            f"{_FOOTER}"
         )

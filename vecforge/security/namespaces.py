@@ -60,6 +60,14 @@ class NamespaceManager:
         """
         self._cache = set(self._storage.list_namespaces())
 
+    def refresh(self) -> None:
+        """Drop the cache so the next check re-reads storage.
+
+        Performance:
+            Time: O(1)
+        """
+        self._cache = None
+
     def validate(self, namespace: str) -> None:
         """Validate that a namespace exists.
 

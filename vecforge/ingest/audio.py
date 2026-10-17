@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -83,11 +84,11 @@ class AudioEmbedder:
     def __init__(
         self,
         whisper_model: str = "base",
-        text_embedder: object | None = None,
+        text_embedder: Any | None = None,
     ) -> None:
         self._whisper_model_name = whisper_model
-        self._whisper_model: object | None = None
-        self._text_embedder = text_embedder
+        self._whisper_model: Any = None
+        self._text_embedder: Any = text_embedder
 
     def _load_whisper(self) -> None:
         """Lazy-load Whisper on first use."""
@@ -99,7 +100,7 @@ class AudioEmbedder:
         self._whisper_model = whisper.load_model(self._whisper_model_name)
         logger.info("AudioEmbedder: loaded Whisper '%s'", self._whisper_model_name)
 
-    def _get_text_embedder(self) -> object:
+    def _get_text_embedder(self) -> Any:
         if self._text_embedder is None:
             from vecforge.core.embedder import Embedder
 
@@ -144,7 +145,7 @@ class AudioEmbedder:
             )
 
         self._load_whisper()
-        result = self._whisper_model.transcribe(str(path))  # type: ignore[union-attr]
+        result = self._whisper_model.transcribe(str(path))
         transcript: str = result["text"].strip()
         logger.info(
             "AudioEmbedder: transcribed '%s' → %d chars", path.name, len(transcript)
@@ -171,7 +172,9 @@ class AudioEmbedder:
         """
         transcript = self.transcribe(audio_path)
         embedder = self._get_text_embedder()
-        vec: NDArray[np.float32] = embedder.embed(transcript)  # type: ignore[union-attr]
+        vec: NDArray[np.float32] = np.asarray(
+            embedder.embed(transcript), dtype=np.float32
+        )
         return vec
 
     def transcribe_and_embed(
@@ -196,5 +199,7 @@ class AudioEmbedder:
         """
         transcript = self.transcribe(audio_path)
         embedder = self._get_text_embedder()
-        vec: NDArray[np.float32] = embedder.embed(transcript)  # type: ignore[union-attr]
+        vec: NDArray[np.float32] = np.asarray(
+            embedder.embed(transcript), dtype=np.float32
+        )
         return transcript, vec

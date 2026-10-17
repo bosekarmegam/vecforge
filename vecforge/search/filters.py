@@ -10,8 +10,9 @@
 """
 Metadata filtering logic for VecForge.
 
-Supports equality, range (gte, lte, gt, lt), in/not_in operators
-for flexible metadata-based result filtering.
+Supports equality, range (gte, lte, gt, lt), in/not_in, ne, contains,
+any/all (list overlap) and exists operators for flexible metadata-based
+result filtering.
 
 Built by Suneel Bose K · ArcGX TechLabs Private Limited.
 """
@@ -24,8 +25,9 @@ from typing import Any
 class MetadataFilter:
     """Filter search results based on metadata conditions.
 
-    Supports operators: equality, gte, lte, gt, lt, in, not_in, ne.
-    Filters are specified as nested dictionaries.
+    Supports operators: equality, gte, lte, gt, lt, in, not_in, ne,
+    contains (substring / list membership), any / all (list overlap) and
+    exists. Filters are specified as nested dictionaries.
 
     Built by Suneel Bose K · ArcGX TechLabs Private Limited.
 
@@ -40,7 +42,19 @@ class MetadataFilter:
         False
     """
 
-    _OPERATORS = {"gte", "lte", "gt", "lt", "in", "not_in", "ne"}
+    _OPERATORS = {
+        "gte",
+        "lte",
+        "gt",
+        "lt",
+        "in",
+        "not_in",
+        "ne",
+        "contains",
+        "any",
+        "all",
+        "exists",
+    }
 
     def __init__(self, filters: dict[str, Any]) -> None:
         self._filters = filters
@@ -59,6 +73,9 @@ class MetadataFilter:
         """
         for key, condition in self._filters.items():
             if key not in metadata:
+                # why: {"exists": False} must match a missing key
+                if isinstance(condition, dict) and condition.get("exists") is False:
+                    continue
                 return False
 
             value = metadata[key]
@@ -93,23 +110,64 @@ class MetadataFilter:
                 if value != threshold:
                     return False
                 continue
-
-            if op == "gte" and not (value >= threshold):
-                return False
-            if op == "lte" and not (value <= threshold):
-                return False
-            if op == "gt" and not (value > threshold):
-                return False
-            if op == "lt" and not (value < threshold):
-                return False
-            if op == "in" and value not in threshold:
-                return False
-            if op == "not_in" and value in threshold:
-                return False
-            if op == "ne" and value == threshold:
+            try:
+                if not self._check_one(op, value, threshold):
+                    return False
+            except TypeError:
+                # why: incomparable types (e.g. "icu" >= 5) never match
                 return False
 
         return True
+
+    def _check_one(self, op: str, value: Any, threshold: Any) -> bool:
+        """Evaluate a single operator; may raise TypeError for bad types."""
+        if op == "gte":
+            return bool(value >= threshold)
+        if op == "lte":
+            return bool(value <= threshold)
+        if op == "gt":
+            return bool(value > threshold)
+        if op == "lt":
+            return bool(value < threshold)
+        if op == "in":
+            return value in threshold
+        if op == "not_in":
+            return value not in threshold
+        if op == "ne":
+            return bool(value != threshold)
+        if op == "contains":
+            return self._contains(value, threshold)
+        if op == "any":
+            return self._any(value, threshold)
+        if op == "all":
+            return self._all(value, threshold)
+        if op == "exists":
+            return bool(threshold) == (value is not None)
+        return True  # pragma: no cover - guarded by _OPERATORS
+
+    @staticmethod
+    def _contains(value: Any, needle: Any) -> bool:
+        """``needle in value`` for strings and sequences (False otherwise)."""
+        try:
+            return needle in value
+        except TypeError:
+            return False
+
+    @staticmethod
+    def _any(value: Any, needles: Any) -> bool:
+        """True when ``value`` (a sequence) shares any item with ``needles``."""
+        try:
+            return bool(set(value) & set(needles))
+        except TypeError:
+            return False
+
+    @staticmethod
+    def _all(value: Any, needles: Any) -> bool:
+        """True when ``value`` (a sequence) contains every item of ``needles``."""
+        try:
+            return set(needles) <= set(value)
+        except TypeError:
+            return False
 
     def filter_results(
         self, results: list[Any], metadata_getter: Any = None

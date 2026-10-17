@@ -149,7 +149,7 @@ class CloudSync:
 
     def _upload_s3(self, path: Path, key: str, checksum: str) -> str:
         try:
-            import boto3  # type: ignore[import-untyped]
+            import boto3
         except ImportError as exc:
             raise ImportError(
                 "S3 sync requires: pip install vecforge[cloud]\n"
@@ -170,7 +170,7 @@ class CloudSync:
 
     def _upload_gcs(self, path: Path, key: str, checksum: str) -> str:
         try:
-            from google.cloud import storage as gcs  # type: ignore[import-untyped]
+            from google.cloud import storage as gcs
         except ImportError as exc:
             raise ImportError(
                 "GCS sync requires: pip install vecforge[cloud]\n"
@@ -188,9 +188,7 @@ class CloudSync:
 
     def _upload_azure(self, path: Path, key: str, checksum: str) -> str:
         try:
-            from azure.storage.blob import (  # type: ignore[import-untyped]
-                BlobServiceClient,
-            )
+            from azure.storage.blob import BlobServiceClient
         except ImportError as exc:
             raise ImportError(
                 "Azure sync requires: pip install vecforge[cloud]\n"

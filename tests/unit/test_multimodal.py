@@ -117,9 +117,11 @@ class TestImageEmbedder:
 
         embedder = ImageEmbedder()
         # Patch _load to be a no-op so we skip the open_clip import check
-        with patch.object(embedder, "_load", return_value=None):
-            with pytest.raises(FileNotFoundError):
-                embedder.embed("/nonexistent/image.jpg")
+        with (
+            patch.object(embedder, "_load", return_value=None),
+            pytest.raises(FileNotFoundError),
+        ):
+            embedder.embed_image("/nonexistent/image.jpg")
 
 
 # ─── AudioEmbedder ───────────────────────────────────────────────────────────
@@ -133,9 +135,11 @@ class TestAudioEmbedder:
         original = aud._whisper
         aud._whisper = None
         try:
-            with patch.dict(sys.modules, {"whisper": None}):
-                with pytest.raises(ImportError, match="multimodal"):
-                    aud._ensure_whisper()
+            with (
+                patch.dict(sys.modules, {"whisper": None}),
+                pytest.raises(ImportError, match="multimodal"),
+            ):
+                aud._ensure_whisper()
         finally:
             aud._whisper = original
 
@@ -216,10 +220,8 @@ class TestQuantumRerankerWindowing:
         # Use float list built from numpy for speed
         scores_arr = np.random.rand(n).astype(float)
         scores = scores_arr.tolist()
-        # Build texts lazily — reranker only accesses results indices
-        texts: list[str] = []  # crossmodal reranker doesn't need texts for pure-Grover
 
-        # Patch texts to be a long dummy list without allocation
+        # Build texts lazily — the pure-Grover path never touches them
         class _LazyList:
             """O(1) __len__ + __getitem__ without allocating N strings."""
 
@@ -234,7 +236,7 @@ class TestQuantumRerankerWindowing:
         elapsed_ms = (time.perf_counter() - t0) * 1000
 
         assert len(results) == 10
-        for idx, score in results:
+        for idx, _score in results:
             assert 0 <= idx < n
         # Allow 2000ms for slow test runners (CI, Windows, etc.)
         assert elapsed_ms < 2000, f"Too slow: {elapsed_ms:.1f}ms > 2000ms"

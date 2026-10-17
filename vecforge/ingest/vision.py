@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import logging
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 from numpy.typing import NDArray
@@ -75,7 +76,7 @@ class ImageEmbedder:
     Example::
 
         >>> embedder = ImageEmbedder()
-        >>> vec = embedder.embed("photo.jpg")
+        >>> vec = embedder.embed_image("photo.jpg")
         >>> vec.shape
         (512,)
         >>> vec.dtype
@@ -89,9 +90,53 @@ class ImageEmbedder:
     ) -> None:
         self._model_name = model_name
         self._pretrained = pretrained
-        self._model: object | None = None
-        self._preprocess: object | None = None
+        self._model: Any = None
+        self._preprocess: Any = None
         self._device: str | None = None
+        self._dimension: int | None = None
+
+    # ─── EmbedderLike protocol (lets a whole vault live in CLIP space) ───
+
+    @property
+    def name(self) -> str:
+        """Return the engine name recorded in the vault."""
+        return f"clip:{self._model_name}/{self._pretrained}"
+
+    @property
+    def dimension(self) -> int:
+        """Return the CLIP embedding dimension (loads the model once)."""
+        if self._dimension is None:
+            self._dimension = int(self.embed_text("vecforge dimension probe").shape[0])
+        return self._dimension
+
+    def encode(self, texts: list[str] | str, **kwargs: Any) -> NDArray[np.float32]:
+        """Encode text(s) with the CLIP text tower → ``(n, dimension)``.
+
+        Using ``VecForge(embedder=ImageEmbedder())`` puts text documents,
+        text queries and image embeddings in one shared space, which is
+        what cross-modal (text → image) search requires.
+        """
+        del kwargs
+        if isinstance(texts, str):
+            texts = [texts]
+        if not texts:
+            return np.zeros((0, self.dimension), dtype=np.float32)
+        return np.stack([self.embed_text(t) for t in texts]).astype(np.float32)
+
+    def embed(
+        self,
+        image: str | Path | Any,
+    ) -> NDArray[np.float32]:
+        """Generate a CLIP embedding for an image (see :meth:`embed_image`).
+
+        Strings that are not existing files are embedded as *text* so the
+        object satisfies the ``EmbedderLike`` protocol used by the vault.
+        """
+        if isinstance(image, str | Path):
+            path = Path(image)
+            if not path.exists() and isinstance(image, str):
+                return self.embed_text(image)
+        return self.embed_image(image)
 
     def _load(self) -> None:
         """Lazy-load model on first use to avoid startup cost."""
@@ -118,9 +163,9 @@ class ImageEmbedder:
             device,
         )
 
-    def embed(
+    def embed_image(
         self,
-        image: str | Path | PIL.Image.Image,  # noqa: F821
+        image: str | Path | Any,
     ) -> NDArray[np.float32]:
         """Generate a 512-dim CLIP embedding for an image.
 
@@ -139,7 +184,7 @@ class ImageEmbedder:
 
         Example::
 
-            >>> vec = ImageEmbedder().embed("sunset.jpg")
+            >>> vec = ImageEmbedder().embed_image("sunset.jpg")
             >>> vec.shape
             (512,)
         """
@@ -159,12 +204,12 @@ class ImageEmbedder:
             img = image.convert("RGB")
 
         # Preprocess: resize, normalize, batch-dim
-        preprocessed = self._preprocess(img).unsqueeze(0)  # type: ignore[operator]
+        preprocessed = self._preprocess(img).unsqueeze(0)
         if self._device:
             preprocessed = preprocessed.to(self._device)
 
         with torch.no_grad():
-            features = self._model.encode_image(preprocessed)  # type: ignore[union-attr]
+            features = self._model.encode_image(preprocessed)
             # L2 normalise to unit sphere
             features = features / features.norm(dim=-1, keepdim=True)
 
@@ -196,7 +241,7 @@ class ImageEmbedder:
             tokens = tokens.to(self._device)
 
         with torch.no_grad():
-            features = self._model.encode_text(tokens)  # type: ignore[union-attr]
+            features = self._model.encode_text(tokens)
             features = features / features.norm(dim=-1, keepdim=True)
 
         return features.squeeze(0).cpu().numpy().astype(np.float32)

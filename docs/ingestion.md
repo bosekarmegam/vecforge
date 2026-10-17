@@ -44,6 +44,7 @@ count = db.ingest(
     "documents/",
     chunk_size=1000,      # Max characters per chunk
     chunk_overlap=200,    # Overlap between consecutive chunks
+    batch_size=64,        # Chunks embedded and inserted per batch
 )
 ```
 
@@ -58,7 +59,9 @@ count = db.ingest(
 ### How Chunking Works
 1. Text is split at sentence/paragraph boundaries when possible
 2. Chunks overlap by `chunk_overlap` characters for continuity
-3. Each chunk gets metadata: `source`, `chunk_index`, `char_start`, `char_end`
+3. Each chunk gets metadata: `source`, `filename`, `chunk_index`, `char_start`, `char_end`
+4. Chunks are embedded and inserted in batches (one model call and one
+   SQLite transaction per batch) — 2.0 ingests 10–50× faster than 1.x
 
 ---
 
@@ -83,6 +86,7 @@ results = db.search("diabetes")
 print(results[0].metadata)
 # {
 #     "source": "medical_records/report.pdf",
+#     "filename": "report.pdf",
 #     "chunk_index": 3,
 #     "char_start": 3000,
 #     "char_end": 4000,

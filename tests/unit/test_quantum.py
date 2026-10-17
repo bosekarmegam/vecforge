@@ -90,13 +90,23 @@ class TestGroverAmplifier:
         result = amp.amplify(scores, iterations=2)
         assert len(result) == 3
 
-    def test_uniform_scores_stable(self) -> None:
-        """Uniform scores should remain unchanged after diffusion (mean = each value)."""  # noqa: E501
+    def test_uniform_scores_stay_unit_norm(self) -> None:
+        """Uniform scores (no signal) still yield a valid unit-norm state."""
         amp = GroverAmplifier(max_iterations=3)
         scores = np.full(5, 0.4, dtype=np.float32)
         amplified = amp.amplify(scores)
-        # Inversion-about-mean of uniform vector returns the same vector
-        np.testing.assert_allclose(amplified, scores, atol=1e-5)
+        assert not np.any(np.isnan(amplified))
+        assert abs(float(np.linalg.norm(amplified)) - 1.0) < 1e-5
+
+    def test_no_oracle_signal_is_identity(self) -> None:
+        """Marking nothing (or everything) leaves the state unchanged."""
+        amp = GroverAmplifier()
+        scores = np.array([0.6, 0.3, 0.1], dtype=np.float32)
+        unit = scores / np.linalg.norm(scores)
+        none_marked = amp.amplify(scores, marked=np.zeros(3, dtype=bool))
+        all_marked = amp.amplify(scores, marked=np.ones(3, dtype=bool))
+        np.testing.assert_allclose(none_marked, unit, atol=1e-6)
+        np.testing.assert_allclose(all_marked, unit, atol=1e-6)
 
 
 # ─── QuantumReranker ───

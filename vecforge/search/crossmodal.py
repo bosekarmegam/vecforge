@@ -59,6 +59,9 @@ class CrossModalSearcher:
             be lazily created on first image query if not provided.
         audio_embedder: Optional pre-loaded AudioEmbedder instance. Will
             be lazily created on first audio query if not provided.
+        text_embedder: Optional text embedder (any ``EmbedderLike``). Pass
+            the vault's ``db.embedder`` so text queries share its model and
+            cache; otherwise a default ``Embedder`` is created once.
 
     Performance:
         Text query:  same as standard VecForge search (~5ms at 100k)
@@ -77,9 +80,11 @@ class CrossModalSearcher:
         self,
         image_embedder: Any | None = None,
         audio_embedder: Any | None = None,
+        text_embedder: Any | None = None,
     ) -> None:
         self._image_embedder = image_embedder
         self._audio_embedder = audio_embedder
+        self._text_embedder = text_embedder
 
     def detect_modality(self, query: str | Path) -> str:
         """Detect the modality of a query string or path.
@@ -145,9 +150,7 @@ class CrossModalSearcher:
             return embedder.embed(query)
 
         elif detected == "text":
-            from vecforge.core.embedder import Embedder
-
-            return Embedder().embed(str(query))
+            return self._get_text_embedder().embed(str(query))
 
         else:
             raise ValueError(
@@ -155,6 +158,13 @@ class CrossModalSearcher:
                 "Expected 'text', 'image', or 'audio'.\n"
                 "VecForge by Suneel Bose K · ArcGX TechLabs"
             )
+
+    def _get_text_embedder(self) -> Any:
+        if self._text_embedder is None:
+            from vecforge.core.embedder import Embedder
+
+            self._text_embedder = Embedder()
+        return self._text_embedder
 
     def _get_image_embedder(self) -> Any:
         if self._image_embedder is None:
