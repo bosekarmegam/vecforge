@@ -265,6 +265,7 @@ If VecForge helps your work, please cite the paper ([PDF](paper/VecForge-2.0-Pap
 - [📖 API Reference](docs/api_reference.md) · [🖥️ CLI Reference](docs/cli_reference.md) · [🌐 REST API](docs/rest_api.md)
 - [📝 Changelog](CHANGELOG.md) — including 2.0 migration notes
 - 🎨 Brand kit: logo SVG/PNG exports and the 2.0 reel in [`assets/brand/`](assets/brand/)
+- 🎬 [60-second introduction reel](assets/brand/vecforge-intro-reel.mp4): what VecForge is and how to use it ([source](video/))
 
 ---
 

@@ -82,11 +82,18 @@ def polish(x: np.ndarray) -> np.ndarray:
     return x * 10 ** (-1 / 20) / max(float(np.max(np.abs(x))), 1e-9)
 
 
-def build(model_dir: Path, sid: int, threads: int) -> np.ndarray:
+def build(
+    model_dir: Path,
+    sid: int,
+    threads: int,
+    script: Path = SCRIPT,
+    timings: list | None = None,
+) -> np.ndarray:
+    """Speak every line into a 60 s track; log each spoken length to ``timings``."""
     tts = make_tts(model_dir, threads)
     out = np.zeros(int(SR * DURATION))
     print(f"{'start':>6} {'slot':>5} {'len':>5} {'speed':>5}  line")
-    for line in load_script():
+    for line in load_script(script):
         start, end = float(line["start"]), float(line["end"])  # type: ignore[arg-type]
         say = str(line.get("say") or line["text"])
         slot = end - start
@@ -99,6 +106,8 @@ def build(model_dir: Path, sid: int, threads: int) -> np.ndarray:
         j = min(len(out), i + len(clip))
         out[i:j] += clip[: j - i]
         seconds = len(clip) / SR
+        if timings is not None:
+            timings.append({"start": start, "spoken": round(seconds, 3)})
         print(f"{start:6.1f} {slot:5.1f} {seconds:5.2f} {speed:5.2f}  {line['text']}")
     return polish(out)
 
@@ -117,8 +126,23 @@ def main() -> None:
     ap.add_argument("--out", default="vecforge-reel-voice.wav")
     ap.add_argument("--speaker", type=int, default=1, help="1 = af_bella (default)")
     ap.add_argument("--threads", type=int, default=4)
+    ap.add_argument(
+        "--script",
+        type=Path,
+        default=SCRIPT,
+        help="narration file (default: brand reel)",
+    )
+    ap.add_argument(
+        "--timings", type=Path, help="write each line's spoken length as JSON"
+    )
     args = ap.parse_args()
-    write_wav(args.out, build(args.model_dir, args.speaker, args.threads))
+    timings: list = []
+    write_wav(
+        args.out,
+        build(args.model_dir, args.speaker, args.threads, args.script, timings),
+    )
+    if args.timings:
+        args.timings.write_text(json.dumps(timings, indent=1) + "\n", encoding="utf-8")
     print(f"wrote {args.out}")
 
 

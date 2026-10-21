@@ -1,0 +1,1 @@
+window.VOICE_TIMINGS = [{"start":0.5,"spoken":2.799},{"start":5.5,"spoken":3.51},{"start":10.4,"spoken":5.841},{"start":17.9,"spoken":4.491},{"start":25.4,"spoken":6.162},{"start":32.9,"spoken":5.004},{"start":40.4,"spoken":5.866},{"start":47.9,"spoken":5.465},{"start":55.6,"spoken":2.888}];

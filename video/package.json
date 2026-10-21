@@ -1,0 +1,19 @@
+{
+  "name": "vecforge-intro-reel",
+  "private": true,
+  "type": "module",
+  "description": "60-second VecForge introduction reel: Remotion VFX scenes and HyperFrames + GSAP demo scenes",
+  "scripts": {
+    "build": "node build.mjs"
+  },
+  "dependencies": {
+    "@remotion/bundler": "4.0.537",
+    "@remotion/cli": "4.0.537",
+    "@remotion/renderer": "4.0.537",
+    "gsap": "3.14.2",
+    "hyperframes": "0.8.181",
+    "react": "19.1.1",
+    "react-dom": "19.1.1",
+    "remotion": "4.0.537"
+  }
+}

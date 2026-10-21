@@ -1,0 +1,8 @@
+node_modules/
+.voice-*/
+.reel-master.mp4
+hf/vendor/
+hf/.hyperframes/
+hf/assets/sfx/
+hf/assets/remotion/
+hf/assets/audio/

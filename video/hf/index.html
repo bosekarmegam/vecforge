@@ -1,0 +1,969 @@
+<!doctype html>
+<html lang="en" data-resolution="portrait">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>VecForge introduction reel</title>
+    <!-- vendor/gsap.min.js is copied from node_modules/gsap by ../build.mjs -->
+    <script src="vendor/gsap.min.js"></script>
+    <script src="narration.js"></script>
+    <script src="voice-timings.js"></script>
+    <style>
+      :root {
+        --bg0: #07051a;
+        --bg1: #110b36;
+        --bg2: #1d1558;
+        --deep: #2a1f7a;
+        --indigo: #6c5ce7;
+        --cyan: #67e8f9;
+        --violet: #c4b5fd;
+        --amber: #ffb86b;
+        --green: #7cf2b0;
+        --ink: #e9e4ff;
+        --forge: linear-gradient(90deg, var(--cyan), var(--violet) 55%, var(--amber));
+      }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        background: var(--bg0);
+      }
+      #root {
+        position: relative;
+        width: 1080px;
+        height: 1920px;
+        overflow: hidden;
+        font-family: Inter, system-ui, sans-serif;
+        color: #fff;
+      }
+      .clip {
+        position: absolute;
+        inset: 0;
+        width: 1080px;
+        height: 1920px;
+      }
+      .vwrap {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+      }
+      video.clip {
+        object-fit: cover;
+      }
+
+      /* ── native scenes ─────────────────────────────── */
+      .scene {
+        z-index: 2;
+        overflow: hidden;
+        background: radial-gradient(1300px 1500px at 50% 38%, var(--bg2) 0%, var(--bg1) 50%, var(--bg0) 100%);
+      }
+      .scene .inner {
+        position: absolute;
+        inset: 0;
+      }
+      .floor {
+        position: absolute;
+        left: -900px;
+        right: -900px;
+        top: 1180px;
+        height: 1500px;
+        opacity: 0.45;
+        transform: perspective(700px) rotateX(72deg);
+        transform-origin: 50% 0%;
+        background-image: linear-gradient(#67e8f955 2px, transparent 2px),
+          linear-gradient(90deg, #67e8f940 2px, transparent 2px);
+        background-size: 120px 120px;
+        mask-image: linear-gradient(to bottom, transparent, black 35%, black 70%, transparent);
+        -webkit-mask-image: linear-gradient(to bottom, transparent, black 35%, black 70%, transparent);
+      }
+      .blob {
+        position: absolute;
+        width: 760px;
+        height: 760px;
+        border-radius: 50%;
+        opacity: 0.55;
+        mix-blend-mode: screen;
+      }
+      .blob.a {
+        left: -260px;
+        top: 120px;
+        background: radial-gradient(circle, #6c5ce799 0%, transparent 65%);
+      }
+      .blob.b {
+        right: -300px;
+        top: 760px;
+        background: radial-gradient(circle, #67e8f955 0%, transparent 65%);
+      }
+      .blob.c {
+        left: 160px;
+        top: 1250px;
+        background: radial-gradient(circle, #ffb86b44 0%, transparent 65%);
+      }
+      .step {
+        position: absolute;
+        left: 70px;
+        right: 70px;
+        top: 140px;
+        height: 270px;
+        display: flex;
+        align-items: center;
+        gap: 34px;
+      }
+      .num {
+        position: relative;
+        font-size: 250px;
+        font-weight: 900;
+        letter-spacing: -0.06em;
+        line-height: 1;
+        color: transparent;
+        -webkit-text-stroke: 4px var(--cyan);
+        filter: drop-shadow(0 0 24px #67e8f988);
+      }
+      .num .fill {
+        position: absolute;
+        inset: 0;
+        background: var(--forge);
+        -webkit-background-clip: text;
+        background-clip: text;
+        -webkit-text-stroke: 0;
+        clip-path: inset(100% 0 0 0);
+      }
+      .lbl .eb {
+        display: block;
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: 8px;
+        color: var(--cyan);
+      }
+      .lbl .ttl {
+        display: block;
+        font-size: 108px;
+        font-weight: 800;
+        letter-spacing: -0.04em;
+        line-height: 1.05;
+      }
+      .win {
+        position: absolute;
+        left: 70px;
+        right: 70px;
+        border-radius: 30px;
+        overflow: hidden;
+        background: rgba(8, 5, 28, 0.86);
+        border: 2px solid rgba(196, 181, 253, 0.3);
+        box-shadow: 0 40px 90px rgba(0, 0, 0, 0.55), 0 0 60px #6c5ce733;
+      }
+      .win .bar {
+        height: 58px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 24px;
+        background: rgba(255, 255, 255, 0.06);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      }
+      .win .bar i {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #ff5f57;
+      }
+      .win .bar i:nth-child(2) {
+        background: #febc2e;
+      }
+      .win .bar i:nth-child(3) {
+        background: #28c840;
+      }
+      .win .bar span {
+        margin-left: 14px;
+        font-size: 24px;
+        font-weight: 600;
+        letter-spacing: 2px;
+        color: rgba(233, 228, 255, 0.55);
+      }
+      .code {
+        padding: 26px 34px 30px;
+        font-family: "DejaVu Sans Mono", ui-monospace, monospace;
+        font-size: 38px;
+        line-height: 1.55;
+        white-space: pre;
+        color: var(--ink);
+      }
+      .code.small {
+        font-size: 33px;
+      }
+      .code .ln {
+        min-height: 1.55em;
+      }
+      .kw {
+        color: #c792ea;
+      }
+      .fn {
+        color: var(--cyan);
+      }
+      .st {
+        color: #ffc98a;
+      }
+      .cm {
+        color: rgba(233, 228, 255, 0.45);
+      }
+      .pr {
+        color: var(--green);
+      }
+      .ok {
+        color: var(--green);
+      }
+      .mu {
+        color: rgba(233, 228, 255, 0.6);
+      }
+      .caret {
+        display: inline-block;
+        width: 0.55em;
+        height: 1.05em;
+        margin-left: 2px;
+        vertical-align: -0.15em;
+        background: var(--cyan);
+        box-shadow: 0 0 14px var(--cyan);
+      }
+      .pbar {
+        height: 22px;
+        margin: 10px 0 8px;
+        border-radius: 11px;
+        background: rgba(255, 255, 255, 0.08);
+        overflow: hidden;
+      }
+      .pbar b {
+        display: block;
+        height: 100%;
+        width: 100%;
+        background: var(--forge);
+        transform-origin: 0 50%;
+        transform: scaleX(0);
+        box-shadow: 0 0 20px var(--cyan);
+      }
+      .chip {
+        position: absolute;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: center;
+      }
+      .chip span {
+        padding: 18px 34px;
+        border-radius: 999px;
+        font-size: 36px;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--indigo), #4b3bd1);
+        box-shadow: 0 0 40px #6c5ce7aa;
+      }
+      /* vault */
+      .vault {
+        position: absolute;
+        left: 390px;
+        top: 1040px;
+        width: 300px;
+        height: 300px;
+      }
+      .vault .body {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 40px;
+        bottom: 40px;
+        background: linear-gradient(90deg, #2a1f7a, #6c5ce7 50%, #2a1f7a);
+        border-left: 3px solid var(--violet);
+        border-right: 3px solid var(--violet);
+      }
+      .vault .cap,
+      .vault .base {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 80px;
+        border-radius: 50%;
+        border: 3px solid var(--violet);
+      }
+      .vault .cap {
+        top: 0;
+        background: radial-gradient(circle, #8b7cf8, #4b3bd1);
+        z-index: 2;
+      }
+      .vault .base {
+        bottom: 0;
+        background: #3a2ca8;
+      }
+      .vault .ring {
+        position: absolute;
+        left: 0;
+        right: 0;
+        height: 80px;
+        border-radius: 50%;
+        border: 3px solid #c4b5fd66;
+      }
+      .vault .glow {
+        position: absolute;
+        inset: -120px;
+        border-radius: 50%;
+        background: radial-gradient(circle, #67e8f966 0%, transparent 60%);
+        opacity: 0;
+      }
+      .count {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 1360px;
+        text-align: center;
+        font-size: 34px;
+        font-weight: 700;
+        letter-spacing: 4px;
+        color: var(--ink);
+      }
+      .count .n {
+        display: none;
+      }
+      .count .n:first-child {
+        display: inline-block;
+      }
+      .count b {
+        color: var(--cyan);
+        font-size: 44px;
+      }
+      .doc {
+        position: absolute;
+        left: 0;
+        top: 0;
+        padding: 14px 22px;
+        border-radius: 16px;
+        font-size: 26px;
+        font-weight: 600;
+        white-space: nowrap;
+        background: #1b1450;
+        border: 2px solid var(--cyan);
+        box-shadow: 0 0 34px #67e8f9aa;
+        opacity: 0;
+      }
+      .tag {
+        position: absolute;
+        padding: 10px 20px;
+        border-radius: 14px;
+        font-family: "DejaVu Sans Mono", monospace;
+        font-size: 28px;
+        background: rgba(255, 184, 107, 0.14);
+        border: 2px solid #ffb86b88;
+        color: #ffe8cc;
+        opacity: 0;
+      }
+      /* search */
+      .lane {
+        position: absolute;
+        width: 380px;
+        padding: 20px 10px;
+        border-radius: 22px;
+        text-align: center;
+        background: rgba(8, 5, 28, 0.86);
+        opacity: 0;
+      }
+      .lane .t {
+        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: 4px;
+      }
+      .lane .s {
+        margin-top: 6px;
+        font-size: 26px;
+        color: var(--ink);
+      }
+      .lane.dense {
+        left: 70px;
+        top: 860px;
+        border: 3px solid var(--cyan);
+        box-shadow: 0 0 34px #67e8f966;
+      }
+      .lane.dense .t {
+        color: var(--cyan);
+      }
+      .lane.sparse {
+        right: 70px;
+        top: 860px;
+        border: 3px solid var(--amber);
+        box-shadow: 0 0 34px #ffb86b55;
+      }
+      .lane.sparse .t {
+        color: var(--amber);
+      }
+      .fusion {
+        position: absolute;
+        left: 420px;
+        top: 960px;
+        width: 240px;
+        height: 110px;
+        border-radius: 55px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        font-weight: 800;
+        letter-spacing: 4px;
+        color: var(--bg0);
+        background: var(--violet);
+        box-shadow: 0 0 50px var(--violet);
+        opacity: 0;
+      }
+      .res {
+        position: absolute;
+        left: 70px;
+        right: 70px;
+        height: 92px;
+        display: flex;
+        align-items: center;
+        gap: 22px;
+        padding: 0 26px;
+        border-radius: 22px;
+        background: rgba(255, 255, 255, 0.07);
+        border: 2px solid rgba(196, 181, 253, 0.25);
+        opacity: 0;
+      }
+      .res.top {
+        border-color: var(--green);
+        background: rgba(124, 242, 176, 0.1);
+        box-shadow: 0 0 40px #7cf2b055;
+      }
+      .res .rk {
+        font-size: 34px;
+        font-weight: 800;
+        color: rgba(233, 228, 255, 0.5);
+        width: 50px;
+      }
+      .res.top .rk {
+        color: var(--green);
+      }
+      .res .tx {
+        flex: 1;
+        font-size: 30px;
+        font-weight: 600;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .res .bar {
+        width: 170px;
+        height: 14px;
+        border-radius: 7px;
+        background: rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+      }
+      .res .bar b {
+        display: block;
+        height: 100%;
+        background: var(--forge);
+        transform-origin: 0 50%;
+        transform: scaleX(0);
+      }
+
+      /* ── overlays ──────────────────────────────────── */
+      #capbg {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 1400px;
+        height: 330px;
+        z-index: 8;
+        background: linear-gradient(to bottom, transparent, rgba(5, 3, 20, 0.72) 35%, rgba(5, 3, 20, 0.72) 65%, transparent);
+      }
+      #captions {
+        position: absolute;
+        left: 50px;
+        right: 50px;
+        top: 1470px;
+        height: 190px;
+        z-index: 9;
+      }
+      .cap {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-wrap: wrap;
+        align-content: center;
+        justify-content: center;
+        gap: 4px 16px;
+        opacity: 0;
+      }
+      .cap .w {
+        display: inline-block;
+        font-size: 60px;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+        color: #fff;
+        text-shadow: 0 4px 22px rgba(0, 0, 0, 0.8);
+        opacity: 0;
+      }
+            #flash {
+        position: absolute;
+        inset: 0;
+        z-index: 10;
+        background: #fff;
+        opacity: 0;
+        mix-blend-mode: screen;
+      }
+      #leak {
+        position: absolute;
+        left: -400px;
+        top: -400px;
+        width: 1900px;
+        height: 2700px;
+        z-index: 10;
+        opacity: 0;
+        mix-blend-mode: screen;
+        background: linear-gradient(115deg, transparent 35%, #67e8f966 45%, #ffb86baa 50%, #c4b5fd66 55%, transparent 65%);
+      }
+      #vignette {
+        position: absolute;
+        inset: 0;
+        z-index: 11;
+        background: radial-gradient(120% 90% at 50% 45%, transparent 55%, rgba(0, 0, 0, 0.55) 100%);
+      }
+      #grain {
+        position: absolute;
+        left: -300px;
+        top: -300px;
+        width: 1680px;
+        height: 2520px;
+        z-index: 12;
+        opacity: 0.06;
+        mix-blend-mode: overlay;
+        background-image: url("assets/fx/grain.png");
+      }
+      #prog {
+        position: absolute;
+        left: 40px;
+        right: 40px;
+        top: 44px;
+        height: 6px;
+        z-index: 13;
+        border-radius: 3px;
+        background: rgba(255, 255, 255, 0.12);
+      }
+      #prog b {
+        display: block;
+        height: 100%;
+        border-radius: 3px;
+        background: var(--forge);
+        transform-origin: 0 50%;
+        transform: scaleX(0);
+        box-shadow: 0 0 12px var(--cyan);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="60" data-width="1080" data-height="1920">
+      <!-- Remotion segments (rendered by ../render-remotion.mjs) -->
+      <div class="vwrap" id="w-open">
+        <video id="v-open" class="clip" src="assets/remotion/open-and-logo.mp4" data-start="0" data-duration="10" data-track-index="0" muted playsinline></video>
+      </div>
+      <div class="vwrap" id="w-what">
+        <video id="v-what" class="clip" src="assets/remotion/what-is.mp4" data-start="10" data-duration="7.5" data-track-index="0" muted playsinline></video>
+      </div>
+      <div class="vwrap" id="w-agent">
+        <video id="v-agent" class="clip" src="assets/remotion/agent-memory.mp4" data-start="40" data-duration="7.5" data-track-index="0" muted playsinline></video>
+      </div>
+      <div class="vwrap" id="w-feat">
+        <video id="v-feat" class="clip" src="assets/remotion/features.mp4" data-start="47.5" data-duration="7.5" data-track-index="0" muted playsinline></video>
+      </div>
+      <div class="vwrap" id="w-end">
+        <video id="v-end" class="clip" src="assets/remotion/end-card.mp4" data-start="55" data-duration="5" data-track-index="0" muted playsinline></video>
+      </div>
+
+      <!-- Step 1: install -->
+      <section id="s-install" class="clip scene" data-start="17.5" data-duration="7.5" data-track-index="1">
+        <div class="floor"></div>
+        <div class="blob a"></div>
+        <div class="blob b"></div>
+        <div class="blob c"></div>
+        <div class="inner">
+          <div class="step">
+            <div class="num">01<span class="fill">01</span></div>
+            <div class="lbl"><span class="eb">STEP 1 OF 3</span><span class="ttl">Install</span></div>
+          </div>
+          <div class="win" id="i-term" style="top: 450px">
+            <div class="bar"><i></i><i></i><i></i><span>TERMINAL</span></div>
+            <div class="code" id="i-term-code"></div>
+          </div>
+          <div class="win" id="i-py" style="top: 880px">
+            <div class="bar"><i></i><i></i><i></i><span>APP.PY</span></div>
+            <div class="code" id="i-py-code"></div>
+          </div>
+          <div class="chip" id="i-chip" style="top: 1250px"><span>✓ vault ready · 0 documents</span></div>
+        </div>
+      </section>
+
+      <!-- Step 2: add -->
+      <section id="s-add" class="clip scene" data-start="25" data-duration="7.5" data-track-index="1">
+        <div class="floor"></div>
+        <div class="blob a"></div>
+        <div class="blob b"></div>
+        <div class="blob c"></div>
+        <div class="inner">
+          <div class="step">
+            <div class="num">02<span class="fill">02</span></div>
+            <div class="lbl"><span class="eb">STEP 2 OF 3</span><span class="ttl">Add</span></div>
+          </div>
+          <div class="win" id="a-win" style="top: 450px">
+            <div class="bar"><i></i><i></i><i></i><span>APP.PY</span></div>
+            <div class="code small" id="a-code"></div>
+          </div>
+          <div class="vault" id="vault">
+            <div class="glow"></div>
+            <div class="base"></div>
+            <div class="body"></div>
+            <div class="ring" style="top: 110px"></div>
+            <div class="ring" style="top: 170px"></div>
+            <div class="cap"></div>
+          </div>
+          <div class="doc" id="d1">Patient has a fever…</div>
+          <div class="doc" id="d2">Invoice 4471 is overdue</div>
+          <div class="doc" id="d3">Flight to Chennai…</div>
+          <div class="tag" id="t1" style="left: 90px; top: 1110px">ward: 7</div>
+          <div class="tag" id="t2" style="left: 740px; top: 1070px">team: finance</div>
+          <div class="tag" id="t3" style="left: 120px; top: 1250px">embedded</div>
+          <div class="tag" id="t4" style="left: 760px; top: 1230px">indexed</div>
+          <div class="count" id="a-count">VAULT · <b id="a-n"><span class="n">0</span><span class="n">1</span><span class="n">2</span><span class="n">3</span></b> DOCUMENTS</div>
+        </div>
+      </section>
+
+      <!-- Step 3: search -->
+      <section id="s-search" class="clip scene" data-start="32.5" data-duration="7.5" data-track-index="1">
+        <div class="floor"></div>
+        <div class="blob a"></div>
+        <div class="blob b"></div>
+        <div class="blob c"></div>
+        <div class="inner">
+          <div class="step">
+            <div class="num">03<span class="fill">03</span></div>
+            <div class="lbl"><span class="eb">STEP 3 OF 3</span><span class="ttl">Search</span></div>
+          </div>
+          <div class="win" id="s-win" style="top: 440px">
+            <div class="bar"><i></i><i></i><i></i><span>APP.PY</span></div>
+            <div class="code" id="s-code"></div>
+          </div>
+          <svg id="s-wires" width="1080" height="1920" style="position: absolute; inset: 0">
+            <path id="wd" d="M540 800 C540 830 260 820 260 860" fill="none" stroke="#67e8f9" stroke-width="6" stroke-linecap="round" />
+            <path id="ws" d="M540 800 C540 830 820 820 820 860" fill="none" stroke="#ffb86b" stroke-width="6" stroke-linecap="round" stroke-dasharray="10 14" />
+            <path id="wd2" d="M260 980 C260 1010 420 1000 450 1015" fill="none" stroke="#67e8f9" stroke-width="6" stroke-linecap="round" />
+            <path id="ws2" d="M820 980 C820 1010 660 1000 630 1015" fill="none" stroke="#ffb86b" stroke-width="4" stroke-linecap="round" stroke-dasharray="10 14" />
+          </svg>
+          <div class="lane dense" id="l-d"><div class="t">MEANING</div><div class="s">dense vectors · 3 hits</div></div>
+          <div class="lane sparse" id="l-s"><div class="t">KEYWORDS</div><div class="s">BM25 · 0 shared words</div></div>
+          <div class="fusion" id="fus">FUSION</div>
+          <div class="res top" id="r1" style="top: 1110px">
+            <div class="rk">#1</div>
+            <div class="tx">Patient has a fever and a cough</div>
+            <div class="bar"><b style="width: 100%" data-w="0.94"></b></div>
+          </div>
+          <div class="res" id="r2" style="top: 1216px">
+            <div class="rk">#2</div>
+            <div class="tx">Flight to Chennai on Friday</div>
+            <div class="bar"><b data-w="0.28"></b></div>
+          </div>
+          <div class="res" id="r3" style="top: 1322px">
+            <div class="rk">#3</div>
+            <div class="tx">Invoice 4471 is overdue</div>
+            <div class="bar"><b data-w="0.16"></b></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- overlays -->
+      <div id="capbg"></div>
+      <div id="captions"></div>
+      <div id="leak"></div>
+      <div id="flash"></div>
+      <div id="vignette"></div>
+      <div id="grain"></div>
+      <div id="prog"><b></b></div>
+
+      <!-- sound: narration over the soundtrack (scripts/make_reel_*.py), plus effects -->
+      <audio id="a-bed" class="clip" src="assets/audio/bed.wav" data-start="0" data-duration="60" data-track-index="5" data-volume="1"></audio>
+      <audio id="sfx-02-glitch-1" class="clip" src="assets/sfx/glitch-1.mp3" data-start="2.3" data-duration="2.6" data-track-index="6" data-volume="0.45"></audio>
+      <audio id="sfx-03-sparkle" class="clip" src="assets/sfx/sparkle.mp3" data-start="5.1" data-duration="1.8" data-track-index="6" data-volume="0.5"></audio>
+      <audio id="sfx-04-whoosh" class="clip" src="assets/sfx/whoosh.mp3" data-start="9.8" data-duration="0.57" data-track-index="7" data-volume="0.5"></audio>
+      <audio id="sfx-05-pop" class="clip" src="assets/sfx/pop.mp3" data-start="15.33" data-duration="0.7" data-track-index="6" data-volume="0.4"></audio>
+      <audio id="sfx-06-pop" class="clip" src="assets/sfx/pop.mp3" data-start="15.63" data-duration="0.7" data-track-index="8" data-volume="0.4"></audio>
+      <audio id="sfx-07-pop" class="clip" src="assets/sfx/pop.mp3" data-start="15.93" data-duration="0.7" data-track-index="9" data-volume="0.4"></audio>
+      <audio id="sfx-08-whoosh" class="clip" src="assets/sfx/whoosh.mp3" data-start="17.3" data-duration="0.57" data-track-index="7" data-volume="0.5"></audio>
+      <audio id="sfx-09-typing" class="clip" src="assets/sfx/typing.mp3" data-start="18.1" data-duration="1.0" data-track-index="6" data-volume="0.35" data-fade-out="0.2"></audio>
+      <audio id="sfx-10-ping" class="clip" src="assets/sfx/ping.mp3" data-start="20.0" data-duration="1.3" data-track-index="8" data-volume="0.35"></audio>
+      <audio id="sfx-11-typing" class="clip" src="assets/sfx/typing.mp3" data-start="20.3" data-duration="1.5" data-track-index="6" data-volume="0.35"></audio>
+      <audio id="sfx-12-pop" class="clip" src="assets/sfx/pop.mp3" data-start="22.6" data-duration="0.7" data-track-index="9" data-volume="0.45"></audio>
+      <audio id="sfx-13-whoosh" class="clip" src="assets/sfx/whoosh.mp3" data-start="24.8" data-duration="0.57" data-track-index="7" data-volume="0.5"></audio>
+      <audio id="sfx-14-typing" class="clip" src="assets/sfx/typing.mp3" data-start="25.7" data-duration="1.5" data-track-index="6" data-volume="0.3"></audio>
+      <audio id="sfx-15-whoosh-short" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="27.9" data-duration="0.57" data-track-index="8" data-volume="0.4"></audio>
+      <audio id="sfx-16-typing" class="clip" src="assets/sfx/typing.mp3" data-start="28.0" data-duration="1.5" data-track-index="6" data-volume="0.3"></audio>
+      <audio id="sfx-17-whoosh-short" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="29.9" data-duration="0.57" data-track-index="8" data-volume="0.4"></audio>
+      <audio id="sfx-18-whoosh-short" class="clip" src="assets/sfx/whoosh-short.mp3" data-start="31.0" data-duration="0.57" data-track-index="9" data-volume="0.4"></audio>
+      <audio id="sfx-19-whoosh" class="clip" src="assets/sfx/whoosh.mp3" data-start="32.3" data-duration="0.57" data-track-index="7" data-volume="0.5"></audio>
+      <audio id="sfx-20-typing" class="clip" src="assets/sfx/typing.mp3" data-start="32.9" data-duration="1.3" data-track-index="6" data-volume="0.3"></audio>
+      <audio id="sfx-21-ping" class="clip" src="assets/sfx/ping.mp3" data-start="36.1" data-duration="1.3" data-track-index="8" data-volume="0.4"></audio>
+      <audio id="sfx-22-whoosh" class="clip" src="assets/sfx/whoosh.mp3" data-start="39.8" data-duration="0.57" data-track-index="7" data-volume="0.5"></audio>
+      <audio id="sfx-23-chime" class="clip" src="assets/sfx/chime.mp3" data-start="46.2" data-duration="2.5" data-track-index="6" data-volume="0.35"></audio>
+      <audio id="sfx-24-whoosh" class="clip" src="assets/sfx/whoosh.mp3" data-start="47.3" data-duration="0.57" data-track-index="7" data-volume="0.5"></audio>
+      <audio id="sfx-25-whoosh" class="clip" src="assets/sfx/whoosh.mp3" data-start="54.8" data-duration="0.57" data-track-index="7" data-volume="0.5"></audio>
+      <audio id="sfx-26-sparkle" class="clip" src="assets/sfx/sparkle.mp3" data-start="55.7" data-duration="1.8" data-track-index="6" data-volume="0.5"></audio>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      const $ = (s) => document.querySelector(s);
+      const $$ = (s) => Array.from(document.querySelectorAll(s));
+
+      // ── typed code ─────────────────────────────────────
+      // A line is a list of [class, text] tokens; every character becomes a
+      // span that the timeline reveals, so seeking shows the exact state.
+      function codeLines(container, lines) {
+        return lines.map((tokens) => {
+          const line = document.createElement("div");
+          line.className = "ln";
+          const chars = [];
+          for (const [cls, text] of tokens) {
+            for (const ch of text) {
+              const s = document.createElement("span");
+              if (cls) s.className = cls;
+              s.textContent = ch;
+              s.style.display = "none";
+              line.appendChild(s);
+              chars.push(s);
+            }
+          }
+          const caret = document.createElement("span");
+          caret.className = "caret";
+          caret.style.opacity = 0;
+          line.appendChild(caret);
+          container.appendChild(line);
+          return { line, chars, caret };
+        });
+      }
+      function type(l, t0, cps = 28) {
+        l.chars.forEach((c, i) => tl.set(c, { display: "inline" }, t0 + i / cps));
+        tl.set(l.caret, { opacity: 1 }, t0);
+        return t0 + l.chars.length / cps;
+      }
+      function show(l, t) {
+        l.chars.forEach((c) => tl.set(c, { display: "inline" }, t));
+      }
+      function hideCaret(l, t) {
+        tl.set(l.caret, { opacity: 0 }, t);
+      }
+      function blink(l, t0, times) {
+        tl.to(l.caret, { opacity: 0, duration: 0.27, repeat: times * 2 - 1, yoyo: true, ease: "steps(1)" }, t0);
+      }
+
+      // ── scene in / out and the shared header ───────────
+      function sceneIn(sel, t) {
+        tl.fromTo(`${sel} .inner`, { scale: 1.18, opacity: 0, filter: "blur(18px)" }, { scale: 1, opacity: 1, filter: "blur(0px)", duration: 0.6, ease: "expo.out" }, t);
+        tl.fromTo(`${sel} .num`, { x: -220, scale: 1.6, opacity: 0 }, { x: 0, scale: 1, opacity: 1, duration: 0.7, ease: "back.out(1.6)" }, t + 0.05);
+        tl.fromTo(`${sel} .num .fill`, { clipPath: "inset(100% 0 0 0)" }, { clipPath: "inset(0% 0 0 0)", duration: 0.8, ease: "power3.inOut" }, t + 0.35);
+        tl.fromTo(`${sel} .lbl .eb`, { x: 120, opacity: 0 }, { x: 0, opacity: 1, duration: 0.5, ease: "expo.out" }, t + 0.15);
+        tl.fromTo(`${sel} .lbl .ttl`, { x: 160, opacity: 0, skewX: -14 }, { x: 0, opacity: 1, skewX: 0, duration: 0.6, ease: "expo.out" }, t + 0.22);
+        tl.fromTo(`${sel} .win`, { y: 140, opacity: 0, rotateX: 22, transformPerspective: 1200 }, { y: 0, opacity: 1, rotateX: 0, duration: 0.7, ease: "expo.out", stagger: 0.12 }, t + 0.25);
+        // background drift for the whole scene
+        tl.fromTo(`${sel} .blob.a`, { x: 0, y: 0 }, { x: 220, y: 160, duration: 7.5, ease: "sine.inOut" }, t);
+        tl.fromTo(`${sel} .blob.b`, { x: 0, y: 0 }, { x: -200, y: -140, duration: 7.5, ease: "sine.inOut" }, t);
+        tl.fromTo(`${sel} .blob.c`, { x: 0, scale: 1 }, { x: 260, scale: 1.3, duration: 7.5, ease: "sine.inOut" }, t);
+        tl.fromTo(`${sel} .floor`, { backgroundPosition: "0px 0px" }, { backgroundPosition: "0px 1200px", duration: 7.5, ease: "none" }, t);
+      }
+      function sceneOut(sel, t) {
+        tl.to(`${sel} .inner`, { scale: 0.9, opacity: 0, filter: "blur(14px)", duration: 0.32, ease: "power2.in" }, t);
+      }
+
+      // ── Step 1: install (17.5–25 s) ───────────────────
+      sceneIn("#s-install", 17.5);
+      const term = codeLines($("#i-term-code"), [
+        [["fn", "$ "], ["", "pip install vecforge"]],
+        [["mu", "Collecting vecforge"]],
+        [],
+        [["ok", "✓ Installed vecforge-2.0.0"]],
+      ]);
+      const pbar = document.createElement("div");
+      pbar.className = "pbar";
+      pbar.innerHTML = "<b></b>";
+      term[2].line.appendChild(pbar);
+      tl.set(pbar, { opacity: 0 }, 0);
+      let t = type(term[0], 18.1, 22);
+      hideCaret(term[0], 19.1);
+      show(term[1], 19.15);
+      tl.set(pbar, { opacity: 1 }, 19.2);
+      tl.fromTo("#i-term-code .pbar b", { scaleX: 0 }, { scaleX: 1, duration: 0.8, ease: "power2.inOut" }, 19.2);
+      show(term[3], 20.0);
+      tl.fromTo(term[3].line, { x: -30, opacity: 0 }, { x: 0, opacity: 1, duration: 0.35, ease: "back.out(2)" }, 20.0);
+      tl.fromTo("#i-term", { boxShadow: "0 0 0px #7cf2b000" }, { boxShadow: "0 0 80px #7cf2b0aa", duration: 0.2, yoyo: true, repeat: 1 }, 20.0);
+      const py = codeLines($("#i-py-code"), [
+        [["kw", "from "], ["", "vecforge "], ["kw", "import "], ["fn", "VecForge"]],
+        [["", "db = "], ["fn", "VecForge"], ["", "("], ["st", '"my_vault"'], ["", ")"]],
+        [["cm", "# one local file. no server."]],
+      ]);
+      t = type(py[0], 20.3, 30);
+      hideCaret(py[0], t + 0.1);
+      t = type(py[1], t + 0.15, 26);
+      hideCaret(py[1], t + 0.15);
+      t = type(py[2], t + 0.2, 34);
+      blink(py[2], t, 3);
+      tl.fromTo("#i-chip span", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(2.2)" }, 22.6);
+      sceneOut("#s-install", 24.68);
+
+      // ── Step 2: add (25–32.5 s) ───────────────────────
+      sceneIn("#s-add", 25);
+      const add = codeLines($("#a-code"), [
+        [["", "db."], ["fn", "add"], ["", "("], ["st", '"Patient has a fever and a cough"'], ["", ","]],
+        [["", "       metadata={"], ["st", '"ward"'], ["", ": "], ["st", '"7"'], ["", "})"]],
+        [["", "db."], ["fn", "add"], ["", "("], ["st", '"Invoice 4471 is overdue"'], ["", ","]],
+        [["", "       metadata={"], ["st", '"team"'], ["", ": "], ["st", '"finance"'], ["", "})"]],
+        [["", "db."], ["fn", "add"], ["", "("], ["st", '"Flight to Chennai on Friday"'], ["", ")"]],
+      ]);
+      t = 25.7;
+      const docAt = [];
+      add.forEach((l, i) => {
+        t = type(l, t, 34);
+        hideCaret(l, t + 0.08);
+        if (i % 2 === 1 || i === 4) docAt.push(t + 0.05);
+        t += 0.12;
+      });
+      blink(add[4], t, 2);
+      // each finished add() sends a document card into the vault
+      const lineY = [585, 687, 738];
+      ["#d1", "#d2", "#d3"].forEach((d, i) => {
+        const t0 = docAt[i];
+        tl.fromTo(d, { x: 980, y: lineY[i], opacity: 0, scale: 0.6 }, { x: 640, y: lineY[i] + 60, opacity: 1, scale: 1, duration: 0.2, ease: "back.out(2)" }, t0);
+        tl.to(d, { x: 420, y: 1090, scale: 0.25, opacity: 0, rotation: -10, duration: 0.5, ease: "power3.in" }, t0 + 0.2);
+        tl.fromTo("#vault .glow", { opacity: 1, scale: 0.7 }, { opacity: 0, scale: 1.4, duration: 0.6, ease: "expo.out" }, t0 + 0.7);
+        tl.fromTo("#vault", { scale: 1.12 }, { scale: 1, duration: 0.5, ease: "elastic.out(1, 0.4)" }, t0 + 0.7);
+        tl.set(`#a-n .n:nth-child(${i + 1})`, { display: "none" }, t0 + 0.7);
+        tl.set(`#a-n .n:nth-child(${i + 2})`, { display: "inline-block" }, t0 + 0.7);
+        tl.fromTo("#a-n", { scale: 1.8 }, { scale: 1, duration: 0.4, ease: "back.out(3)" }, t0 + 0.7);
+      });
+      tl.fromTo("#vault", { y: 80, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "expo.out" }, 25.5);
+      tl.fromTo("#a-count", { opacity: 0 }, { opacity: 1, duration: 0.4 }, 25.8);
+      tl.fromTo("#vault .ring", { y: 0 }, { y: -14, duration: 0.5, yoyo: true, repeat: 13, ease: "sine.inOut" }, 25.5);
+      ["#t1", "#t2", "#t3", "#t4"].forEach((s, i) => {
+        tl.fromTo(s, { scale: 0, opacity: 0, y: 30 }, { scale: 1, opacity: 1, y: 0, duration: 0.45, ease: "back.out(2.4)" }, [27.6, 29.4, 30.4, 30.9][i]);
+        tl.to(s, { y: -12, duration: 1.2, yoyo: true, repeat: 1, ease: "sine.inOut" }, [27.6, 29.4, 30.4, 30.9][i] + 0.45);
+      });
+      sceneOut("#s-add", 32.18);
+
+      // ── Step 3: search (32.5–40 s) ────────────────────
+      sceneIn("#s-search", 32.5);
+      const srch = codeLines($("#s-code"), [
+        [["", "hits = db."], ["fn", "search"], ["", "("]],
+        [["", "    "], ["st", '"respiratory symptoms"'], ["", ", top_k="], ["pr", "3"], ["", ")"]],
+        [["fn", "print"], ["", "(hits[0].text)"]],
+        [["ok", "Patient has a fever and a cough"]],
+      ]);
+      t = type(srch[0], 32.95, 30);
+      hideCaret(srch[0], t + 0.05);
+      t = type(srch[1], t + 0.08, 32);
+      hideCaret(srch[1], t + 0.1);
+      // the two retrievers, then fusion
+      const wire = (sel, t0, d) => {
+        const p = $(sel);
+        const len = p.getTotalLength();
+        tl.fromTo(p, { strokeDasharray: `${len} ${len}`, strokeDashoffset: len }, { strokeDashoffset: 0, duration: d, ease: "power2.inOut" }, t0);
+      };
+      wire("#wd", 34.3, 0.4);
+      tl.set("#ws", { opacity: 0 }, 0);
+      tl.to("#ws", { opacity: 0.8, duration: 0.3 }, 34.3);
+      tl.fromTo("#l-d", { y: 40, opacity: 0, scale: 0.8 }, { y: 0, opacity: 1, scale: 1, duration: 0.5, ease: "back.out(2)" }, 34.6);
+      tl.fromTo("#l-s", { y: 40, opacity: 0, scale: 0.8 }, { y: 0, opacity: 0.75, scale: 1, duration: 0.5, ease: "back.out(2)" }, 34.75);
+      wire("#wd2", 35.2, 0.35);
+      tl.set("#ws2", { opacity: 0 }, 0);
+      tl.to("#ws2", { opacity: 0.6, duration: 0.3 }, 35.25);
+      tl.fromTo("#fus", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(2.5)" }, 35.5);
+      tl.to("#fus", { scale: 1.08, duration: 0.3, yoyo: true, repeat: 5, ease: "sine.inOut" }, 36.0);
+      tl.to("#ws", { strokeDashoffset: -96, duration: 4, ease: "none" }, 34.3);
+      ["#r1", "#r2", "#r3"].forEach((s, i) => {
+        const t0 = 36.1 + i * 0.22;
+        tl.fromTo(s, { x: 300, opacity: 0, skewX: -12 }, { x: 0, opacity: i ? 0.75 : 1, skewX: 0, duration: 0.5, ease: "expo.out" }, t0);
+        const b = $(`${s} .bar b`);
+        tl.fromTo(b, { scaleX: 0 }, { scaleX: Number(b.dataset.w), duration: 0.7, ease: "power3.out" }, t0 + 0.2);
+      });
+      tl.fromTo("#r1", { boxShadow: "0 0 0px #7cf2b000" }, { boxShadow: "0 0 70px #7cf2b0cc", duration: 0.35, yoyo: true, repeat: 3 }, 36.5);
+      t = type(srch[2], 37.05, 30);
+      hideCaret(srch[2], t + 0.1);
+      show(srch[3], t + 0.25);
+      tl.fromTo(srch[3].line, { opacity: 0, x: -24 }, { opacity: 1, x: 0, duration: 0.35, ease: "back.out(2)" }, t + 0.25);
+      sceneOut("#s-search", 39.68);
+
+      // ── Remotion segments: punch in on every cut ──────
+      [["#w-what", 10], ["#w-agent", 40], ["#w-feat", 47.5], ["#w-end", 55]].forEach(([w, c]) => {
+        tl.fromTo(w, { scale: 1.14, filter: "blur(12px)" }, { scale: 1, filter: "blur(0px)", duration: 0.55, ease: "expo.out" }, c);
+      });
+      [["#w-open", 9.75], ["#w-what", 17.25], ["#w-agent", 47.25], ["#w-feat", 54.75]].forEach(([w, c]) => {
+        tl.to(w, { scale: 0.92, filter: "blur(10px)", duration: 0.25, ease: "power2.in" }, c);
+      });
+
+      // ── transitions at every cut ──────────────────────
+      [5, 10, 17.5, 25, 32.5, 40, 47.5, 55].forEach((c, i) => {
+        tl.fromTo("#flash", { opacity: c === 5 ? 0 : 0.5 }, { opacity: 0, duration: 0.35, ease: "power2.out", immediateRender: i === 0 }, c);
+        tl.fromTo("#leak", { xPercent: -70, opacity: 0.9 }, { xPercent: 70, opacity: 0, duration: 0.7, ease: "power2.out", immediateRender: i === 0 }, c - 0.2);
+      });
+
+      // ── captions: karaoke words, chunked to two lines ─
+      const capBox = $("#captions");
+      window.NARRATION.forEach((line, i) => {
+        const spoken = window.VOICE_TIMINGS[i].spoken;
+        const words = line.text.split(" ");
+        const chunks = [];
+        let cur = [];
+        for (const w of words) {
+          if (cur.length && (cur.join(" ") + " " + w).length > 34) {
+            chunks.push(cur);
+            cur = [];
+          }
+          cur.push(w);
+        }
+        chunks.push(cur);
+        const total = line.text.replace(/ /g, "").length;
+        let done = 0;
+        const timeOf = (n) => line.start + 0.05 + (spoken * 0.95 * n) / total;
+        chunks.forEach((chunk, k) => {
+          const el = document.createElement("div");
+          el.className = "cap";
+          capBox.appendChild(el);
+          const spans = chunk.map((w) => {
+            const s = document.createElement("span");
+            s.className = "w";
+            s.textContent = w;
+            el.appendChild(s);
+            return s;
+          });
+          const first = timeOf(done);
+          spans.forEach((s, j) => {
+            const tw = timeOf(done);
+            tl.fromTo(s, { opacity: 0, y: 26, scale: 0.7 }, { opacity: 1, y: 0, scale: 1, duration: 0.2, ease: "back.out(2.4)" }, tw);
+            tl.set(s, { color: "#ffb86b" }, tw);
+            done += chunk[j].length;
+            tl.set(s, { color: "#ffffff" }, timeOf(done));
+          });
+          const last = k === chunks.length - 1 ? line.start + spoken + 0.45 : timeOf(done);
+          tl.set(el, { opacity: 1 }, first - 0.02);
+          tl.to(el, { opacity: 0, duration: 0.12 }, last);
+        });
+      });
+
+      // ── film grain, progress ──────────────────────────
+      for (let i = 0; i < 900; i++) {
+        const a = Math.sin(i * 12.9898) * 43758.5453;
+        const b = Math.sin(i * 78.233) * 12345.678;
+        tl.set("#grain", { x: -Math.floor((a - Math.floor(a)) * 256), y: -Math.floor((b - Math.floor(b)) * 256) }, i / 15);
+      }
+      tl.fromTo("#prog b", { scaleX: 0 }, { scaleX: 1, duration: 60, ease: "none" }, 0);
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+      tl.seek(0);
+    </script>
+  </body>
+</html>
